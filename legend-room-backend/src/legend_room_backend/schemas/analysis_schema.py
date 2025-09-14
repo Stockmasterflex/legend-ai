@@ -1,0 +1,1 @@
+# This file will contain the schema definitions related to the analysis

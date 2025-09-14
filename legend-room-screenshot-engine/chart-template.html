@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Legend Room Chart</title>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <style>
+        /* Basic styling to make the chart fill the page */
+        html, body, #container {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background-color: #131722; /* Match TradingView dark theme background */
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <script type="text/javascript">
+        // Function to get query parameters from the page's URL
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Get the 'symbol' parameter, defaulting to 'SPY' if it's not provided.
+        // This allows the caller to specify which stock to chart.
+        const symbol = urlParams.get('symbol') || 'SPY';
+        const pivot = parseFloat(urlParams.get('pivot') || 'NaN');
+        // contractions as comma-separated dates or indices (future use)
+        const contractions = (urlParams.get('contractions') || '').split(',').filter(Boolean);
+
+        new TradingView.widget({
+            autosize: true,
+            symbol: symbol,
+            interval: "D",
+            timezone: "Etc/UTC",
+            theme: "dark",
+            style: "1",
+            locale: "en",
+            container_id: "container",
+            // Remove the default top toolbar to get a cleaner chart image
+            toolbar_bg: "#f1f3f6",
+            enable_publishing: false,
+            hide_top_toolbar: true,
+            save_image: false,
+            container_id: "container",
+            studies: [
+                "Volume@tv-basicstudies",
+                "RSI@tv-basicstudies"
+            ],
+        });
+
+        // Draw simple overlays using HTML canvas on top of TradingView container (best-effort)
+        const container = document.getElementById('container');
+        const overlay = document.createElement('div');
+        overlay.style.position = 'absolute';
+        overlay.style.inset = '0';
+        overlay.style.pointerEvents = 'none';
+        container.appendChild(overlay);
+        const canvas = document.createElement('canvas');
+        canvas.width = container.clientWidth; canvas.height = container.clientHeight;
+        overlay.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        function drawPivot() {
+          if (!Number.isFinite(pivot)) return;
+          ctx.strokeStyle = '#ffcc00';
+          ctx.lineWidth = 2;
+          // approximate middle horizontal line to represent pivot
+          const y = Math.floor(canvas.height * 0.4);
+          ctx.beginPath(); ctx.moveTo(20, y); ctx.lineTo(canvas.width - 20, y); ctx.stroke();
+          ctx.fillStyle = '#ffcc00';
+          ctx.font = '12px sans-serif';
+          ctx.fillText(`Pivot ~ ${pivot.toFixed(2)}`, 24, y - 6);
+        }
+
+        function drawContractions() {
+          if (!contractions.length) return;
+          ctx.fillStyle = '#00d1ff';
+          const baseY = Math.floor(canvas.height * 0.65);
+          contractions.slice(0, 5).forEach((c, i) => {
+            const x = 60 + i * 40;
+            ctx.beginPath(); ctx.arc(x, baseY, 4, 0, Math.PI * 2); ctx.fill();
+          });
+          ctx.font = '12px sans-serif';
+          ctx.fillText('Contractions', 60, baseY + 16);
+        }
+
+        setTimeout(()=>{ drawPivot(); drawContractions(); }, 1500);
+    </script>
+</body>
+</html>

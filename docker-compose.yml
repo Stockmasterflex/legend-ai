@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  shots:
+    build: ./legend-room-screenshot-engine
+    ports:
+      - "3010:3010"
+    environment:
+      - PORT=3010
+      - DRY_RUN=${DRY_RUN:-1}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3010/screenshot"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./legend-room-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SHOTS_BASE_URL=http://shots:3010
+      - DEFAULT_SYMBOL=${DEFAULT_SYMBOL:-SPY}
+    depends_on:
+      shots:
+        condition: service_healthy
+

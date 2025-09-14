@@ -1,0 +1,9 @@
+{
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_VCP_API_BASE": "https://legend-api.onrender.com"
+    }
+  }
+}
+
+

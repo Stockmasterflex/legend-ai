@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+html, body {
+  height: 100%;
+  background: theme('colors.background');
+  color: theme('colors.text');
+}
+
+.container-px { @apply px-4 md:px-6 lg:px-8; }
+.card { @apply bg-card/95 rounded-xl shadow-card border border-white/5; }
+.btn { @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition; }
+.btn-primary { @apply bg-accent/20 text-accent hover:bg-accent/30; }
+.btn-ghost { @apply bg-white/5 hover:bg-white/10; }
+.badge { @apply text-xs px-2 py-0.5 rounded bg-white/10; }
+.grid-cards { @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3; }
+.muted { @apply text-white/60; }
+
+/* Simple fade/slide animations */
+.fade-in { animation: fadeIn 500ms ease-out both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px) } to { opacity:1; transform:none } }
+

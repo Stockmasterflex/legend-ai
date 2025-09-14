@@ -1,0 +1,22 @@
+19:25:51 Worker e6d8318f68d94e6292f23bf7ce78b8c7: started with PID 36564, version 2.6.0
+19:25:51 Worker e6d8318f68d94e6292f23bf7ce78b8c7: subscribing to channel rq:pubsub:e6d8318f68d94e6292f23bf7ce78b8c7
+19:25:51 *** Listening on legend...
+19:25:51 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+19:30:05 legend: jobs.execute_backtest_run(1) (f481cc4c-2855-4c71-b01e-275ac3202d6b)
+19:30:05 Worker e6d8318f68d94e6292f23bf7ce78b8c7: moving job f481cc4c-2855-4c71-b01e-275ac3202d6b to FailedJobRegistry (Work-horse terminated unexpectedly; waitpid returned 11 (signal 11); )
+19:30:05 Work horse killed for job f481cc4c-2855-4c71-b01e-275ac3202d6b: retpid=40517, ret_val=11
+19:36:51 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+19:50:21 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+20:03:52 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+20:17:22 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+20:22:54 legend: jobs.execute_backtest_run(2) (c46813ec-dd15-4a6a-b6ad-8da6ab3adc71)
+20:22:54 Worker e6d8318f68d94e6292f23bf7ce78b8c7: moving job c46813ec-dd15-4a6a-b6ad-8da6ab3adc71 to FailedJobRegistry (Work-horse terminated unexpectedly; waitpid returned 11 (signal 11); )
+20:22:54 Work horse killed for job c46813ec-dd15-4a6a-b6ad-8da6ab3adc71: retpid=88484, ret_val=11
+20:29:40 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+20:43:10 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+20:56:41 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+21:10:11 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+21:23:41 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+21:37:12 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+21:50:42 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend
+22:04:13 Worker e6d8318f68d94e6292f23bf7ce78b8c7: cleaning registries for queue: legend

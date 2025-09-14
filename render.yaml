@@ -1,0 +1,79 @@
+services:
+  - type: web
+    name: legend-api
+    env: docker
+    dockerfilePath: ./Dockerfile.api
+    plan: starter
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: SERVICE_DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://YOUR_VERCEL_URL
+      - key: SHOTS_BASE_URL
+        value: https://legend-shots.onrender.com
+      - key: LEGEND_ENV
+        value: production
+      - key: VCP_PROVIDER
+        value: yfinance
+
+  - type: worker
+    name: legend-worker
+    env: docker
+    dockerfilePath: ./Dockerfile.worker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: SERVICE_DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SHOTS_BASE_URL
+        value: https://legend-shots.onrender.com
+      - key: LEGEND_ENV
+        value: production
+      - key: VCP_PROVIDER
+        value: yfinance
+
+  - type: cron
+    name: legend-scheduler
+    schedule: "30 16 * * *"
+    env: docker
+    dockerfilePath: ./Dockerfile.scheduler
+    plan: starter
+    envVars:
+      - key: SERVICE_DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SHOTS_BASE_URL
+        value: https://legend-shots.onrender.com
+      - key: LEGEND_ENV
+        value: production
+      - key: VCP_PROVIDER
+        value: yfinance
+
+  - type: web
+    name: legend-shots
+    env: node
+    rootDir: legend-room-screenshot-engine
+    buildCommand: npm install
+    startCommand: node screenshotEngine.js
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3010
+      - key: DRY_RUN
+        value: "1"
+      # Optional Cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+

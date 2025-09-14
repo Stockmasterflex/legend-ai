@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "legend-room-backend"
+version = "0.1.0"
+description = "Legend Room Backend API"
+authors = ["Kyle <you@example.com>"]
+package-mode = false   # we only want dependency management
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.100.0"
+uvicorn = "^0.23.0"
+sqlalchemy = "^2.0.0"
+alembic = "^1.11.0"
+pydantic = "^2.5.1"
+yfinance = "^0.2.28"
+pandas = "^2.1.2"
+plotly = "^5.18.0"
+openai = "^0.27.0"
+alpha_vantage = "^2.3.1"
+investpy = "^1.0.7"
+cachetools = "^5.3.1"
+requests = "^2.31.0"
+scipy = "^1.11.1"
+numpy = "^1.26.4"
+cloudinary = "^1.44.0"
+pypi-package = "^0.1"
+setuptools = "<81"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+httpx = "<0.28"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,24 @@
+{
+  "name": "legend-room-screenshot-engine",
+  "version": "1.0.0",
+  "description": "Puppeteer script to capture TradingView charts and upload to Cloudinary.",
+  "main": "screenshotEngine.js",
+  "scripts": {
+    "start": "node screenshotEngine.js",
+    "start:dry": "DRY_RUN=1 PORT=${PORT:-3010} node screenshotEngine.js",
+    "smoke": "mkdir -p reports && node -e \"const fs=require('fs');(async()=>{const p=require('puppeteer');const b=await p.launch({args:['--no-sandbox','--disable-setuid-sandbox']});const pg=await b.newPage();const html=fs.readFileSync('chart-template.html','utf-8');await pg.setContent(html,{waitUntil:'networkidle0'});await pg.screenshot({path:'reports/SMOKE.png'});await b.close();console.log('Wrote reports/SMOKE.png');})();\""
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "^123.0.1",
+    "cloudinary": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "puppeteer-core": "^22.0.0"
+  },
+  "devDependencies": {
+    "puppeteer": "^22.10.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

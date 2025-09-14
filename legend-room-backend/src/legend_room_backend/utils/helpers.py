@@ -1,0 +1,1 @@
+# This file will contain the helper functions used throughout the application

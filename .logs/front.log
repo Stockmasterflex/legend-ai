@@ -1,0 +1,72 @@
+
+> kyle-thomas-portfolio@0.1.0 demo
+> NEXT_PUBLIC_VCP_API_BASE=http://127.0.0.1:8000 next dev
+
+  ▲ Next.js 14.2.5
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1393ms
+ ○ Compiling /demo ...
+ ✓ Compiled /demo in 1148ms (460 modules)
+ GET /demo 200 in 1358ms
+ ○ Compiling /projects ...
+ ✓ Compiled /projects in 506ms (469 modules)
+ GET /projects 200 in 687ms
+ GET /projects 200 in 51ms
+ ✓ Compiled /about in 321ms (459 modules)
+ GET /about 200 in 439ms
+ ○ Compiling /contact ...
+ ✓ Compiled /contact in 660ms (468 modules)
+ GET /contact 200 in 807ms
+ GET /projects 200 in 47ms
+ GET /contact 200 in 21ms
+ GET /about 200 in 26ms
+ GET /projects 200 in 37ms
+ GET /demo 200 in 53ms
+ ✓ Compiled in 960ms (482 modules)
+ ✓ Compiled in 527ms (482 modules)
+ ✓ Compiled in 1436ms (482 modules)
+ ✓ Compiled in 1083ms (482 modules)
+ ✓ Compiled in 654ms (482 modules)
+ ✓ Compiled in 633ms (482 modules)
+ ✓ Compiled in 1311ms (468 modules)
+ ✓ Compiled in 659ms (482 modules)
+ ✓ Compiled in 527ms (482 modules)
+ ✓ Compiled in 412ms (482 modules)
+ GET /demo 200 in 312ms
+ GET /demo 200 in 60ms
+ ○ Compiling / ...
+ ✓ Compiled / in 612ms (475 modules)
+ GET / 200 in 763ms
+ GET /projects 200 in 72ms
+ GET /about 200 in 62ms
+ GET /contact 200 in 56ms
+ GET / 200 in 59ms
+ ✓ Compiled in 1508ms (489 modules)
+ ✓ Compiled in 1022ms (489 modules)
+ ✓ Compiled in 679ms (489 modules)
+ ✓ Compiled in 294ms (489 modules)
+ GET / 200 in 121ms
+ GET /projects 200 in 44ms
+ GET / 200 in 44ms
+ GET /contact 200 in 21ms
+ GET /about 200 in 33ms
+ GET /projects 200 in 47ms
+ GET / 200 in 48ms
+ GET /demo 200 in 40ms
+ GET /demo 200 in 66ms
+ GET /demo 200 in 214ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 577ms (481 modules)
+ GET /dashboard 200 in 795ms
+ GET /demo 200 in 36ms
+ GET /dashboard 200 in 37ms
+ GET /demo 200 in 29ms
+ GET /dashboard 200 in 77ms
+ ✓ Compiled in 1395ms (490 modules)
+ ✓ Compiled in 553ms (490 modules)
+ ✓ Compiled in 1084ms (490 modules)
+ ✓ Compiled in 624ms (490 modules)
+ ✓ Compiled in 461ms (490 modules)

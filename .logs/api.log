@@ -1,0 +1,866 @@
+INFO:     Will watch for changes in these directories: ['/Users/kyleholthaus/Projects/LegendAI']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [36143] using StatReload
+INFO:     Started server process [36187]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+{"asctime": "2025-09-13 19:28:05,482", "levelname": "INFO", "message": "request", "request_id": "afdd21dc-7b7f-402e-8a8b-86fe7d314ff8", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 5}
+INFO:     127.0.0.1:64914 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:28:05,497", "levelname": "INFO", "message": "request", "request_id": "cbb4a8b0-1ed1-463e-bc78-9521bc266799", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 19}
+INFO:     127.0.0.1:64915 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:28:07,847", "levelname": "INFO", "message": "request", "request_id": "e78160db-d653-436c-9f3d-82dd8c21b4c2", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 2342}
+INFO:     127.0.0.1:64914 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:28:07,847", "levelname": "INFO", "message": "request", "request_id": "715d2e76-40a5-44fb-a40a-0540e664d013", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 2335}
+INFO:     127.0.0.1:64915 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:28:07,885", "levelname": "INFO", "message": "request", "request_id": "3ed13ccf-b955-4a9f-a0a2-03dbf08caafe", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 20}
+INFO:     127.0.0.1:64914 - "GET /api/v1/vcp/metrics?start=2025-06-16&end=2025-09-14 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:28:07,886", "levelname": "INFO", "message": "request", "request_id": "2bbc14e7-c7d7-4494-84b9-217d3bce3460", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 21}
+INFO:     127.0.0.1:64915 - "GET /api/v1/vcp/metrics?start=2025-06-16&end=2025-09-14 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:28:07,890", "levelname": "INFO", "message": "request", "request_id": "d08d2633-79b9-447f-80f7-83a4913c859d", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 1}
+INFO:     127.0.0.1:64915 - "GET /api/v1/vcp/candidates HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:28:07,890", "levelname": "INFO", "message": "request", "request_id": "da3b4d77-6ff3-4e4c-a5da-5647e751b009", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 1}
+INFO:     127.0.0.1:64914 - "GET /api/v1/vcp/candidates HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:28:07,918", "levelname": "INFO", "message": "request", "request_id": "27197fc8-be53-4556-b704-554cff76a3dc", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 24}
+INFO:     127.0.0.1:64914 - "GET /api/v1/vcp/candidates?day=today HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:28:07,921", "levelname": "INFO", "message": "request", "request_id": "577897b8-7807-4a9a-8edd-001a8ebea1e2", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 27}
+INFO:     127.0.0.1:64915 - "GET /api/v1/vcp/candidates?day=today HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:30:05,621", "levelname": "INFO", "message": "request", "request_id": "cbda8048-ccbf-4bae-a82e-3f5f75636f5d", "path": "/api/v1/runs", "method": "POST", "status_code": 202, "duration_ms": 1805}
+INFO:     127.0.0.1:64987 - "POST /api/v1/runs?start=2024-01-02&end=2024-01-31&universe=simple&provider=yfinance HTTP/1.1" 202 Accepted
+{"asctime": "2025-09-13 19:30:06,214", "levelname": "INFO", "message": "request", "request_id": "8ddf32dc-00d4-48fd-8038-dd7b394e7872", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 575}
+INFO:     127.0.0.1:64987 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:30:06,480", "levelname": "INFO", "message": "request", "request_id": "4c59b5fb-7f32-4217-9e89-f9a25e1e6afc", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 261}
+INFO:     127.0.0.1:64987 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:30:06,750", "levelname": "INFO", "message": "request", "request_id": "c5f86889-954f-4146-b3d1-11c8dd4e0cef", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 262}
+INFO:     127.0.0.1:64987 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:05,727", "levelname": "INFO", "message": "request", "request_id": "1fc1965d-1082-4002-8f80-78b841dc35a5", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 17}
+INFO:     127.0.0.1:65111 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:05,729", "levelname": "INFO", "message": "request", "request_id": "cd725b8b-893c-40a0-b54d-366ca989cee9", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 20}
+INFO:     127.0.0.1:65112 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:06,294", "levelname": "INFO", "message": "request", "request_id": "a303f157-9f48-4fa1-9856-d02e5821289a", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 560}
+INFO:     127.0.0.1:65112 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:06,295", "levelname": "INFO", "message": "request", "request_id": "17530538-2c9b-49f9-808d-c9c1386e1721", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 561}
+INFO:     127.0.0.1:65111 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:06,837", "levelname": "INFO", "message": "request", "request_id": "4cece9b5-6c08-46c1-9d8a-6e2197d3898d", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 536}
+INFO:     127.0.0.1:65112 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:06,905", "levelname": "INFO", "message": "request", "request_id": "b4b94dcc-1b42-49b8-befa-ab8acb43c871", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 605}
+INFO:     127.0.0.1:65111 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:07,095", "levelname": "INFO", "message": "request", "request_id": "cf4806c5-bb57-4555-9446-f2508e25fc72", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 252}
+INFO:     127.0.0.1:65112 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:07,162", "levelname": "INFO", "message": "request", "request_id": "6670ea75-04e4-4938-ad81-173a4458bc01", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 253}
+INFO:     127.0.0.1:65111 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:07,383", "levelname": "INFO", "message": "request", "request_id": "4916b441-dd6d-4a26-8d8c-66f2bfbe5db9", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 284}
+INFO:     127.0.0.1:65112 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:32:07,415", "levelname": "INFO", "message": "request", "request_id": "3a83c8ea-8efb-40f2-8da9-61a015403d77", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 249}
+INFO:     127.0.0.1:65111 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36187]
+INFO:     Started server process [45802]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+{"asctime": "2025-09-13 19:36:20,178", "levelname": "INFO", "message": "request", "request_id": "9312bbd0-31f6-4ae4-b11a-d6357c94e3c2", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 5}
+INFO:     127.0.0.1:65254 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:36:22,527", "levelname": "INFO", "message": "request", "request_id": "84a46dc4-5578-41a3-b76f-2ac39d8550ab", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 2320}
+INFO:     127.0.0.1:65254 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:36:23,079", "levelname": "INFO", "message": "request", "request_id": "3977c446-da93-485f-a892-c17cba4481c7", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 536}
+INFO:     127.0.0.1:65254 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:36:23,329", "levelname": "INFO", "message": "request", "request_id": "c8dcc785-96de-4d24-b329-4a42673b9135", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 243}
+INFO:     127.0.0.1:65254 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:36:23,604", "levelname": "INFO", "message": "request", "request_id": "6155a780-5819-433f-bd63-ae96b7d7ccd5", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 272}
+INFO:     127.0.0.1:65254 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [45802]
+INFO:     Started server process [46881]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'scheduler.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [46881]
+INFO:     Started server process [64939]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64939]
+INFO:     Started server process [65418]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+{"asctime": "2025-09-13 19:58:07,073", "levelname": "INFO", "message": "request", "request_id": "5d22b055-eb6c-4fcb-91f9-45f6bcebe5cf", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 7}
+INFO:     127.0.0.1:49752 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:07,076", "levelname": "INFO", "message": "request", "request_id": "fd6c2d39-6993-4709-a120-ceed8497058f", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 9}
+INFO:     127.0.0.1:49753 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:09,875", "levelname": "INFO", "message": "request", "request_id": "26daafff-0abc-4d33-a17f-d94c865a265c", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 2672}
+INFO:     127.0.0.1:49752 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:09,876", "levelname": "INFO", "message": "request", "request_id": "4b6d25a6-7c0c-47b6-b8cc-90760bd03677", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 2673}
+INFO:     127.0.0.1:49753 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:10,421", "levelname": "INFO", "message": "request", "request_id": "1482af62-8552-455c-a6ed-a0edee75c7ad", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 514}
+INFO:     127.0.0.1:49753 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:10,459", "levelname": "INFO", "message": "request", "request_id": "199a30a8-2f14-4186-ae61-5c00995f3898", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 550}
+INFO:     127.0.0.1:49752 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:10,685", "levelname": "INFO", "message": "request", "request_id": "6c91e99d-5aed-4db8-a1b8-cc0cd4510272", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 257}
+INFO:     127.0.0.1:49753 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:10,711", "levelname": "INFO", "message": "request", "request_id": "a7e1c061-03e5-42d7-b133-b980fc5ce81d", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 249}
+INFO:     127.0.0.1:49752 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:10,957", "levelname": "INFO", "message": "request", "request_id": "31a2d8a0-60a0-4ae9-aeb6-37cdcd75a180", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 268}
+INFO:     127.0.0.1:49753 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:10,981", "levelname": "INFO", "message": "request", "request_id": "a71ae2b4-afbb-42a8-9980-1bcd7d189211", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 266}
+INFO:     127.0.0.1:49752 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:40,918", "levelname": "INFO", "message": "request", "request_id": "6cf57bea-8fca-4ac1-920f-939b6ffadc37", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 14}
+INFO:     127.0.0.1:49799 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:41,538", "levelname": "INFO", "message": "request", "request_id": "8196732f-864c-443d-add5-a8cd97ffcaaf", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 571}
+INFO:     127.0.0.1:49799 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:42,059", "levelname": "INFO", "message": "request", "request_id": "703e87bb-1302-4fdc-8639-e4fc6a494760", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 517}
+INFO:     127.0.0.1:49799 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:42,308", "levelname": "INFO", "message": "request", "request_id": "0ce91cab-1236-4136-860c-c07fc9f8c627", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 245}
+INFO:     127.0.0.1:49799 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 19:58:42,567", "levelname": "INFO", "message": "request", "request_id": "c1946434-c443-4e3f-9f96-c0a06805f23d", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 257}
+INFO:     127.0.0.1:49799 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [65418]
+INFO:     Started server process [68183]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [68183]
+INFO:     Started server process [68534]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'vcp/data_provider.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [68534]
+INFO:     Started server process [72400]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'vcp/data_provider.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [72400]
+INFO:     Started server process [73543]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+{"asctime": "2025-09-13 20:10:56,670", "levelname": "INFO", "message": "request", "request_id": "e47ce218-55ec-4e8d-bb48-dc2b1f713031", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 4}
+INFO:     127.0.0.1:50517 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:10:59,622", "levelname": "INFO", "message": "request", "request_id": "c4d3c48c-a440-4707-8a8a-5de4614faebd", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 2874}
+INFO:     127.0.0.1:50517 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:11:00,224", "levelname": "INFO", "message": "request", "request_id": "93e531f8-b217-47a5-bcf5-e0eb79d2a97e", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 595}
+INFO:     127.0.0.1:50517 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:11:00,490", "levelname": "INFO", "message": "request", "request_id": "9941415d-bb7c-4e1f-a6f1-24dfd16b0647", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 261}
+INFO:     127.0.0.1:50517 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:11:00,775", "levelname": "INFO", "message": "request", "request_id": "aa156fec-adc2-4093-bbe6-3a242a1c9acc", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 279}
+INFO:     127.0.0.1:50517 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:20:54,563", "levelname": "INFO", "message": "request", "request_id": "4782ce25-d824-4a15-8b6c-caf929159192", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 22}
+INFO:     127.0.0.1:50782 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:20:54,569", "levelname": "INFO", "message": "request", "request_id": "59127d56-09c6-42fa-85c6-515ba45767b5", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 26}
+INFO:     127.0.0.1:50783 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50783 - "GET /api/v1/runs?limit=50 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.OperationalError: SSL connection has been closed unexpectedly
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 182, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 184, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 48, in add_request_id_logging
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    raise app_exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 302, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 215, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2476, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 967, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 122, in list_runs
+    RunsBase.metadata.create_all(bind=runs_engine)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
+    bind._run_ddl_visitor(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3252, in _run_ddl_visitor
+    conn._run_ddl_visitor(visitorcallable, element, **kwargs)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2459, in _run_ddl_visitor
+    ).traverse_single(element)
+      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/visitors.py", line 661, in traverse_single
+    return meth(obj, **kw)
+           ^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 963, in visit_metadata
+    [t for t in tables if self._can_create_table(t)]
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 963, in <listcomp>
+    [t for t in tables if self._can_create_table(t)]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 928, in _can_create_table
+    return not self.checkfirst or not self.dialect.has_table(
+                                      ^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in has_table
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/reflection.py", line 89, in cache
+    return fn(self, con, *args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/base.py", line 3494, in has_table
+    return bool(connection.scalar(query, {"table_name": table_name}))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1308, in scalar
+    return meth(
+           ^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 544, in _execute_on_scalar
+    return self._execute_on_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) SSL connection has been closed unexpectedly
+
+[SQL: SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s]
+[parameters: {'table_name': 'backtest_runs', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+{"asctime": "2025-09-13 20:20:56,380", "levelname": "INFO", "message": "request", "request_id": "fd875c57-fea8-410f-8f15-8813ad8c18f9", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 1216}
+INFO:     127.0.0.1:50786 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:20:56,735", "levelname": "INFO", "message": "request", "request_id": "45db61c5-8161-40f1-b953-9cfb6fa21723", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 2156}
+INFO:     127.0.0.1:50782 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:20:56,920", "levelname": "INFO", "message": "request", "request_id": "f53060e3-5c75-4169-b7d8-6078ee7bcafc", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 530}
+INFO:     127.0.0.1:50786 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:20:57,172", "levelname": "INFO", "message": "request", "request_id": "116828a6-cdd6-4f96-875b-f08b178e5841", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 250}
+INFO:     127.0.0.1:50786 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:20:57,238", "levelname": "INFO", "message": "request", "request_id": "3c75bb70-6c87-45cd-ab95-ff7cde1b904a", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 499}
+INFO:     127.0.0.1:50782 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:20:57,440", "levelname": "INFO", "message": "request", "request_id": "9054023b-11d8-475b-8a5f-1c3e91cc15d2", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 262}
+INFO:     127.0.0.1:50786 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:20:57,493", "levelname": "INFO", "message": "request", "request_id": "a322d88a-a6c4-4dbf-8353-5a1d545ef3b6", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 251}
+INFO:     127.0.0.1:50782 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:20:57,743", "levelname": "INFO", "message": "request", "request_id": "1d1440d2-9d43-4a77-88fe-81357704a898", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 247}
+INFO:     127.0.0.1:50782 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:03,453", "levelname": "INFO", "message": "request", "request_id": "9e2a7ac4-0530-47d6-b198-1ad628dd0dab", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 300}
+INFO:     127.0.0.1:50791 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:05,881", "levelname": "INFO", "message": "request", "request_id": "1f1c9f63-7f8e-4cb9-908e-b5f10faf8b71", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 30}
+INFO:     127.0.0.1:50791 - "GET /api/v1/chart?symbol=MSFT HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:07,100", "levelname": "INFO", "message": "request", "request_id": "69f627c4-a994-469d-8fb5-a29a9e89bfd3", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 2}
+INFO:     127.0.0.1:50791 - "GET /api/v1/chart?symbol=MSFT HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:07,433", "levelname": "INFO", "message": "request", "request_id": "447f694b-3713-4322-9370-1daa6dd833ba", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 3}
+INFO:     127.0.0.1:50791 - "GET /api/v1/chart?symbol=MSFT HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:08,191", "levelname": "INFO", "message": "request", "request_id": "be96309d-a56c-485b-a416-80349e61d13d", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 5}
+INFO:     127.0.0.1:50797 - "GET /api/v1/chart?symbol=NVDA HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:08,449", "levelname": "INFO", "message": "request", "request_id": "71b1561a-1eb1-4742-9839-8fa5de6c1605", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 2}
+INFO:     127.0.0.1:50797 - "GET /api/v1/chart?symbol=NVDA HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:17,037", "levelname": "INFO", "message": "request", "request_id": "515e6403-7e83-4fc7-92b3-63bf0be36257", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 14}
+INFO:     127.0.0.1:50818 - "GET /api/v1/chart?symbol=MSFT HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:19,550", "levelname": "INFO", "message": "request", "request_id": "0f1cbb06-79b8-479c-b792-c59714962636", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 1}
+INFO:     127.0.0.1:50820 - "GET /api/v1/chart?symbol=MSFT HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:32,746", "levelname": "INFO", "message": "request", "request_id": "f01cd21c-c888-4926-860e-b24d2191e09b", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 10}
+INFO:     127.0.0.1:50854 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:32,750", "levelname": "INFO", "message": "request", "request_id": "14bee5dd-a1a1-4a8b-b758-871ab0516212", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 14}
+INFO:     127.0.0.1:50855 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:33,293", "levelname": "INFO", "message": "request", "request_id": "6d53dfa3-eb39-4594-ac9c-e02abe9942fc", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 539}
+INFO:     127.0.0.1:50855 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:33,294", "levelname": "INFO", "message": "request", "request_id": "0d247a97-e75f-4ec8-9dc3-acabe86e1f3d", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 540}
+INFO:     127.0.0.1:50854 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:33,810", "levelname": "INFO", "message": "request", "request_id": "51da94a1-f1fe-4006-8861-cccd27566970", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 512}
+INFO:     127.0.0.1:50854 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:33,810", "levelname": "INFO", "message": "request", "request_id": "bee1564c-1f10-4031-bf46-799787d66b57", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 512}
+INFO:     127.0.0.1:50855 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:34,067", "levelname": "INFO", "message": "request", "request_id": "2485798c-cf71-437d-8267-c1b0cfdb0943", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 253}
+INFO:     127.0.0.1:50854 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:34,067", "levelname": "INFO", "message": "request", "request_id": "b2215db8-cf05-420c-8058-c31b4cd5855b", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 254}
+INFO:     127.0.0.1:50855 - "GET /api/v1/vcp/candidates?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:34,340", "levelname": "INFO", "message": "request", "request_id": "74b5156a-da0f-4949-80b1-9b70e409257d", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 270}
+INFO:     127.0.0.1:50855 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:34,340", "levelname": "INFO", "message": "request", "request_id": "f52e0fdd-0f12-49d6-a584-8a6fbcec6db9", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 271}
+INFO:     127.0.0.1:50854 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:41,346", "levelname": "INFO", "message": "request", "request_id": "8b5491b5-dbf6-4966-93d8-e17b91425967", "path": "/api/v1/vcp/today", "method": "GET", "status_code": 200, "duration_ms": 376}
+INFO:     127.0.0.1:50860 - "GET /api/v1/vcp/today HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:41,610", "levelname": "INFO", "message": "request", "request_id": "c052b147-3b37-4d2b-9aa3-2fe2a86df233", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 260}
+INFO:     127.0.0.1:50860 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:21:57,443", "levelname": "INFO", "message": "request", "request_id": "10472a94-569e-4af2-82ac-447206af8db7", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 1}
+INFO:     127.0.0.1:50866 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:22:54,537", "levelname": "INFO", "message": "request", "request_id": "6ddbb91a-e253-49c2-9bb3-835a01e12e98", "path": "/api/v1/runs", "method": "POST", "status_code": 202, "duration_ms": 1636}
+INFO:     127.0.0.1:50895 - "POST /api/v1/runs?start=2025-06-16&end=2025-09-14&universe=simple&provider=yfinance HTTP/1.1" 202 Accepted
+{"asctime": "2025-09-13 20:22:55,102", "levelname": "INFO", "message": "request", "request_id": "9ba30d08-b2fd-4497-a09c-0f68fe00d6a5", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 556}
+INFO:     127.0.0.1:50895 - "GET /api/v1/vcp/metrics?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:22:55,591", "levelname": "INFO", "message": "request", "request_id": "417180b6-adcb-4e70-86da-2449c98f8108", "path": "/api/v1/runs/2", "method": "GET", "status_code": 200, "duration_ms": 483}
+INFO:     127.0.0.1:50895 - "GET /api/v1/runs/2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:22:55,858", "levelname": "INFO", "message": "request", "request_id": "cfc0a74e-4794-4c22-909d-8c6e83d48b9c", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 259}
+INFO:     127.0.0.1:50895 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:23:09,384", "levelname": "INFO", "message": "request", "request_id": "de6201c5-8475-499a-86af-007259f21525", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 16}
+INFO:     127.0.0.1:50902 - "GET /api/v1/chart?symbol=MSFT HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:23:11,632", "levelname": "INFO", "message": "request", "request_id": "7d645f9f-eced-4ae4-b38b-cf9b0e2e08f3", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 282}
+INFO:     127.0.0.1:50902 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:23:39,666", "levelname": "INFO", "message": "request", "request_id": "375f315c-d540-4023-b7ce-8781778d9306", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 578}
+INFO:     127.0.0.1:50915 - "GET /api/v1/vcp/metrics?run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:23:40,182", "levelname": "INFO", "message": "request", "request_id": "2d9c5932-c9b1-4aad-9bfa-147b732876f3", "path": "/api/v1/runs/1", "method": "GET", "status_code": 200, "duration_ms": 508}
+INFO:     127.0.0.1:50915 - "GET /api/v1/runs/1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:23:40,443", "levelname": "INFO", "message": "request", "request_id": "448b9edf-0b19-4365-a15f-f4ccc0d29551", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 257}
+INFO:     127.0.0.1:50915 - "GET /api/v1/vcp/candidates?day=today&run_id=1 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:27,217", "levelname": "INFO", "message": "request", "request_id": "3301c1a6-4cd3-4bf4-81a5-7c518333c84b", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 60}
+INFO:     127.0.0.1:51619 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:27,225", "levelname": "INFO", "message": "request", "request_id": "81d2b847-b426-415f-9ba1-dabca55a5823", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 58}
+INFO:     127.0.0.1:51620 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51620 - "GET /api/v1/runs?limit=50 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.OperationalError: SSL connection has been closed unexpectedly
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 182, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 184, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 48, in add_request_id_logging
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    raise app_exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 302, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 215, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2476, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 967, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 122, in list_runs
+    RunsBase.metadata.create_all(bind=runs_engine)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
+    bind._run_ddl_visitor(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3252, in _run_ddl_visitor
+    conn._run_ddl_visitor(visitorcallable, element, **kwargs)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2459, in _run_ddl_visitor
+    ).traverse_single(element)
+      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/visitors.py", line 661, in traverse_single
+    return meth(obj, **kw)
+           ^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 963, in visit_metadata
+    [t for t in tables if self._can_create_table(t)]
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 963, in <listcomp>
+    [t for t in tables if self._can_create_table(t)]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 928, in _can_create_table
+    return not self.checkfirst or not self.dialect.has_table(
+                                      ^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in has_table
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/reflection.py", line 89, in cache
+    return fn(self, con, *args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/base.py", line 3494, in has_table
+    return bool(connection.scalar(query, {"table_name": table_name}))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1308, in scalar
+    return meth(
+           ^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 544, in _execute_on_scalar
+    return self._execute_on_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) SSL connection has been closed unexpectedly
+
+[SQL: SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s]
+[parameters: {'table_name': 'backtest_runs', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+INFO:     127.0.0.1:51619 - "GET /api/v1/runs?limit=50 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.OperationalError: SSL connection has been closed unexpectedly
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 182, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 184, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 48, in add_request_id_logging
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    raise app_exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 302, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 215, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2476, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 967, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 122, in list_runs
+    RunsBase.metadata.create_all(bind=runs_engine)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
+    bind._run_ddl_visitor(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3252, in _run_ddl_visitor
+    conn._run_ddl_visitor(visitorcallable, element, **kwargs)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2459, in _run_ddl_visitor
+    ).traverse_single(element)
+      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/visitors.py", line 661, in traverse_single
+    return meth(obj, **kw)
+           ^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 963, in visit_metadata
+    [t for t in tables if self._can_create_table(t)]
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 963, in <listcomp>
+    [t for t in tables if self._can_create_table(t)]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 928, in _can_create_table
+    return not self.checkfirst or not self.dialect.has_table(
+                                      ^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in has_table
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/reflection.py", line 89, in cache
+    return fn(self, con, *args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/base.py", line 3494, in has_table
+    return bool(connection.scalar(query, {"table_name": table_name}))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1308, in scalar
+    return meth(
+           ^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 544, in _execute_on_scalar
+    return self._execute_on_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) SSL connection has been closed unexpectedly
+
+[SQL: SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s]
+[parameters: {'table_name': 'backtest_runs', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+{"asctime": "2025-09-13 20:41:29,438", "levelname": "INFO", "message": "request", "request_id": "d881d698-5df3-4378-ba04-4ea128a2ef03", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 1643}
+INFO:     127.0.0.1:51622 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:29,887", "levelname": "INFO", "message": "request", "request_id": "4a217ed3-3f86-4acd-a355-3c33d3dc50ea", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 2051}
+{"asctime": "2025-09-13 20:41:29,896", "levelname": "INFO", "message": "request", "request_id": "cc9ea0dc-81e5-466c-890f-bd395e277266", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 11}
+INFO:     127.0.0.1:51635 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:29,923", "levelname": "INFO", "message": "request", "request_id": "e66284e1-e3b7-4748-b3ff-2d8ee717b0ca", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 39}
+INFO:     127.0.0.1:51636 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:30,007", "levelname": "INFO", "message": "request", "request_id": "e9fa1be9-b6bf-4401-b48e-1e93b415cd6e", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 565}
+{"asctime": "2025-09-13 20:41:30,473", "levelname": "INFO", "message": "request", "request_id": "1e2b861f-e6eb-4b30-ba7b-57c1e0154646", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 548}
+INFO:     127.0.0.1:51635 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:31,075", "levelname": "INFO", "message": "request", "request_id": "641b518e-6c8f-4f29-854b-0c15e3364dae", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 1148}
+{"asctime": "2025-09-13 20:41:31,224", "levelname": "INFO", "message": "request", "request_id": "348525ca-487e-4454-afdd-60b5dd89d2fc", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 622}
+{"asctime": "2025-09-13 20:41:31,293", "levelname": "INFO", "message": "request", "request_id": "8df67cd2-00c4-4527-8ff2-9ee63e18879a", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 1}
+INFO:     127.0.0.1:51640 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:31,294", "levelname": "INFO", "message": "request", "request_id": "fb6a8a9c-64ce-4af9-a219-573ca61e5f7d", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 1}
+INFO:     127.0.0.1:51641 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:31,799", "levelname": "INFO", "message": "request", "request_id": "b74c57d6-7b51-44d4-8f51-cae095b0dc95", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 500}
+INFO:     127.0.0.1:51640 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:31,808", "levelname": "INFO", "message": "request", "request_id": "f7a2851e-966f-4650-b29e-0bd6a4e86794", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 512}
+INFO:     127.0.0.1:51641 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:32,313", "levelname": "INFO", "message": "request", "request_id": "382374f5-a796-4507-ab52-1040b67dad3e", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 500}
+INFO:     127.0.0.1:51641 - "GET /api/v1/vcp/metrics?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:32,313", "levelname": "INFO", "message": "request", "request_id": "37ad381c-3666-4a29-857a-952db68bcf0d", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 506}
+INFO:     127.0.0.1:51640 - "GET /api/v1/vcp/metrics?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:32,571", "levelname": "INFO", "message": "request", "request_id": "1e2c95dd-4b24-4b1d-b5a9-11ba2f9c6df6", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 253}
+INFO:     127.0.0.1:51640 - "GET /api/v1/vcp/candidates?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:32,571", "levelname": "INFO", "message": "request", "request_id": "2ad9b320-d87f-4c3b-981e-1955d91ca77d", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 254}
+INFO:     127.0.0.1:51641 - "GET /api/v1/vcp/candidates?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:32,855", "levelname": "INFO", "message": "request", "request_id": "504d6089-dda9-4260-b0fb-409ba4060d6a", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 280}
+INFO:     127.0.0.1:51640 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:41:32,855", "levelname": "INFO", "message": "request", "request_id": "fe08dcde-c301-455c-ae42-2d6d0c4aa21e", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 280}
+INFO:     127.0.0.1:51641 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:38,565", "levelname": "INFO", "message": "request", "request_id": "e0bafa85-ddb3-4021-90c8-7fd79717aed4", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 25}
+INFO:     127.0.0.1:51746 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:38,571", "levelname": "INFO", "message": "request", "request_id": "87bbd849-0c30-4f61-aeb4-117aff03209a", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 32}
+INFO:     127.0.0.1:51747 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:39,149", "levelname": "INFO", "message": "request", "request_id": "2fe5e4ac-1597-42d8-8391-78b7a866ce84", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 567}
+INFO:     127.0.0.1:51746 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:39,150", "levelname": "INFO", "message": "request", "request_id": "2fb3dc5b-4444-4c84-8c4e-975dd7a42508", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 568}
+INFO:     127.0.0.1:51747 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:39,707", "levelname": "INFO", "message": "request", "request_id": "c3a15f44-b21a-45d8-b353-9cac92d0739a", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 552}
+INFO:     127.0.0.1:51747 - "GET /api/v1/vcp/metrics?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:39,707", "levelname": "INFO", "message": "request", "request_id": "35438a89-ca38-46cf-9367-326c748f7392", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 552}
+INFO:     127.0.0.1:51746 - "GET /api/v1/vcp/metrics?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:39,972", "levelname": "INFO", "message": "request", "request_id": "b8999806-c6fd-4ec9-a589-64ecdbdc5ba1", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 263}
+INFO:     127.0.0.1:51746 - "GET /api/v1/vcp/candidates?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:39,973", "levelname": "INFO", "message": "request", "request_id": "b75072a4-659a-43d2-9d80-cb1d0696be41", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 263}
+INFO:     127.0.0.1:51747 - "GET /api/v1/vcp/candidates?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:40,250", "levelname": "INFO", "message": "request", "request_id": "fd14df5e-8406-4bc3-8b9f-b184820cc565", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 273}
+INFO:     127.0.0.1:51746 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:40,251", "levelname": "INFO", "message": "request", "request_id": "af42dd56-12f1-4067-9c34-264c25b918f9", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 271}
+INFO:     127.0.0.1:51747 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:56,458", "levelname": "INFO", "message": "request", "request_id": "5c7ecb36-c6b3-46b2-b196-56e428db9555", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 5}
+INFO:     127.0.0.1:51764 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:56,464", "levelname": "INFO", "message": "request", "request_id": "84548d60-ec41-476e-89ee-b87a783b30f2", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 11}
+INFO:     127.0.0.1:51765 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:56,993", "levelname": "INFO", "message": "request", "request_id": "7a6ebfb3-b5f9-43b3-a513-b5912a66ead6", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 520}
+INFO:     127.0.0.1:51764 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:56,993", "levelname": "INFO", "message": "request", "request_id": "fd47ee64-c81d-4943-b30b-19fcd7f77494", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 520}
+INFO:     127.0.0.1:51765 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:57,499", "levelname": "INFO", "message": "request", "request_id": "596b9699-7683-4d0d-be3a-d121a73e3a86", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 503}
+INFO:     127.0.0.1:51765 - "GET /api/v1/vcp/metrics?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:57,517", "levelname": "INFO", "message": "request", "request_id": "0f3c00d2-e895-4c1a-8cbd-ebc6f13d7664", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 515}
+INFO:     127.0.0.1:51764 - "GET /api/v1/vcp/metrics?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:57,765", "levelname": "INFO", "message": "request", "request_id": "402ce036-a603-4837-ab24-46ede85bec40", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 261}
+INFO:     127.0.0.1:51765 - "GET /api/v1/vcp/candidates?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:57,774", "levelname": "INFO", "message": "request", "request_id": "066ccea2-69cf-4bae-9595-6d25f1762035", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 252}
+INFO:     127.0.0.1:51764 - "GET /api/v1/vcp/candidates?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:58,034", "levelname": "INFO", "message": "request", "request_id": "6985c236-d1d7-45aa-93b5-e01a452f22e0", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 266}
+INFO:     127.0.0.1:51765 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-13 20:43:58,035", "levelname": "INFO", "message": "request", "request_id": "6dbf513e-dca3-4484-bdd9-dc4da09ca17c", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 258}
+INFO:     127.0.0.1:51764 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [73543]
+INFO:     Started server process [13288]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [13288]
+INFO:     Started server process [14651]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14651]
+INFO:     Started server process [14919]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14919]
+INFO:     Started server process [29656]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [29656]
+INFO:     Started server process [31613]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [31613]
+INFO:     Started server process [32326]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [32326]
+INFO:     Started server process [36126]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36126]
+INFO:     Started server process [38005]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'service_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38005]
+INFO:     Started server process [38244]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Traceback (most recent call last):
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/bin/uvicorn", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/click/core.py", line 1442, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/click/core.py", line 1363, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/click/core.py", line 1226, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/click/core.py", line 794, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/main.py", line 413, in main
+    run(
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/main.py", line 575, in run
+    ChangeReload(config, target=server.run, sockets=[sock]).run()
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/supervisors/basereload.py", line 53, in run
+    for changes in self:
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/supervisors/basereload.py", line 72, in __next__
+    return self.should_restart()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/supervisors/statreload.py", line 32, in should_restart
+    for file in self.iter_py_files():
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/supervisors/statreload.py", line 52, in iter_py_files
+    for path in list(reload_dir.rglob("*.py")):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/pathlib.py", line 968, in rglob
+    for p in selector.select_from(self):
+  File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/pathlib.py", line 408, in _select_from
+    for p in successor_select(starting_point, is_dir, exists, scandir):
+  File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/pathlib.py", line 355, in _select_from
+    with scandir(parent_path) as scandir_it:
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/pathlib.py", line 938, in _scandir
+    return os.scandir(self)
+           ^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/kyleholthaus/Projects/LegendAI/.continue'

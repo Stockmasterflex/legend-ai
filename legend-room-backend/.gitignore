@@ -1,0 +1,10 @@
+.DS_Store
+.DS_Store
+reports/
+.env
+__pycache__/
+
+# Local DB/test artifacts
+*.db
+*.sqlite
+*.sqlite3
