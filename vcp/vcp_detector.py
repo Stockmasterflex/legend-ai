@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -91,14 +90,14 @@ class VCPDetector:
         for hi, lo in zip(highs, lows):
             if lo <= hi:
                 continue
-            h, l = float(df.iloc[hi]["High"]), float(df.iloc[lo]["Low"])
-            pct = (h - l) / max(h, 1e-9)
+            high_price, low_price = float(df.iloc[hi]["High"]), float(df.iloc[lo]["Low"])
+            pct = (high_price - low_price) / max(high_price, 1e-9)
             if 0.02 < pct < self.max_base_depth:
                 contractions.append(
                     Contraction(
                         start_date=pd.to_datetime(df.iloc[hi]["Date"]),
                         end_date=pd.to_datetime(df.iloc[lo]["Date"]),
-                        high_price=h, low_price=l, percent_drop=pct,
+                        high_price=high_price, low_price=low_price, percent_drop=pct,
                         avg_volume=float(df["Volume"].iloc[hi:lo+1].mean()),
                         duration_days=int(lo - hi)
                     )
@@ -135,7 +134,7 @@ class VCPDetector:
             if lo_val == float(win["Low"].min()):
                 lows.append(i)
         # align in time (alternating hi→lo sequences)
-        highs = [h for h in highs if any(l > h for l in lows)]
-        lows_sorted = sorted([l for l in lows if any(h < l for h in highs)])
-        highs_sorted = sorted([h for h in highs if any(l > h for l in lows_sorted)])
+        highs = [hi for hi in highs if any(lo > hi for lo in lows)]
+        lows_sorted = sorted([lo for lo in lows if any(hi < lo for hi in highs)])
+        highs_sorted = sorted([hi for hi in highs if any(lo > hi for lo in lows_sorted)])
         return highs_sorted, lows_sorted

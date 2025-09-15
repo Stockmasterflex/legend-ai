@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import os
 import time
-import json
 import subprocess
 from datetime import date
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 import redis
 from rq import Queue

@@ -9,14 +9,16 @@ from cachetools import TTLCache
 data_cache = TTLCache(maxsize=100, ttl=600)
 
 def _clean_and_validate_df(df: pd.DataFrame, ticker: str, source: str = "unknown") -> pd.DataFrame:
-    if not isinstance(df, pd.DataFrame) or df.empty: return pd.DataFrame()
+    if not isinstance(df, pd.DataFrame) or df.empty:
+        return pd.DataFrame()
     df = df.copy()
     df.reset_index(inplace=True)
     df.rename(columns={'index': 'Date', 'date': 'Date'}, inplace=True)
     if source == 'alpha_vantage':
         df.rename(columns={'1. open': 'Open', '2. high': 'High', '3. low': 'Low', '4. close': 'Close', '5. volume': 'Volume'}, inplace=True)
     cols_to_validate = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
-    if not all(col in df.columns for col in cols_to_validate): return pd.DataFrame()
+    if not all(col in df.columns for col in cols_to_validate):
+        return pd.DataFrame()
     df['Date'] = pd.to_datetime(df['Date'])
     for col in ['Open', 'High', 'Low', 'Close', 'Volume']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -36,7 +38,8 @@ def _get_from_investpy(ticker: str) -> pd.DataFrame:
 
 def _get_from_alpha_vantage(ticker: str, interval: str) -> pd.DataFrame:
     api_key = os.getenv("ALPHA_VANTAGE_KEY")
-    if not api_key: return pd.DataFrame()
+    if not api_key:
+        return pd.DataFrame()
     ts = TimeSeries(key=api_key, output_format='pandas')
     df, _ = ts.get_weekly(symbol=ticker) if interval == "1wk" else ts.get_daily(symbol=ticker, outputsize='full')
     return _clean_and_validate_df(df, ticker, "alpha_vantage")

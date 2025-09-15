@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 
 def precision_at_k(candidates_df: pd.DataFrame, outcomes_df: pd.DataFrame, k: int = 10) -> float:

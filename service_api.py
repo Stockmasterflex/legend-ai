@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Depends, Query, Request
-from typing import Dict, Any, List, Optional
-from datetime import date
+from typing import Dict, Any, Optional
 from pathlib import Path
 import pandas as pd
 from vcp.vcp_detector import VCPDetector
@@ -17,9 +16,7 @@ from starlette.middleware.cors import CORSMiddleware
 from uuid import uuid4
 from pythonjsonlogger import jsonlogger
 import logging
-from collections import defaultdict
 import requests
-import pandas as pd
 from functools import lru_cache
 
 app = FastAPI(title="Legend AI — VCP API", version="0.1.0")

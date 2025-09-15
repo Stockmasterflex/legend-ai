@@ -51,7 +51,7 @@ def generate_chart(ticker: str) -> str:
             upload_result = cloudinary.uploader.upload(tmp.name, folder="legend-room", public_id=f"{ticker}_chart", overwrite=True)
             return upload_result["secure_url"]
 
-    except Exception as e:
+    except Exception:
         # Fallback to TradingView screenshot engine or generic dummy
         try:
             fallback_url = f"{SCREENSHOT_SERVICE_URL}/screenshot?symbol={ticker}"
@@ -59,5 +59,5 @@ def generate_chart(ticker: str) -> str:
             r.raise_for_status()
             data = r.json()
             return data.get("chart_url")
-        except Exception as e2:
+        except Exception:
             return f"https://dummyimage.com/1200x750/131722/ffffff&text={ticker}+Chart"

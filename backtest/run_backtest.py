@@ -1,7 +1,6 @@
 import argparse
 import json
 from pathlib import Path
-from typing import List
 from backtest.simulate import walk_forward, summarize_range
 from backtest.simulate import REPORT_ROOT
 from backtest.simulate import _load_universe as load_universe  # re-export for CLI

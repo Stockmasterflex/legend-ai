@@ -1,7 +1,6 @@
 import time
 import os
 import redis
-from fastapi import Request, Response
 
 
 class SimpleRateLimiter:

@@ -4,7 +4,6 @@ import scanner_utils as scanner
 import database
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
-import pandas as pd
 from datetime import datetime
 
 # The list of stocks our worker will fetch data for.
