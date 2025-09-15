@@ -59,7 +59,12 @@ async function captureAndUpload(symbol, chartUrl) {
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 750 });
-    await page.goto(localUrl, { waitUntil: 'networkidle0' });
+    await page.goto(localUrl, { waitUntil: 'domcontentloaded' });
+    try {
+      await page.waitForSelector('#container', { timeout: 8000 });
+    } catch {}
+    // give TradingView time to render
+    await page.waitForTimeout(2000);
 
     console.log('Page loaded. Taking screenshot...');
     await page.screenshot({ path: screenshotPath });

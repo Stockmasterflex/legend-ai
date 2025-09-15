@@ -56,7 +56,7 @@ def walk_forward(start: str, end: str, universe: List[str], provider: str = "yfi
     price_map: Dict[str, pd.DataFrame] = {}
     for sym in universe:
         try:
-            df = load_prices(sym)
+            df = load_prices(sym, refresh=True)
             # Ensure Date as datetime and sorted
             df["Date"] = pd.to_datetime(df["Date"])
             df = df.sort_values("Date").reset_index(drop=True)

@@ -30,7 +30,7 @@ def scan_once(date_label: str):
     det = VCPDetector()
     rows = []
     for sym in simple_universe():
-        df = load_prices(sym)
+        df = load_prices(sym, refresh=True)
         sig = det.detect_vcp(df, sym)
         if sig.detected:
             rows.append({
