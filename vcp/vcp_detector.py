@@ -33,7 +33,7 @@ class VCPDetector:
     def __init__(self, min_price=10.0, min_volume=500_000,
                  min_contractions=2, max_contractions=6,
                  max_base_depth=0.40, final_contraction_max=0.10,
-                 pivot_window=5, breakout_volume_multiplier=1.5):
+                 pivot_window=7, breakout_volume_multiplier=1.8):
         self.min_price = min_price
         self.min_volume = min_volume
         self.min_contractions = min_contractions
@@ -80,13 +80,17 @@ class VCPDetector:
         df["MA50"] = df["Close"].rolling(50).mean()
         df["MA150"] = df["Close"].rolling(150).mean()
         df["MA200"] = df["Close"].rolling(200).mean()
-        if not (current_price > df["MA50"].iloc[-1] > df["MA150"].iloc[-1] > df["MA200"].iloc[-1]):
+        # Trend template: stacked MAs and positive slope on MA50
+        ma_stack = current_price > df["MA50"].iloc[-1] > df["MA150"].iloc[-1] > df["MA200"].iloc[-1]
+        ma50_slope = float(df["MA50"].iloc[-1] - df["MA50"].iloc[-20]) if pd.notnull(df["MA50"].iloc[-20]) else 0.0
+        if not (ma_stack and ma50_slope > 0):
             signal.notes = (signal.notes or []) + ["Failed trend template"]
             return signal
         signal.trend_strength = 1.0
 
         highs, lows = self._find_swings(df, window=5)
         contractions: List[Contraction] = []
+        # Build contraction legs between swing highs and subsequent swing lows
         for hi, lo in zip(highs, lows):
             if lo <= hi:
                 continue
@@ -103,24 +107,53 @@ class VCPDetector:
                     )
                 )
 
-        if len(contractions) < self.min_contractions:
+        if len(contractions) < max(3, self.min_contractions):
             signal.notes = (signal.notes or []) + ["Not enough contractions"]
+            return signal
+
+        # Validate VCP: decreasing contraction depth, tight final area, volume dry-up
+        depths = [c.percent_drop for c in contractions]
+        decreasing = all(depths[i+1] <= depths[i] * 0.9 for i in range(len(depths)-1))
+        if not decreasing:
+            signal.notes = (signal.notes or []) + ["Contractions not tightening"]
             return signal
 
         signal.contractions = contractions
         signal.final_contraction_tightness = contractions[-1].percent_drop
+        if signal.final_contraction_tightness is None or signal.final_contraction_tightness > self.final_contraction_max:
+            signal.notes = (signal.notes or []) + ["Final contraction too wide"]
+            return signal
+
+        # Volume dry-up: last 10d < 60% of 50d
+        vol10 = float(df["Volume"].iloc[-10:].mean())
+        vol50 = avg_volume_50d
+        vol_dry_up = vol10 < 0.6 * max(vol50, 1e-9)
+        signal.volume_dry_up = bool(vol_dry_up)
+        if not vol_dry_up:
+            signal.notes = (signal.notes or []) + ["No volume dry-up"]
+            return signal
 
         pivot = float(df["High"].iloc[-self.pivot_window:].max())
         signal.pivot_price = pivot
-        if current_price > pivot:
+        # Breakout confirmation (optional)
+        if current_price > pivot and float(df["Volume"].iloc[-1]) > self.breakout_volume_multiplier * avg_volume_50d:
             signal.breakout_detected = True
 
-        # naive confidence placeholder
-        tight_bonus = max(0.0, 0.12 - signal.final_contraction_tightness) * 200
-        signal.confidence_score = float(min(95, 65 + tight_bonus))
+        # Confidence: composite of tightness, number of contractions, trend, volume dry-up
+        tight_bonus = max(0.0, 0.12 - float(signal.final_contraction_tightness)) * 200
+        count_bonus = min(len(contractions), 5) * 4
+        trend_bonus = min(max(ma50_slope, 0.0) * 50, 10)
+        vol_bonus = 10 if vol_dry_up else 0
+        breakout_bonus = 10 if signal.breakout_detected else 0
+        base_score = 55 + tight_bonus + count_bonus + trend_bonus + vol_bonus + breakout_bonus
+        signal.confidence_score = float(max(0, min(95, base_score)))
         signal.detected = True
         signal.signal_date = pd.to_datetime(df["Date"].iloc[-1])
-        signal.notes = (signal.notes or []) + [f"Detected with {len(contractions)} contractions"]
+        signal.notes = (signal.notes or []) + [
+            f"Detected with {len(contractions)} contractions",
+            f"final={signal.final_contraction_tightness:.2f}",
+            "vol_dry_up" if vol_dry_up else "vol_normal",
+        ]
         return signal
 
     def _find_swings(self, df: pd.DataFrame, window=5):

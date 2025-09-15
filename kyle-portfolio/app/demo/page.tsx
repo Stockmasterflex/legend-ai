@@ -171,8 +171,7 @@ export default function DemoPage() {
       setSparks(map)
     } catch (e: any) {
       setError(e?.message || 'Rescan failed')
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   const onSelectRun = async (val: string) => {
@@ -306,11 +305,16 @@ export default function DemoPage() {
         </div>
         <div>
           <label className="text-xs muted">Universe</label>
-          <input type="text" className="input input-sm" value={newRun.universe} onChange={e=>setNewRun(v=>({...v, universe: e.target.value}))} />
+          <select className="select select-sm" value={newRun.universe} onChange={e=>setNewRun(v=>({...v, universe: e.target.value}))}>
+            <option value="simple">Simple (Top tech)</option>
+            <option value="file:backtest/data/custom_universe.csv">Custom CSV</option>
+          </select>
         </div>
         <div>
           <label className="text-xs muted">Provider</label>
-          <input type="text" className="input input-sm" value={newRun.provider} onChange={e=>setNewRun(v=>({...v, provider: e.target.value}))} />
+          <select className="select select-sm" value={newRun.provider} onChange={e=>setNewRun(v=>({...v, provider: e.target.value}))}>
+            <option value="yfinance">Yahoo Finance</option>
+          </select>
         </div>
         <button className="btn" onClick={createRun} disabled={creating}>{creating ? 'Enqueuing…' : 'Create Run'}</button>
       </div>
@@ -355,7 +359,7 @@ export default function DemoPage() {
                   <td className="px-4 py-3 font-medium"><a className="underline" href={`https://finance.yahoo.com/quote/${encodeURIComponent(r.symbol)}`} target="_blank" rel="noreferrer">{r.symbol}</a></td>
                   <td className="px-4 py-3">{fmtNum(r.price)}</td>
                   <td className="px-4 py-3">{fmtNum(r.pivot)}</td>
-                  <td className="px-4 py-3">{r.confidence.toFixed(1)}</td>
+                  <td className="px-4 py-3">{Math.round(r.confidence)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Sparkline data={sparks[r.symbol] || []} />
