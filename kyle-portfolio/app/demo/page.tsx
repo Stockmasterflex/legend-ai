@@ -155,9 +155,13 @@ export default function DemoPage() {
     setLoading(true)
     setError(null)
     try {
-      await fetchJSON(`${API_BASE}/api/v1/vcp/today`)
-      // refresh candidates for same selectedDay
-      const cands = await fetchJSON<{ rows: Candidate[] }>(`${API_BASE}/api/v1/vcp/candidates?day=${selectedDay}${selectedRunId?`&run_id=${selectedRunId}`:''}`)
+      const resp = await fetchJSON<{ day: string }>(`${API_BASE}/api/v1/vcp/today`)
+      const day = resp?.day || new Date().toISOString().slice(0,10)
+      // switch to ad-hoc global day (not tied to a run)
+      setSelectedRunId(null)
+      setSelectedDay(day)
+      // refresh candidates for new day from global reports root
+      const cands = await fetchJSON<{ rows: Candidate[] }>(`${API_BASE}/api/v1/vcp/candidates?day=${day}`)
       setCandidates(cands.rows || [])
       // re-fetch sparks
       const map: Record<string, number[]> = {}
@@ -347,15 +351,15 @@ export default function DemoPage() {
             </thead>
             <tbody>
               {candidates.map((r) => (
-                <tr key={`${r.date}-${r.symbol}`} className="border-t border-white/5 hover:bg-white/5 cursor-pointer" onClick={()=>window.open(`https://finance.yahoo.com/quote/${encodeURIComponent(r.symbol)}`, '_blank')}>
-                  <td className="px-4 py-3 font-medium underline">{r.symbol}</td>
+                <tr key={`${r.date}-${r.symbol}`} className="border-t border-white/5 hover:bg-white/5">
+                  <td className="px-4 py-3 font-medium"><a className="underline" href={`https://finance.yahoo.com/quote/${encodeURIComponent(r.symbol)}`} target="_blank" rel="noreferrer">{r.symbol}</a></td>
                   <td className="px-4 py-3">{fmtNum(r.price)}</td>
                   <td className="px-4 py-3">{fmtNum(r.pivot)}</td>
                   <td className="px-4 py-3">{r.confidence.toFixed(1)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Sparkline data={sparks[r.symbol] || []} />
-                      <button className="btn btn-ghost btn-xs" onClick={async (e)=>{e.stopPropagation(); try{ const res = await fetch(`${API_BASE}/api/v1/chart?symbol=${encodeURIComponent(r.symbol)}`); const j = await res.json(); const url = j.chart_url || j.engine?.chart_url || j.local_png; if (url) window.open(url, '_blank'); } catch{}}}>Chart</button>
+                      <button className="btn btn-primary btn-xs" onClick={async ()=>{ try{ const res = await fetch(`${API_BASE}/api/v1/chart?symbol=${encodeURIComponent(r.symbol)}&pivot=${encodeURIComponent(r.pivot)}`); const j = await res.json(); const url = j.chart_url || j.engine?.chart_url || j.local_png; if (url) window.open(url, '_blank'); } catch{}}}>Chart</button>
                     </div>
                   </td>
                   <td className="px-4 py-3 max-w-[24ch] truncate" title={r.notes || ''}>{r.notes || ''}</td>

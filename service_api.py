@@ -84,10 +84,12 @@ def scan_symbol(symbol: str) -> Dict[str, Any]:
 
 
 @app.get("/api/v1/vcp/today")
-def vcp_today():
-    csv_path = scan_once("today")
+def vcp_today(label: Optional[str] = Query(None)):
+    from datetime import date as _date
+    day = label or _date.today().isoformat()
+    csv_path = scan_once(day)
     rows = pd.read_csv(csv_path).to_dict(orient="records")
-    return {"report": str(csv_path), "rows": rows}
+    return {"day": day, "report": str(csv_path), "rows": rows}
 
 
 @app.get("/api/v1/vcp/metrics")

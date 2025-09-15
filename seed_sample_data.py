@@ -45,7 +45,7 @@ def main() -> None:
         artifacts_root = Path(f"backtest/reports/runs/{run.id}").absolute()
         ensure_dirs(artifacts_root)
 
-        # Sample candidates for two days
+        # Sample candidates for two days (expand universe to show more items)
         day1 = artifacts_root / "daily_candidates" / "2024-01-05.csv"
         day2 = artifacts_root / "daily_candidates" / "2024-01-12.csv"
         cand_cols = ["date", "symbol", "confidence", "pivot", "price", "notes"]
@@ -53,10 +53,14 @@ def main() -> None:
             ["2024-01-05", "NVDA", 0.92, 125.4, 128.2, "Tight VCP"] ,
             ["2024-01-05", "MSFT", 0.88, 401.0, 405.3, "Strong base"],
             ["2024-01-05", "AAPL", 0.81, 179.2, 181.4, "Light pullback"],
+            ["2024-01-05", "AVGO", 0.79, 880.2, 889.9, "Momentum leader"],
+            ["2024-01-05", "META", 0.77, 320.0, 323.1, "Tight action"],
         ], columns=cand_cols)
         df2 = pd.DataFrame([
             ["2024-01-12", "NVDA", 0.90, 130.1, 132.5, "Breakout attempt"],
             ["2024-01-12", "AVGO", 0.84, 890.0, 899.2, "High momentum"],
+            ["2024-01-12", "TSLA", 0.72, 252.0, 255.3, "VCP forming"],
+            ["2024-01-12", "AMD", 0.74, 112.5, 114.2, "Chip peer"],
         ], columns=cand_cols)
         df1.to_csv(day1, index=False)
         df2.to_csv(day2, index=False)
@@ -72,6 +76,8 @@ def main() -> None:
         out2 = pd.DataFrame([
             ["2024-01-12","NVDA","2024-01-13",1,1,"2024-01-27",0.31,0.07,0.22],
             ["2024-01-12","AVGO","2024-01-13",1,1,"2024-01-27",0.18,0.04,0.12],
+            ["2024-01-12","TSLA","2024-01-13",1,0,"2024-01-25",0.09,0.06,0.03],
+            ["2024-01-12","AMD","2024-01-13",1,1,"2024-01-28",0.15,0.05,0.10],
         ], columns=out_cols)
         (artifacts_root / "outcomes" / "2024-01-05_outcomes.csv").write_text(out1.to_csv(index=False))
         (artifacts_root / "outcomes" / "2024-01-12_outcomes.csv").write_text(out2.to_csv(index=False))

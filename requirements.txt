@@ -16,4 +16,6 @@ prometheus-client
 python-json-logger
 requests
 pytz
+pytest
+httpx
 

@@ -57,7 +57,9 @@
         overlay.style.pointerEvents = 'none';
         container.appendChild(overlay);
         const canvas = document.createElement('canvas');
-        canvas.width = container.clientWidth; canvas.height = container.clientHeight;
+        function resize(){ canvas.width = container.clientWidth; canvas.height = container.clientHeight; }
+        resize();
+        window.addEventListener('resize', resize);
         overlay.appendChild(canvas);
         const ctx = canvas.getContext('2d');
 
@@ -85,7 +87,7 @@
           ctx.fillText('Contractions', 60, baseY + 16);
         }
 
-        setTimeout(()=>{ drawPivot(); drawContractions(); }, 1500);
+        setTimeout(()=>{ drawPivot(); drawContractions(); }, 2200);
     </script>
 </body>
 </html>

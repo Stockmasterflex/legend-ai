@@ -76,3 +76,7 @@
  ✓ Compiled in 1130ms (490 modules)
  ✓ Compiled in 559ms (490 modules)
  ✓ Compiled in 2.2s (490 modules)
+ ✓ Compiled in 8.4s (490 modules)
+ ✓ Compiled in 1320ms (490 modules)
+ GET /demo 200 in 920ms
+ ✓ Compiled in 29.4s (490 modules)
