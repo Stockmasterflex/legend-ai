@@ -18,14 +18,18 @@ from pythonjsonlogger import jsonlogger
 import logging
 import requests
 from functools import lru_cache
+from fastapi import APIRouter
 
 app = FastAPI(title="Legend AI — VCP API", version="0.1.0")
 
-# CORS
-allowed = os.getenv("ALLOWED_ORIGINS", "*").split(",") if os.getenv("ALLOWED_ORIGINS") else ["*"]
+# CORS (support explicit origins + vercel preview regex)
+allowed = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
+origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", r"https://.*\\.vercel\\.app")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed,
+    allow_origin_regex=origin_regex,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -66,6 +70,48 @@ LATENCY = Histogram("legend_request_latency_ms", "Latency", buckets=(5, 10, 25, 
 @app.get("/metrics")
 def metrics(request: Request):
     return app.response_class(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+# --- Demo/fallback routes ---
+demo_router = APIRouter()
+
+LEGEND_MOCK = os.getenv("LEGEND_MOCK", "0") == "1"
+SAMPLE_RUN = {
+    "run_id": "SAMPLE-2025-09-15",
+    "universe": ["AAPL","NVDA","MSFT","META","GOOGL"],
+    "metrics": {"hit_rate": 0.62, "precision_at_10": 0.70, "precision_at_25": 0.66, "coverage": 125, "median_runup": 0.047},
+    "patterns": [
+        {"ticker":"AAPL","pattern":"VCP","score":92,"atr":2.1,"r_breakout":2.8},
+        {"ticker":"NVDA","pattern":"Flag","score":88,"atr":15.3,"r_breakout":3.5},
+        {"ticker":"MSFT","pattern":"VCP","score":85,"atr":6.7,"r_breakout":2.2}
+    ],
+    "created_at": "2025-09-15T12:00:00Z",
+    "is_sample": True,
+}
+
+@demo_router.get("/health")
+def demo_health():
+    from datetime import datetime, timezone
+    return {"ok": True, "service": "legend-api", "ts": datetime.now(timezone.utc).isoformat()}
+
+@demo_router.get("/sample_run")
+def sample_run():
+    return SAMPLE_RUN
+
+@demo_router.get("/latest_run")
+def latest_run():
+    try:
+        # Placeholder for future real latest run
+        return SAMPLE_RUN
+    except Exception:
+        return SAMPLE_RUN
+
+@demo_router.post("/create_run")
+def create_run_demo(payload: dict):
+    from datetime import datetime
+    if LEGEND_MOCK:
+        return {"run_id": f"MOCK-{datetime.now().strftime('%Y%m%d-%H%M%S')}", "status": "submitted", "estimated_completion": "2-3 minutes", "is_mock": True}
+    return {"run_id": f"RUN-{datetime.now().strftime('%Y%m%d-%H%M%S')}", "status": "submitted"}
+
+app.include_router(demo_router, prefix="/api", tags=["demo"])
 
 
 @app.get("/scan/{symbol}")
