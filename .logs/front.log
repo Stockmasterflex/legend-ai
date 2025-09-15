@@ -70,3 +70,8 @@
  ✓ Compiled in 1084ms (490 modules)
  ✓ Compiled in 624ms (490 modules)
  ✓ Compiled in 461ms (490 modules)
+ GET /dashboard 200 in 725ms
+ GET /demo 200 in 137ms
+ ✓ Compiled in 3s (490 modules)
+ ✓ Compiled in 1130ms (490 modules)
+ ✓ Compiled in 559ms (490 modules)

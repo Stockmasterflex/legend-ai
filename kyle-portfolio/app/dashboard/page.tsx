@@ -250,7 +250,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...mockRecentCandidates, ...mockRecentCandidates].map((c, i) => <CandidateCard key={i} candidate={c} />)}
+            {recent.map((c, i) => <CandidateCard key={i} candidate={c} />)}
           </div>
         </div>
       )}

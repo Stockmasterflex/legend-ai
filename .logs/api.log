@@ -864,3 +864,385 @@ Traceback (most recent call last):
     return os.scandir(self)
            ^^^^^^^^^^^^^^^^
 FileNotFoundError: [Errno 2] No such file or directory: '/Users/kyleholthaus/Projects/LegendAI/.continue'
+INFO:     127.0.0.1:56305 - "GET /api/v1/analytics/overview?run_id=1 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 79, in collapse_excgroups
+  |     yield
+  |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 183, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 772, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    |     result = await app(  # type: ignore[func-returns-value]
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    |     return await self.app(scope, receive, send)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/applications.py", line 113, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    |     raise exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 182, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |   File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(typ, value, traceback)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 184, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 50, in add_request_id_logging
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    |     raise app_exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    |     await self.app(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 78, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 75, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 302, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 215, in run_endpoint_function
+    |     return await run_in_threadpool(dependant.call, **values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    |     return await anyio.to_thread.run_sync(func)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/to_thread.py", line 56, in run_sync
+    |     return await get_async_backend().run_sync_in_worker_thread(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2476, in run_sync_in_worker_thread
+    |     return await future
+    |            ^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 967, in run
+    |     result = context.run(func, *args)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 300, in analytics_overview
+    |     avg_r_by_day = outs.groupby("date_detected")["r_multiple"].mean().to_dict() if len(outs) else {}
+    |                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/pandas/core/groupby/generic.py", line 1951, in __getitem__
+    |     return super().__getitem__(key)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/pandas/core/base.py", line 245, in __getitem__
+    |     raise KeyError(f"Column not found: {key}")
+    | KeyError: 'Column not found: r_multiple'
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 182, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 184, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 50, in add_request_id_logging
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    raise app_exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 302, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 215, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2476, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 967, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 300, in analytics_overview
+    avg_r_by_day = outs.groupby("date_detected")["r_multiple"].mean().to_dict() if len(outs) else {}
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/pandas/core/groupby/generic.py", line 1951, in __getitem__
+    return super().__getitem__(key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/pandas/core/base.py", line 245, in __getitem__
+    raise KeyError(f"Column not found: {key}")
+KeyError: 'Column not found: r_multiple'
+INFO:     127.0.0.1:56312 - "GET /api/v1/analytics/overview?run_id=1 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 79, in collapse_excgroups
+  |     yield
+  |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 183, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 772, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    |     result = await app(  # type: ignore[func-returns-value]
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    |     return await self.app(scope, receive, send)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/applications.py", line 113, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    |     raise exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 182, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |   File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(typ, value, traceback)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 184, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 50, in add_request_id_logging
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    |     raise app_exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    |     await self.app(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 78, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 75, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 302, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 215, in run_endpoint_function
+    |     return await run_in_threadpool(dependant.call, **values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    |     return await anyio.to_thread.run_sync(func)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/to_thread.py", line 56, in run_sync
+    |     return await get_async_backend().run_sync_in_worker_thread(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2476, in run_sync_in_worker_thread
+    |     return await future
+    |            ^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 967, in run
+    |     result = context.run(func, *args)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 300, in analytics_overview
+    |     avg_r_by_day = outs.groupby("date_detected")["r_multiple"].mean().to_dict() if len(outs) else {}
+    |                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/pandas/core/groupby/generic.py", line 1951, in __getitem__
+    |     return super().__getitem__(key)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/pandas/core/base.py", line 245, in __getitem__
+    |     raise KeyError(f"Column not found: {key}")
+    | KeyError: 'Column not found: r_multiple'
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 182, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/Users/kyleholthaus/.pyenv/versions/3.11.8/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 184, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 50, in add_request_id_logging
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    raise app_exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 302, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 215, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2476, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 967, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/service_api.py", line 300, in analytics_overview
+    avg_r_by_day = outs.groupby("date_detected")["r_multiple"].mean().to_dict() if len(outs) else {}
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/pandas/core/groupby/generic.py", line 1951, in __getitem__
+    return super().__getitem__(key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.11/site-packages/pandas/core/base.py", line 245, in __getitem__
+    raise KeyError(f"Column not found: {key}")
+KeyError: 'Column not found: r_multiple'
+{"asctime": "2025-09-14 16:11:12,561", "levelname": "INFO", "message": "request", "request_id": "6cbb330e-8607-4942-82c6-b5d85c9c0c99", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 15}
+INFO:     127.0.0.1:56334 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-14 16:11:12,564", "levelname": "INFO", "message": "request", "request_id": "424873a7-24a9-4b5b-8e51-8a2242f680d0", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 14}
+INFO:     127.0.0.1:56335 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-14 16:11:13,134", "levelname": "INFO", "message": "request", "request_id": "c7d1ddf0-147e-4708-abc2-a913132f62b3", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 566}
+INFO:     127.0.0.1:56334 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-14 16:11:13,677", "levelname": "INFO", "message": "request", "request_id": "6d540f1d-407d-4819-80f2-8b8b15acb391", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 527}
+INFO:     127.0.0.1:56334 - "GET /api/v1/vcp/metrics?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-14 16:11:13,678", "levelname": "INFO", "message": "request", "request_id": "ef1cce0f-9f71-4bd1-ace1-4dee75f6d77f", "path": "/api/v1/runs", "method": "GET", "status_code": 200, "duration_ms": 1109}
+INFO:     127.0.0.1:56335 - "GET /api/v1/runs?limit=50 HTTP/1.1" 200 OK
+{"asctime": "2025-09-14 16:11:13,949", "levelname": "INFO", "message": "request", "request_id": "7c45ec86-b57e-4a38-a05a-c18771ab3027", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 269}
+INFO:     127.0.0.1:56335 - "GET /api/v1/vcp/candidates?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-14 16:11:14,206", "levelname": "INFO", "message": "request", "request_id": "0cf5fdb4-1142-4700-b8fb-683847c9973b", "path": "/api/v1/vcp/metrics", "method": "GET", "status_code": 200, "duration_ms": 525}
+INFO:     127.0.0.1:56334 - "GET /api/v1/vcp/metrics?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-14 16:11:14,221", "levelname": "INFO", "message": "request", "request_id": "a85259cf-7bba-45a3-8656-5b6636bfbcce", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 268}
+INFO:     127.0.0.1:56335 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-14 16:11:14,455", "levelname": "INFO", "message": "request", "request_id": "f017a52d-876f-4b6c-b969-e5e2cbca8454", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 245}
+INFO:     127.0.0.1:56334 - "GET /api/v1/vcp/candidates?run_id=2 HTTP/1.1" 200 OK
+{"asctime": "2025-09-14 16:11:14,718", "levelname": "INFO", "message": "request", "request_id": "9e964b11-2b50-422a-9463-4c468682219c", "path": "/api/v1/vcp/candidates", "method": "GET", "status_code": 200, "duration_ms": 259}
+INFO:     127.0.0.1:56334 - "GET /api/v1/vcp/candidates?day=today&run_id=2 HTTP/1.1" 200 OK
