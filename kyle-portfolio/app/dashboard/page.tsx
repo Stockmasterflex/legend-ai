@@ -148,9 +148,11 @@ export default function Dashboard() {
   const [timeline, setTimeline] = React.useState<any[]>([])
   const [kpis, setKpis] = React.useState<any>({})
   const [error, setError] = React.useState<string | null>(null)
+  const [loading, setLoading] = React.useState<boolean>(false)
 
   React.useEffect(() => {
     (async () => {
+      setLoading(true)
       try {
         const rid = runId ?? 1
         const a = await fetchJSON<any>(`${API_BASE}/api/v1/analytics/overview?run_id=${rid}`)
@@ -160,7 +162,7 @@ export default function Dashboard() {
         setKpis(a.kpis || {})
       } catch (e: any) {
         setError(e?.message || 'Failed to load analytics')
-      }
+      } finally { setLoading(false) }
     })()
   }, [runId])
   return (
@@ -223,6 +225,8 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {recent.map((c, i) => <CandidateCard key={i} candidate={c} />)}
             </div>
+            {loading && <div className="text-xs muted mt-3">Loading…</div>}
+            {error && <div className="text-xs text-red-300 mt-3">{error}</div>}
           </div>
         </div>
       )}

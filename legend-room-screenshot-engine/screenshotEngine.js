@@ -28,10 +28,10 @@ cloudinary.config({
  * The core screenshot and upload function.
  * @param {string} symbol The stock symbol to screenshot (e.g., 'AAPL').
  */
-async function captureAndUpload(symbol) {
+async function captureAndUpload(symbol, chartUrl) {
   let browser = null;
   // Point to the local HTML template, passing the symbol in the query string.
-  const chartUrl = `file://${path.resolve('chart-template.html')}?symbol=${symbol}`;
+  const localUrl = chartUrl || `file://${path.resolve('chart-template.html')}?symbol=${symbol}`;
   // Write to repo reports dir for smoke
   const reportsDir = path.resolve('reports');
   if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
@@ -43,7 +43,7 @@ async function captureAndUpload(symbol) {
   }
 
   console.log(`Starting process for symbol: ${symbol}`);
-  console.log(`Loading chart from: ${chartUrl}`);
+  console.log(`Loading chart from: ${localUrl}`);
 
   try {
     browser = await puppeteer.launch({
@@ -59,7 +59,7 @@ async function captureAndUpload(symbol) {
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 750 });
-    await page.goto(chartUrl, { waitUntil: 'networkidle0' });
+    await page.goto(localUrl, { waitUntil: 'networkidle0' });
 
     console.log('Page loaded. Taking screenshot...');
     await page.screenshot({ path: screenshotPath });
@@ -105,10 +105,7 @@ app.all('/screenshot', async (req, res) => {
     let url = `file://${path.resolve('chart-template.html')}?symbol=${symbol}`;
     if (pivot) url += `&pivot=${encodeURIComponent(pivot)}`;
     if (contractions) url += `&contractions=${encodeURIComponent(contractions)}`;
-    // temporarily override to inject markup params
-    const original = process.env.DRY_RUN === '1' ? null : chartUrl;
-    const chartUrl = url;
-    const chartOut = await captureAndUpload(symbol);
+    const chartOut = await captureAndUpload(symbol, url);
     res.status(200).json({ chart_url: chartOut, symbol, pivot, contractions });
   } catch (error) {
     res.status(500).json({ error: error.message });

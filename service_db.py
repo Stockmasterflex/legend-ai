@@ -21,7 +21,14 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 # Use Postgres in production via SERVICE_DATABASE_URL; fallback to local SQLite for dev.
 SERVICE_DATABASE_URL = os.getenv("SERVICE_DATABASE_URL", "sqlite:///./legend_runs.db")
 
-engine = create_engine(SERVICE_DATABASE_URL, echo=False, future=True)
+# Pre-ping to auto-reconnect on stale Neon connections; recycle to avoid long-idle closures
+engine = create_engine(
+    SERVICE_DATABASE_URL,
+    echo=False,
+    future=True,
+    pool_pre_ping=True,
+    pool_recycle=300,
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 

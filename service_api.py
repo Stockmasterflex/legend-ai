@@ -295,9 +295,12 @@ def analytics_overview(
     timeline = []
     if len(cands):
         by_day = cands.groupby("date").size().to_dict()
-        success_by_day = outs.groupby("date_detected")["success"].sum().to_dict() if len(outs) else {}
+        success_by_day = outs.groupby("date_detected")["success"].sum().to_dict() if len(outs) and "success" in outs.columns else {}
         triggers_by_day = outs.groupby("date_detected").size().to_dict() if len(outs) else {}
-        avg_r_by_day = outs.groupby("date_detected")["r_multiple"].mean().to_dict() if len(outs) else {}
+        if len(outs) and "r_multiple" in outs.columns:
+            avg_r_by_day = outs.groupby("date_detected")["r_multiple"].mean().to_dict()
+        else:
+            avg_r_by_day = {}
         for d in sorted(set(cands["date"].tolist())):
             tl = {
                 "period": d,
