@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - PORT=8000
+      - PYTHONPATH=/app
+      - LEGEND_MOCK_MODE=${LEGEND_MOCK_MODE:-0}
+      - NEWSAPI_KEY=${NEWSAPI_KEY:-}
+      - SHOTS_BASE_URL=${SHOTS_BASE_URL:-http://localhost:3010}
+    volumes:
+      - ./legend_runs.db:/app/legend_runs.db
+      - ./backtest/reports:/app/backtest/reports
+      - ./.logs:/app/.logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./kyle-portfolio
+      dockerfile: ../Dockerfile.frontend
+    ports:
+      - "${FRONT_PORT:-3000}:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+    depends_on:
+      - api
+    restart: unless-stopped

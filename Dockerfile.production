@@ -1,0 +1,39 @@
+# Production Dockerfile for Legend AI VCP Detection System
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p .logs backtest/reports/daily_candidates backtest/reports/outcomes backtest/reports/summary
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/healthz || exit 1
+
+# Expose port
+EXPOSE $PORT
+
+# Run database migrations and start app
+CMD ["sh", "-c", "python -m alembic upgrade head && uvicorn service_api:app --host 0.0.0.0 --port $PORT --workers 1"]
