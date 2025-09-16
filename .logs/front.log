@@ -92,3 +92,4 @@
  ✓ Compiled in 793ms (490 modules)
  ✓ Compiled in 784ms (490 modules)
  ✓ Compiled in 807ms (490 modules)
+ GET /demo 200 in 508ms

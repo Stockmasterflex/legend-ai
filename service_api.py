@@ -9,7 +9,6 @@ from backtest.ingestion import load_prices
 from backtest.simulate import summarize_range, REPORT_ROOT
 from service_db import Base as RunsBase, engine as runs_engine, get_db as get_runs_db, BacktestRun
 from sqlalchemy.orm import Session
-from jobs import enqueue_backtest
 import os
 import time
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
@@ -304,8 +303,11 @@ def create_run(start: str, end: str, universe: str = Query("simple"), provider: 
     except Exception:
         pass
     RunsBase.metadata.create_all(bind=runs_engine)
-    out = enqueue_backtest(start, end, universe, provider, detector_version)
-    return out
+    try:
+        from jobs import enqueue_backtest  # lazy import to avoid hard dependency
+        return enqueue_backtest(start, end, universe, provider, detector_version)
+    except Exception:
+        return {"status": "disabled", "message": "Background worker unavailable on this instance."}
 
 
 @app.get("/api/v1/runs/{run_id}")
