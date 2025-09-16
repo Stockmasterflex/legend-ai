@@ -10,6 +10,16 @@ type Candidate = {
   price: number
   notes?: string
 }
+type Signal = {
+  score: number
+  reasons: string[]
+  badges?: string[]
+}
+type Sentiment = {
+  label: 'bullish'|'neutral'|'bearish'|string
+  score?: number
+  confidence?: number
+}
 
 type Summary = {
   precision_at_10: number
@@ -96,6 +106,9 @@ export default function DemoPage() {
   const [selectedDay, setSelectedDay] = React.useState<string>('')
   const [availableDays, setAvailableDays] = React.useState<string[]>([])
   const [runDetail, setRunDetail] = React.useState<any|null>(null)
+  const [isSample, setIsSample] = React.useState(false)
+  const [signalMap, setSignalMap] = React.useState<Record<string, Signal>>({})
+  const [sentMap, setSentMap] = React.useState<Record<string, Sentiment>>({})
 
   const start = React.useMemo(() => new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10), [])
   const end = React.useMemo(() => new Date().toISOString().slice(0, 10), [])
@@ -132,14 +145,46 @@ export default function DemoPage() {
       const defaultDay = days[days.length - 1] || new Date().toISOString().slice(0, 10)
       setSelectedDay(defaultDay)
       // candidates for default day
-      const cands = await fetchJSON<{ rows: Candidate[] }>(`${API_BASE}/api/v1/vcp/candidates?day=${defaultDay}${runId?`&run_id=${runId}`:''}`)
-      setCandidates(cands.rows || [])
-      // fetch sparklines in parallel
+      let rows: Candidate[] = []
+      try {
+        const cands = await fetchJSON<{ rows: Candidate[] }>(`${API_BASE}/api/v1/vcp/candidates?day=${defaultDay}${runId?`&run_id=${runId}`:''}`)
+        rows = cands.rows || []
+      } catch {}
+      if ((!rows || rows.length === 0) && (runs || []).length === 0) {
+        try {
+          const latest = await fetchWithRetry<any>(`${API_BASE}/api/latest_run`, 2, 400, 4000)
+          setIsSample(!!latest?.is_sample)
+          const today = new Date().toISOString().slice(0, 10)
+          rows = (latest?.patterns || []).map((p: any) => ({
+            date: today,
+            symbol: p.ticker || p.symbol || 'SAMPLE',
+            confidence: typeof p.score === 'number' ? p.score : 75,
+            pivot: typeof p.r_breakout === 'number' ? p.r_breakout : 0,
+            price: 0,
+            notes: 'Sample data',
+          }))
+        } catch {}
+      }
+      setCandidates(rows || [])
+      // fetch sparklines + signals + sentiment in parallel
       const map: Record<string, number[]> = {}
-      await Promise.all((cands.rows || []).map(async (r) => {
+      const sMap: Record<string, Signal> = {}
+      const senMap: Record<string, Sentiment> = {}
+      await Promise.all((rows || []).map(async (r) => {
         map[r.symbol] = await fetchSparkline(r.symbol)
+        try {
+          const sigResp = await fetchWithRetry<{ symbol: string, signal: Signal }>(`${API_BASE}/api/v1/signals?symbol=${encodeURIComponent(r.symbol)}`, 2, 400, 4000)
+          if (sigResp?.signal) sMap[r.symbol] = sigResp.signal
+        } catch {}
+        try {
+          const senResp = await fetchWithRetry<{ symbol: string, sentiment: any, is_sample?: boolean }>(`${API_BASE}/api/v1/sentiment?symbol=${encodeURIComponent(r.symbol)}`, 1, 0, 3000)
+          const lab = (senResp?.sentiment?.label || 'neutral') as any
+          if (lab && lab !== 'neutral') senMap[r.symbol] = { label: lab, score: senResp.sentiment?.score, confidence: senResp.sentiment?.confidence }
+        } catch {}
       }))
       setSparks(map)
+      setSignalMap(sMap)
+      setSentMap(senMap)
     } catch (e: any) {
       setError(e?.message || 'Failed to load data')
     } finally {
@@ -335,7 +380,22 @@ export default function DemoPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="card p-6 animate-pulse text-sm muted">Loading data…</div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_,i)=>(
+              <div key={i} className="card p-4 animate-pulse">
+                <div className="h-3 w-16 bg-white/10 rounded mb-2" />
+                <div className="h-5 w-24 bg-white/20 rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="card p-4 animate-pulse">
+            <div className="h-4 w-40 bg-white/10 rounded mb-3" />
+            {[...Array(6)].map((_,i)=>(
+              <div key={i} className="h-5 w-full bg-white/5 rounded mb-2" />
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Candidates table */}
@@ -349,6 +409,7 @@ export default function DemoPage() {
                 <th className="px-4 py-3">Price</th>
                 <th className="px-4 py-3">Pivot</th>
                 <th className="px-4 py-3">Confidence</th>
+                <th className="px-4 py-3">Signal</th>
                 <th className="px-4 py-3">Chart</th>
                 <th className="px-4 py-3">Notes</th>
               </tr>
@@ -362,8 +423,23 @@ export default function DemoPage() {
                   <td className="px-4 py-3">{Math.round(r.confidence)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
+                      <span className="inline-block rounded px-2 py-0.5 bg-white/10">
+                        {signalMap[r.symbol]?.label ? `${signalMap[r.symbol]?.label} ${signalMap[r.symbol]?.score ?? ''}` : (signalMap[r.symbol]?.score ?? '—')}
+                      </span>
+                      {signalMap[r.symbol]?.badges?.includes('volume-confirmed MACD') && (
+                        <span className="badge badge-success">Vol-confirmed MACD</span>
+                      )}
+                      {sentMap[r.symbol]?.label && (
+                        <span className={`badge ${sentMap[r.symbol]?.label?.toLowerCase() === 'bearish' ? 'badge-error' : sentMap[r.symbol]?.label?.toLowerCase() === 'bullish' ? 'badge-success' : 'badge-ghost'}`}>
+                          {sentMap[r.symbol]?.label}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
                       <Sparkline data={sparks[r.symbol] || []} />
-                      <button className="btn btn-primary btn-xs" onClick={async ()=>{ try{ const res = await fetch(`${API_BASE}/api/v1/chart?symbol=${encodeURIComponent(r.symbol)}&pivot=${encodeURIComponent(r.pivot)}`); const j = await res.json(); const url = j.chart_url || j.engine?.chart_url || j.local_png; if (url) window.open(url, '_blank'); } catch{}}}>Chart</button>
+                      <button className="btn btn-primary btn-xs" onClick={async ()=>{ try{ const res = await fetchWithRetry<any>(`${API_BASE}/api/v1/chart?symbol=${encodeURIComponent(r.symbol)}${Number.isFinite(r.pivot as any)?`&pivot=${encodeURIComponent(r.pivot)}`:''}`, 2, 400, 5000); const url = res.chart_url || res.engine?.chart_url || res.local_png; if (url) window.open(url, '_blank'); } catch{ alert('Chart unavailable. Please ensure the chart service is running.') }}}>Chart</button>
                     </div>
                   </td>
                   <td className="px-4 py-3 max-w-[24ch] truncate" title={r.notes || ''}>{r.notes || ''}</td>

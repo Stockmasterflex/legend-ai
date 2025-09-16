@@ -10,7 +10,7 @@ const path = require('path');
 const app = express();
 app.use(cors({ origin: '*'}));
 app.use(express.json());
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3010;
 const EXEC_PATH = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium';
 
 // --- IMPORTANT ---
@@ -107,6 +107,10 @@ app.all('/screenshot', async (req, res) => {
   const symbol = String(symbolRaw).toUpperCase().trim();
 
   try {
+    if (process.env.DRY_RUN === '1') {
+      const url = `https://dummyimage.com/1200x750/131722/ffffff&text=${encodeURIComponent(symbol)}+Chart`;
+      return res.status(200).json({ chart_url: url, symbol, pivot, contractions, dry_run: true });
+    }
     let url = `file://${path.resolve('chart-template.html')}?symbol=${symbol}`;
     if (pivot) url += `&pivot=${encodeURIComponent(pivot)}`;
     if (contractions) url += `&contractions=${encodeURIComponent(contractions)}`;

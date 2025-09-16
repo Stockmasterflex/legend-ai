@@ -20,12 +20,20 @@ import logging
 import requests
 from functools import lru_cache
 from fastapi import APIRouter
+from datetime import datetime, date
+from typing import List
 
 app = FastAPI(title="Legend AI — VCP API", version="0.1.0")
 
-# CORS (support explicit origins + vercel preview regex)
-allowed = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
-origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", r"https://.*\\.vercel\\.app")
+# CORS: allow localhost, vercel previews, and configured origins
+base_allowed = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://legend-ai.vercel.app",
+]
+allowed_env = os.getenv("ALLOWED_ORIGINS", "")
+allowed = list({*base_allowed, *[o.strip() for o in allowed_env.split(",") if o.strip()]})
+origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", r"https://.*\.vercel\.app")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed,
@@ -43,6 +51,10 @@ logger = logging.getLogger("legend_api")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
     logger.addHandler(handler)
+logging.getLogger("legend.vcp").setLevel(logging.DEBUG)
+logging.getLogger("legend.indicators").setLevel(logging.INFO)
+logging.getLogger("legend.signals").setLevel(logging.INFO)
+logging.getLogger("legend.sentiment").setLevel(logging.INFO)
 
 
 @app.middleware("http")
@@ -99,11 +111,28 @@ def sample_run():
 
 @demo_router.get("/latest_run")
 def latest_run():
+    # Always available sample/latest response
+    out = dict(SAMPLE_RUN)
+    out["is_sample"] = True
     try:
-        # Placeholder for future real latest run
-        return SAMPLE_RUN
+        # Attach indicators/signals/sentiment for first few tickers
+        from indicators.ta import compute_all_indicators
+        from signals.core import score_from_indicators
+        from sentiment.core import fetch_headlines_and_sentiment
+        enrich = []
+        for p in out.get("patterns", [])[:3]:
+            sym = p.get("ticker") or p.get("symbol")
+            df = yf_history_cached((sym or "SPY"), period="6mo")
+            if df is None or df.empty:
+                continue
+            ind = compute_all_indicators(df)
+            sig = score_from_indicators(ind, df)
+            sen = fetch_headlines_and_sentiment(sym) if os.getenv("NEWSAPI_KEY") else {"label":"neutral","is_sample":True}
+            enrich.append({"symbol": sym, "indicators": ind, "signal": sig, "sentiment": sen})
+        out["analysis"] = enrich
     except Exception:
-        return SAMPLE_RUN
+        pass
+    return out
 
 @demo_router.post("/create_run")
 def create_run_demo(payload: dict):
@@ -113,6 +142,82 @@ def create_run_demo(payload: dict):
     return {"run_id": f"RUN-{datetime.now().strftime('%Y%m%d-%H%M%S')}", "status": "submitted"}
 
 app.include_router(demo_router, prefix="/api", tags=["demo"])
+
+SHOTS_BASE_URL = os.getenv("SHOTS_BASE_URL", "http://127.0.0.1:3010")
+
+# -------- Utilities: fetch OHLCV via yfinance (cached) --------
+@lru_cache(maxsize=256)
+def yf_history_cached(symbol: str, period: str = "6mo"):
+    import yfinance as yf
+    t = yf.Ticker(symbol)
+    df = t.history(period=period, auto_adjust=False)
+    if df is None or df.empty:
+        return pd.DataFrame()
+    df.index.name = "Date"
+    df.reset_index(inplace=True)
+    return df
+
+# -------- Indicators/Signals/Sentiment endpoints (Phase 3/4) --------
+@app.get("/api/v1/indicators")
+def api_indicators(symbol: str = Query(...), period: str = Query("6mo")) -> Dict[str, Any]:
+    try:
+        from indicators.ta import compute_all_indicators
+        df = yf_history_cached(symbol.upper(), period=period)
+        if df.empty:
+            raise RuntimeError("no_data")
+        out = compute_all_indicators(df)
+        return {"symbol": symbol.upper(), "period": period, "indicators": out, "is_sample": False}
+    except Exception:
+        # sample payload
+        return {
+            "symbol": symbol.upper(),
+            "period": period,
+            "indicators": {
+                "ema21": None, "ema50": None, "ema200": None, "rsi14": 50.0,
+                "macd": {"macd": 0.0, "signal": 0.0, "hist": 0.0},
+                "bb": {"mid": None, "upper": None, "lower": None, "width": 0.12},
+                "atr14": None, "stoch": {"k": 50.0, "d": 50.0}, "vol_sma50": None, "bb_width": 0.12,
+            },
+            "is_sample": True,
+        }
+
+@app.get("/api/v1/signals")
+def api_signals(symbol: str = Query(...)) -> Dict[str, Any]:
+    try:
+        from indicators.ta import compute_all_indicators
+        from signals.core import score_from_indicators
+        df = yf_history_cached(symbol.upper(), period="6mo")
+        if df.empty:
+            raise RuntimeError("no_data")
+        ind = compute_all_indicators(df)
+        sig = score_from_indicators(ind, df)
+        return {"symbol": symbol.upper(), "signal": sig, "is_sample": False}
+    except Exception:
+        return {
+            "symbol": symbol.upper(),
+            "signal": {
+                "score": 65,
+                "reasons": ["sample: tight BB", "sample: RSI>50"],
+                "ema21": None, "ema50": None, "ema200": None,
+                "rsi": 52.0, "macd": {"macd": 0.1, "signal": 0.05, "hist": 0.05},
+                "bbwidth": 0.12,
+                "badges": [],
+            },
+            "is_sample": True,
+        }
+
+@app.get("/api/v1/sentiment")
+def api_sentiment(symbol: str = Query(...)) -> Dict[str, Any]:
+    try:
+        from sentiment.core import fetch_headlines_and_sentiment
+        data = fetch_headlines_and_sentiment(symbol.upper(), limit=5)
+        return {"symbol": symbol.upper(), "sentiment": data, "is_sample": data.get("is_sample", False)}
+    except Exception:
+        return {
+            "symbol": symbol.upper(),
+            "sentiment": {"label": "neutral", "score": 0.0, "confidence": 0.5, "headlines": [], "is_sample": True},
+            "is_sample": True,
+        }
 
 
 @app.get("/scan/{symbol}")
