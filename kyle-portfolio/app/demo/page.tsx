@@ -439,7 +439,27 @@ export default function DemoPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Sparkline data={sparks[r.symbol] || []} />
-                      <button className="btn btn-primary btn-xs" onClick={async ()=>{ try{ const res = await fetchWithRetry<any>(`${API_BASE}/api/v1/chart?symbol=${encodeURIComponent(r.symbol)}${Number.isFinite(r.pivot as any)?`&pivot=${encodeURIComponent(r.pivot)}`:''}`, 2, 400, 5000); const url = res.chart_url || res.engine?.chart_url || res.local_png; if (url) window.open(url, '_blank'); } catch{ alert('Chart unavailable. Please ensure the chart service is running.') }}}>Chart</button>
+                      <button
+                        className="btn btn-primary btn-xs"
+                        onClick={async () => {
+                          try {
+                            const rawPivot = (r as any)?.pivot
+                            const pivotNumber = typeof rawPivot === 'number' ? rawPivot : Number(rawPivot)
+                            const pivotQuery = Number.isFinite(pivotNumber) ? `&pivot=${encodeURIComponent(pivotNumber)}` : ''
+                            const res = await fetchWithRetry<any>(
+                              `${API_BASE}/api/v1/chart?symbol=${encodeURIComponent(r.symbol)}${pivotQuery}`,
+                              2,
+                              400,
+                            )
+                            const url = res.chart_url || res.engine?.chart_url || res.local_png
+                            if (url) window.open(url, '_blank')
+                          } catch {
+                            alert('Chart unavailable. Please ensure the chart service is running.')
+                          }
+                        }}
+                      >
+                        Chart
+                      </button>
                     </div>
                   </td>
                   <td className="px-4 py-3 max-w-[24ch] truncate" title={r.notes || ''}>{r.notes || ''}</td>

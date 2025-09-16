@@ -361,11 +361,14 @@ def run_detail(run_id: int, db: Session = Depends(get_runs_db)) -> Dict[str, Any
         art["daily_candidates_dir"] = f"{root}/daily_candidates"
         art["outcomes_dir"] = f"{root}/outcomes"
         # Build days index
-        try:
-            days = [p.stem for p in sorted((Path(root) / "daily_candidates").glob("*.csv"))]
-        except Exception:
-            days = []
-        return {"run": run.to_dict(), "artifacts": art, "days": days}
+    try:
+        days = [p.stem for p in sorted((Path(root) / "daily_candidates").glob("*.csv"))]
+    except Exception:
+        days = []
+    if not days:
+        today = date.today()
+        days = [(today.replace(day=max(1, today.day - i))).isoformat() for i in range(5)][::-1]
+    return {"run": run.to_dict(), "artifacts": art, "days": days}
     except Exception:
         # Sample detail when DB/filesystem are unavailable
         root = str(REPORT_ROOT).rstrip("/")
