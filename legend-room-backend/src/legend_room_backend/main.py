@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -9,6 +10,9 @@ from pydantic import BaseModel
 from datetime import datetime, date
 from typing import List
 from sqlalchemy.orm import Session
+
+logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("legend.vcp").setLevel(logging.DEBUG)
 
 from .db.database import get_db, engine, Base
 from .db.models import Price

@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 import pandas as pd
 from vcp.vcp_detector import VCPDetector
+from settings import load_vcp_settings, is_mock_enabled
 from backtest.run_backtest import scan_once
 from backtest.ingestion import load_prices
 from backtest.simulate import summarize_range, REPORT_ROOT
@@ -73,7 +74,7 @@ def metrics(request: Request):
 # --- Demo/fallback routes ---
 demo_router = APIRouter()
 
-LEGEND_MOCK = os.getenv("LEGEND_MOCK", "0") == "1"
+LEGEND_MOCK = is_mock_enabled()
 SAMPLE_RUN = {
     "run_id": "SAMPLE-2025-09-15",
     "universe": ["AAPL","NVDA","MSFT","META","GOOGL"],
@@ -117,7 +118,15 @@ app.include_router(demo_router, prefix="/api", tags=["demo"])
 @app.get("/scan/{symbol}")
 def scan_symbol(symbol: str) -> Dict[str, Any]:
     df = load_prices(symbol)
-    sig = VCPDetector().detect_vcp(df, symbol)
+    vcp_cfg = load_vcp_settings()
+    det = VCPDetector(
+        min_contractions=max(2, vcp_cfg.min_tighten_steps),
+        max_base_depth=vcp_cfg.max_base_depth,
+        final_contraction_max=vcp_cfg.max_final_range,
+        pivot_window=vcp_cfg.pivot_window,
+        breakout_volume_multiplier=vcp_cfg.breakout_volx,
+    )
+    sig = det.detect_vcp(df, symbol)
     d = sig.__dict__.copy()
     # Make dataclasses JSON-safe
     d["contractions"] = [c.__dict__ for c in (sig.contractions or [])]
