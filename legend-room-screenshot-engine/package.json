@@ -12,11 +12,10 @@
     "@sparticuz/chromium": "^123.0.1",
     "cloudinary": "^2.2.0",
     "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "puppeteer-core": "^22.0.0"
+    "express": "^4.19.2"
   },
   "devDependencies": {
-    "puppeteer": "^22.10.0"
+    "puppeteer": "^22.15.0"
   },
   "engines": {
     "node": ">=18.0.0"

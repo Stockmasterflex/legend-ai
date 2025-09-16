@@ -2,7 +2,7 @@
 
 const express = require('express');
 const cors = require('cors');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const path = require('path');
@@ -11,7 +11,22 @@ const app = express();
 app.use(cors({ origin: '*'}));
 app.use(express.json());
 const PORT = process.env.PORT || 3010;
-const EXEC_PATH = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium';
+
+async function getBrowser() {
+  const launchOptions = {
+    headless: 'new',
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+    ],
+    ignoreHTTPSErrors: true,
+  };
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  return puppeteer.launch(launchOptions);
+}
 
 // --- IMPORTANT ---
 // Configure Cloudinary using Environment Variables for security.
@@ -46,16 +61,7 @@ async function captureAndUpload(symbol, chartUrl) {
   console.log(`Loading chart from: ${localUrl}`);
 
   try {
-    browser = await puppeteer.launch({
-      executablePath: EXEC_PATH,
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-      ],
-      ignoreHTTPSErrors: true,
-    });
+    browser = await getBrowser();
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 750 });
