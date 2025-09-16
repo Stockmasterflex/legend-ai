@@ -48,7 +48,7 @@ type Run = {
   num_success?: number
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_VCP_API_BASE || 'http://127.0.0.1:8000'
+const API_BASE = process.env.NEXT_PUBLIC_VCP_API_BASE || 'https://legend-api.onrender.com'
 
 async function fetchWithRetry<T>(url: string, tries = 3, backoffMs = 500): Promise<T> {
   let lastErr: any
@@ -306,6 +306,32 @@ export default function DemoPage() {
     }
   }
 
+  // Improved chart click handler to fix popup blocking and handle errors better
+  const handleChartClick = async (symbol: string, pivot?: number | null) => {
+    try {
+      // Open a tab synchronously so browsers don't block it
+      const tab = window.open('about:blank', '_blank', 'noopener,noreferrer');
+      
+      // Build query without pivot when it's null/undefined
+      const q = new URLSearchParams({ symbol });
+      if (typeof pivot === 'number' && !Number.isNaN(pivot)) q.set('pivot', String(pivot));
+      
+      const res = await fetch(`${API_BASE}/api/v1/chart?${q.toString()}`, { cache: 'no-store' });
+      const data = await res.json();
+      
+      if (data?.chart_url) {
+        if (tab) tab.location.href = data.chart_url;  // Send the new tab to the image
+      } else {
+        if (tab) tab.close();
+        alert('No chart URL returned from API.');
+        console.error('Chart API response:', data);
+      }
+    } catch (err) {
+      alert('Failed to open chart. Check console for details.');
+      console.error('Chart error:', err);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -441,22 +467,7 @@ export default function DemoPage() {
                       <Sparkline data={sparks[r.symbol] || []} />
                       <button
                         className="btn btn-primary btn-xs"
-                        onClick={async () => {
-                          try {
-                            const rawPivot = (r as any)?.pivot
-                            const pivotNumber = typeof rawPivot === 'number' ? rawPivot : Number(rawPivot)
-                            const pivotQuery = Number.isFinite(pivotNumber) ? `&pivot=${encodeURIComponent(pivotNumber)}` : ''
-                            const res = await fetchWithRetry<any>(
-                              `${API_BASE}/api/v1/chart?symbol=${encodeURIComponent(r.symbol)}${pivotQuery}`,
-                              2,
-                              400,
-                            )
-                            const url = res.chart_url || res.engine?.chart_url || res.local_png
-                            if (url) window.open(url, '_blank')
-                          } catch {
-                            alert('Chart unavailable. Please ensure the chart service is running.')
-                          }
-                        }}
+                        onClick={() => handleChartClick(r.symbol, r.pivot)}
                       >
                         Chart
                       </button>
