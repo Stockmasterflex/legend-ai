@@ -243,9 +243,24 @@ def scan_symbol(symbol: str) -> Dict[str, Any]:
 def vcp_today(label: Optional[str] = Query(None)):
     from datetime import date as _date
     day = label or _date.today().isoformat()
-    csv_path = scan_once(day)
-    rows = pd.read_csv(csv_path).to_dict(orient="records")
-    return {"day": day, "report": str(csv_path), "rows": rows}
+    try:
+        # If mock mode, return sample immediately
+        if LEGEND_MOCK:
+            sample_rows = [
+                {"symbol": p.get("ticker"), "confidence": p.get("score", 80), "pivot": None, "price": None, "notes": p.get("pattern", "VCP")}
+                for p in SAMPLE_RUN.get("patterns", [])
+            ]
+            return {"day": day, "report": "sample", "rows": sample_rows, "is_sample": True}
+        csv_path = scan_once(day)
+        rows = pd.read_csv(csv_path).to_dict(orient="records")
+        return {"day": day, "report": str(csv_path), "rows": rows}
+    except Exception:
+        # Always provide a usable sample
+        sample_rows = [
+            {"symbol": p.get("ticker"), "confidence": p.get("score", 80), "pivot": None, "price": None, "notes": p.get("pattern", "VCP")}
+            for p in SAMPLE_RUN.get("patterns", [])
+        ]
+        return {"day": day, "report": "sample", "rows": sample_rows, "is_sample": True}
 
 
 @app.get("/api/v1/vcp/metrics")
@@ -352,7 +367,12 @@ def candidates_by_date(
         return {"days": days}
     p = cand_dir / f"{day}.csv"
     if not p.exists():
-        return {"day": day, "rows": []}
+        # Provide sample rows so the demo always shows content
+        sample_rows = [
+            {"symbol": ptn.get("ticker"), "confidence": ptn.get("score", 80), "pivot": None, "price": None, "notes": ptn.get("pattern", "VCP")}
+            for ptn in SAMPLE_RUN.get("patterns", [])
+        ]
+        return {"day": day, "rows": sample_rows, "is_sample": True}
     df = pd.read_csv(p)
     # enrich with sector if requested for filtering
     if sector:
