@@ -1,137 +1,92 @@
-// screenshotEngine.js
+import express from 'express'
+import cors from 'cors'
+import cloudinaryLib from 'cloudinary'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { launchBrowser } from './chromium.js'
 
-const express = require('express');
-const cors = require('cors');
-const puppeteer = require('puppeteer');
-const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
-const path = require('path');
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-const app = express();
-app.use(cors({ origin: '*'}));
-app.use(express.json());
-const PORT = process.env.PORT || 3010;
+const cloudinary = cloudinaryLib.v2
 
-async function getBrowser() {
-  const launchOptions = {
-    headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-    ],
-    ignoreHTTPSErrors: true,
-  };
-  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-    launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-  }
-  return puppeteer.launch(launchOptions);
-}
+const app = express()
+app.use(cors({ origin: '*' }))
+app.use(express.json())
+const PORT = process.env.PORT || 3010
 
-// --- IMPORTANT ---
-// Configure Cloudinary using Environment Variables for security.
-// DO NOT hardcode your API keys in the code.
-// Set these in your Render.com service settings.
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
-});
+})
 
-/**
- * The core screenshot and upload function.
- * @param {string} symbol The stock symbol to screenshot (e.g., 'AAPL').
- */
 async function captureAndUpload(symbol, chartUrl) {
-  let browser = null;
-  // Point to the local HTML template, passing the symbol in the query string.
-  const localUrl = chartUrl || `file://${path.resolve('chart-template.html')}?symbol=${symbol}`;
-  // Write to repo reports dir for smoke
-  const reportsDir = path.resolve('reports');
-  if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
-  const screenshotPath = path.join(reportsDir, 'SMOKE.png');
-  
+  let browser = null
+  const localUrl = chartUrl || `file://${path.resolve(__dirname, 'chart-template.html')}?symbol=${symbol}`
+  const reportsDir = path.resolve(__dirname, 'reports')
+  if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true })
+  const screenshotPath = path.join(reportsDir, 'SMOKE.png')
+
   if (process.env.DRY_RUN === '1') {
-    console.log('DRY_RUN enabled: skipping browser and upload.');
-    return `https://dummyimage.com/1200x750/131722/ffffff&text=${encodeURIComponent(symbol)}+Chart`;
+    const url = `https://dummyimage.com/1200x750/131722/ffffff&text=${encodeURIComponent(symbol)}+Chart`
+    return url
   }
 
-  console.log(`Starting process for symbol: ${symbol}`);
-  console.log(`Loading chart from: ${localUrl}`);
-
   try {
-    browser = await getBrowser();
-
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1200, height: 750 });
-    await page.goto(localUrl, { waitUntil: 'domcontentloaded' });
+    browser = await launchBrowser()
+    const page = await browser.newPage()
+    await page.setViewport({ width: 1200, height: 750 })
+    await page.goto(localUrl, { waitUntil: 'domcontentloaded' })
     try {
-      await page.waitForSelector('#container', { timeout: 8000 });
-    } catch {}
-    // give TradingView time to render
-    await page.waitForTimeout(2000);
+      await page.waitForSelector('#container', { timeout: 8000 })
+    } catch (err) {
+      console.warn('chart selector not found before timeout', err?.message)
+    }
+    await page.waitForTimeout(2000)
+    await page.screenshot({ path: screenshotPath })
 
-    console.log('Page loaded. Taking screenshot...');
-    await page.screenshot({ path: screenshotPath });
-    console.log(`Screenshot saved locally to: ${screenshotPath}`);
-
-    // For smoke: return the local file path; optionally still upload if creds present
     if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
       try {
-        console.log('Uploading to Cloudinary...');
         const uploadResult = await cloudinary.uploader.upload(screenshotPath, {
-          public_id: `stock_chart_${symbol.toLowerCase()}_${Date.now()}`
-        });
-        console.log('Upload successful.');
-        return uploadResult.secure_url;
-      } catch (e) {
-        console.warn('Cloudinary upload failed, returning local path.', e.message);
+          public_id: `stock_chart_${symbol.toLowerCase()}_${Date.now()}`,
+        })
+        return uploadResult.secure_url
+      } catch (uploadError) {
+        console.warn('Cloudinary upload failed, returning local path', uploadError?.message)
       }
     }
-    return screenshotPath;
-
-  } catch (error) {
-    console.error('Error during capture and upload process:', error);
-    throw new Error('Failed to generate and upload chart.'); // Re-throw a generic error
+    return screenshotPath
   } finally {
-    // Cleanup: close the browser and delete the local file.
     if (browser) {
-      await browser.close();
+      await browser.close()
     }
-    // keep SMOKE.png on disk for inspection
   }
 }
 
-// Screenshot endpoint: accepts GET or POST. If no symbol is provided, default to SPY.
-// GET example: /screenshot?symbol=TSLA
-// POST example: { "symbol": "TSLA" }
 app.all('/screenshot', async (req, res) => {
-  const symbolRaw = (req.query && req.query.symbol) || (req.body && req.body.symbol) || 'SPY';
-  const pivot = req.query && req.query.pivot ? String(req.query.pivot) : undefined;
-  const contractions = req.query && req.query.contractions ? String(req.query.contractions) : undefined;
-  const symbol = String(symbolRaw).toUpperCase().trim();
+  const symbolRaw = (req.query?.symbol) || (req.body?.symbol) || 'SPY'
+  const pivot = req.query?.pivot ? String(req.query.pivot) : undefined
+  const contractions = req.query?.contractions ? String(req.query.contractions) : undefined
+  const symbol = String(symbolRaw).toUpperCase().trim()
 
   try {
-    if (process.env.DRY_RUN === '1') {
-      const url = `https://dummyimage.com/1200x750/131722/ffffff&text=${encodeURIComponent(symbol)}+Chart`;
-      return res.status(200).json({ chart_url: url, symbol, pivot, contractions, dry_run: true });
-    }
-    let url = `file://${path.resolve('chart-template.html')}?symbol=${symbol}`;
-    if (pivot) url += `&pivot=${encodeURIComponent(pivot)}`;
-    if (contractions) url += `&contractions=${encodeURIComponent(contractions)}`;
-    const chartOut = await captureAndUpload(symbol, url);
-    res.status(200).json({ chart_url: chartOut, symbol, pivot, contractions });
+    let templateUrl = `file://${path.resolve(__dirname, 'chart-template.html')}?symbol=${symbol}`
+    if (pivot) templateUrl += `&pivot=${encodeURIComponent(pivot)}`
+    if (contractions) templateUrl += `&contractions=${encodeURIComponent(contractions)}`
+    const url = await captureAndUpload(symbol, templateUrl)
+    res.status(200).json({ chart_url: url, symbol, pivot, contractions, dry_run: process.env.DRY_RUN === '1' })
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error?.message || 'Failed to generate chart' })
   }
-});
+})
 
-// Root endpoint to confirm the service is online.
-app.get('/', (req, res) => {
-  res.send('Screenshot service is running. Use /screenshot?symbol=YOUR_SYMBOL to capture an image.');
-});
+app.get('/', (_req, res) => {
+  res.send('Screenshot service running')
+})
 
 app.listen(PORT, () => {
-  console.log(`Screenshot service listening on port ${PORT}`);
-});
+  console.log(`Screenshot service listening on port ${PORT}`)
+})

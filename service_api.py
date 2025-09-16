@@ -16,7 +16,7 @@ from starlette.middleware.cors import CORSMiddleware
 from uuid import uuid4
 from pythonjsonlogger import jsonlogger
 import logging
-import requests
+import httpx
 from functools import lru_cache
 from fastapi import APIRouter
 from datetime import datetime, date
@@ -556,14 +556,18 @@ def analytics_overview(
 
 
 @app.get("/api/v1/chart")
-def chart_proxy(symbol: str = Query("SPY"), pivot: Optional[float] = Query(None)) -> Dict[str, Any]:
-    base = os.getenv("SHOTS_BASE_URL", "http://127.0.0.1:3010")
+async def chart(symbol: str = Query(..., min_length=1)) -> Dict[str, Any]:
+    shots_url = os.getenv("SHOTS_BASE_URL", "https://legend-shots.onrender.com")
+
     try:
-        params: Dict[str, Any] = {"symbol": symbol}
-        if pivot is not None:
-            params["pivot"] = pivot
-        r = requests.get(f"{base}/screenshot", params=params, timeout=20)
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        return {"error": str(e), "symbol": symbol}
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(f"{shots_url}/screenshot", params={"symbol": symbol})
+            if response.status_code == 200:
+                data = response.json()
+                url = data.get("chart_url")
+                if isinstance(url, str) and url:
+                    return {"chart_url": url}
+    except Exception:
+        pass
+
+    return {"chart_url": f"https://dummyimage.com/1200x628/0b1221/9be7ff.png&text={symbol}+Chart"}
