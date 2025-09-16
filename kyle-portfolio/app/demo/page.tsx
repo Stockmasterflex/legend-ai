@@ -48,7 +48,7 @@ type Run = {
   num_success?: number
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_VCP_API_BASE || 'https://legend-api.onrender.com'
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://legend-api.onrender.com"
 
 async function fetchWithRetry<T>(url: string, tries = 3, backoffMs = 500): Promise<T> {
   let lastErr: any
@@ -109,6 +109,8 @@ export default function DemoPage() {
   const [isSample, setIsSample] = React.useState(false)
   const [signalMap, setSignalMap] = React.useState<Record<string, Signal>>({})
   const [sentMap, setSentMap] = React.useState<Record<string, Sentiment>>({})
+  // Inline chart preview cache per symbol
+  const [chartUrls, setChartUrls] = React.useState<Record<string, string | null>>({})
 
   const start = React.useMemo(() => new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10), [])
   const end = React.useMemo(() => new Date().toISOString().slice(0, 10), [])
@@ -152,7 +154,7 @@ export default function DemoPage() {
       } catch {}
       if ((!rows || rows.length === 0) && (runs || []).length === 0) {
         try {
-          const latest = await fetchWithRetry<any>(`${API_BASE}/api/latest_run`, 2, 400, 4000)
+          const latest = await fetchWithRetry<any>(`${API_BASE}/api/latest_run`, 2, 400)
           setIsSample(!!latest?.is_sample)
           const today = new Date().toISOString().slice(0, 10)
           rows = (latest?.patterns || []).map((p: any) => ({
@@ -173,11 +175,11 @@ export default function DemoPage() {
       await Promise.all((rows || []).map(async (r) => {
         map[r.symbol] = await fetchSparkline(r.symbol)
         try {
-          const sigResp = await fetchWithRetry<{ symbol: string, signal: Signal }>(`${API_BASE}/api/v1/signals?symbol=${encodeURIComponent(r.symbol)}`, 2, 400, 4000)
+          const sigResp = await fetchWithRetry<{ symbol: string, signal: Signal }>(`${API_BASE}/api/v1/signals?symbol=${encodeURIComponent(r.symbol)}`, 2, 400)
           if (sigResp?.signal) sMap[r.symbol] = sigResp.signal
         } catch {}
         try {
-          const senResp = await fetchWithRetry<{ symbol: string, sentiment: any, is_sample?: boolean }>(`${API_BASE}/api/v1/sentiment?symbol=${encodeURIComponent(r.symbol)}`, 1, 0, 3000)
+          const senResp = await fetchWithRetry<{ symbol: string, sentiment: any, is_sample?: boolean }>(`${API_BASE}/api/v1/sentiment?symbol=${encodeURIComponent(r.symbol)}`, 1, 0)
           const lab = (senResp?.sentiment?.label || 'neutral') as any
           if (lab && lab !== 'neutral') senMap[r.symbol] = { label: lab, score: senResp.sentiment?.score, confidence: senResp.sentiment?.confidence }
         } catch {}
@@ -306,29 +308,18 @@ export default function DemoPage() {
     }
   }
 
-  // Improved chart click handler to fix popup blocking and handle errors better
-  const handleChartClick = async (symbol: string, pivot?: number | null) => {
+  // Inline chart loader for dropdown preview
+  const loadChart = async (symbol: string, pivot?: number | null) => {
     try {
-      // Open a tab synchronously so browsers don't block it
-      const tab = window.open('about:blank', '_blank', 'noopener,noreferrer');
-      
-      // Build query without pivot when it's null/undefined
-      const q = new URLSearchParams({ symbol });
-      if (typeof pivot === 'number' && !Number.isNaN(pivot)) q.set('pivot', String(pivot));
-      
-      const res = await fetch(`${API_BASE}/api/v1/chart?${q.toString()}`, { cache: 'no-store' });
-      const data = await res.json();
-      
-      if (data?.chart_url) {
-        if (tab) tab.location.href = data.chart_url;  // Send the new tab to the image
-      } else {
-        if (tab) tab.close();
-        alert('No chart URL returned from API.');
-        console.error('Chart API response:', data);
-      }
-    } catch (err) {
-      alert('Failed to open chart. Check console for details.');
-      console.error('Chart error:', err);
+      const q = new URLSearchParams({ symbol })
+      if (typeof pivot === 'number' && Number.isFinite(pivot)) q.set('pivot', String(pivot))
+      const res = await fetch(`${API_BASE}/api/v1/chart?${q.toString()}`, { cache: 'no-store' })
+      const data = await res.json()
+      setChartUrls(prev => ({ ...prev, [symbol]: data?.chart_url || null }))
+      if (!data?.chart_url) console.warn('No chart_url from API for', symbol, data)
+    } catch (e) {
+      console.error('Failed to load chart:', e)
+      setChartUrls(prev => ({ ...prev, [symbol]: null }))
     }
   }
 
@@ -450,7 +441,7 @@ export default function DemoPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="inline-block rounded px-2 py-0.5 bg-white/10">
-                        {signalMap[r.symbol]?.label ? `${signalMap[r.symbol]?.label} ${signalMap[r.symbol]?.score ?? ''}` : (signalMap[r.symbol]?.score ?? '—')}
+                        {typeof signalMap[r.symbol]?.score === 'number' ? `${signalMap[r.symbol]?.score}` : '—'}
                       </span>
                       {signalMap[r.symbol]?.badges?.includes('volume-confirmed MACD') && (
                         <span className="badge badge-success">Vol-confirmed MACD</span>
@@ -462,16 +453,45 @@ export default function DemoPage() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <Sparkline data={sparks[r.symbol] || []} />
-                      <button
-                        className="btn btn-primary btn-xs"
-                        onClick={() => handleChartClick(r.symbol, r.pivot)}
+                      <select
+                        className="select select-sm"
+                        defaultValue=""
+                        onChange={(e) => {
+                          if (e.target.value === 'show') {
+                            loadChart(r.symbol, r.pivot ?? undefined)
+                          } else if (e.target.value === 'hide') {
+                            setChartUrls(prev => ({ ...prev, [r.symbol]: null }))
+                          }
+                          e.currentTarget.value = ''
+                        }}
                       >
-                        Chart
-                      </button>
+                        <option value="" disabled>Chart…</option>
+                        <option value="show">Show chart</option>
+                        <option value="hide">Hide chart</option>
+                      </select>
                     </div>
+                    {chartUrls[r.symbol] && (
+                      <div className="mt-2 space-y-1">
+                        <a
+                          href={chartUrls[r.symbol] as string}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="link link-primary text-xs"
+                        >
+                          Open image in new tab
+                        </a>
+                        <div className="border rounded p-1">
+                          <img
+                            src={chartUrls[r.symbol] as string}
+                            alt={`${r.symbol} chart`}
+                            style={{ maxWidth: 480, height: 'auto' }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 max-w-[24ch] truncate" title={r.notes || ''}>{r.notes || ''}</td>
                 </tr>
