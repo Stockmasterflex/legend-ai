@@ -106,11 +106,11 @@ ai:
 
 top5:
 	@echo "Wedge (S&P500, weekly)"
-	@curl -s "$(LEGEND_API)/api/v1/scan?pattern=wedge&universe=sp500&timeframe=1wk&limit=5&min_price=0&min_volume=0" \
-	  | jq '.results | map({symbol,score,entry,stop,targets,chart_url}) | .[0:5]' && echo
+	@curl -s "$(LEGEND_API)/api/v1/scan?pattern=wedge&universe=sp500&timeframe=1wk&limit=1&min_price=0&min_volume=0" \
+	  | jq '.results | map({symbol,score,entry,stop,targets,chart_url})' && echo
 	@echo "Cup & Handle (NASDAQ-100, daily)"
-	@curl -s "$(LEGEND_API)/api/v1/scan?pattern=cup_handle&universe=nasdaq100&limit=5&min_price=0&min_volume=0" \
-	  | jq '.results | map({symbol,score,entry,stop,targets,chart_url}) | .[0:5]'
+	@curl -s "$(LEGEND_API)/api/v1/scan?pattern=cup_handle&universe=nasdaq100&limit=1&min_price=0&min_volume=0" \
+	  | jq '.results | map({symbol,score,entry,stop,targets,chart_url})'
 
 ai-deps:
 	@python3 scripts/ai_deps.py
