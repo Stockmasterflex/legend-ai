@@ -47,6 +47,16 @@ FastAPI docs: http://127.0.0.1:8000/docs
 Demo dashboard: http://localhost:3000/demo
 Stop everything: make down
 
+### Docker (recommended)
+
+For a fully containerized dev stack (API + Redis + RQ worker + scheduler + screenshot engine + frontend):
+
+```
+docker compose -f docker-compose.dev.yml up --build
+```
+
+Environment variables can be configured via `.env` (copy from `.env.example`).
+
 ## Historical runs: persistence and usage
 
 The API persists summary KPIs of backtest windows in a lightweight SQLite DB (`legend_runs.db`). You can list and create runs via API:

@@ -22,8 +22,6 @@ def load_prices(symbol: str, period: str = "18mo", interval: str = "1d", refresh
                     return df_cached
         except Exception:
             pass
-        if not cache.exists():
-            pass
     df = DataProvider().fetch(symbol, period=period, interval=interval)
     if "Date" not in df.columns:
         df = df.reset_index()
