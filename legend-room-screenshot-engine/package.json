@@ -1,21 +1,14 @@
 {
-  "name": "legend-room-screenshot-engine",
-  "version": "1.0.0",
-  "description": "Puppeteer script to capture TradingView charts and upload to Cloudinary.",
+  "name": "legend-shots",
+  "private": true,
   "type": "module",
-  "main": "screenshotEngine.js",
-  "scripts": {
-    "start": "node screenshotEngine.js",
-    "dev": "node screenshotEngine.js"
-  },
   "dependencies": {
     "@sparticuz/chromium": "^130.0.0",
-    "cloudinary": "^2.2.0",
-    "cors": "^2.8.5",
     "express": "^4.19.2",
     "puppeteer-core": "^22.15.0"
   },
-  "engines": {
-    "node": ">=18.0.0"
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
   }
 }

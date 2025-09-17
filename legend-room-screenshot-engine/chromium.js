@@ -1,8 +1,8 @@
-import chromium from '@sparticuz/chromium'
-import puppeteer from 'puppeteer-core'
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 export async function launchBrowser() {
-  const executablePath = await chromium.executablePath()
+  const executablePath = await chromium.executablePath();
   return puppeteer.launch({
     executablePath,
     headless: 'new',
@@ -10,8 +10,8 @@ export async function launchBrowser() {
       ...chromium.args,
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
+      '--disable-dev-shm-usage'
     ],
-    defaultViewport: chromium.defaultViewport,
-  })
+    defaultViewport: chromium.defaultViewport
+  });
 }

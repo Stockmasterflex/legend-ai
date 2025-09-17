@@ -142,7 +142,7 @@ def create_run_demo(payload: dict):
 
 app.include_router(demo_router, prefix="/api", tags=["demo"])
 
-SHOTS_BASE_URL = os.getenv("SHOTS_BASE_URL", "http://127.0.0.1:3010")
+SHOTS_BASE_URL = os.getenv("SHOTS_BASE_URL", "https://legend-shots.onrender.com")
 
 # -------- Utilities: fetch OHLCV via yfinance (cached) --------
 @lru_cache(maxsize=256)
@@ -556,17 +556,15 @@ def analytics_overview(
 
 
 @app.get("/api/v1/chart")
-async def chart(symbol: str = Query(..., min_length=1)) -> Dict[str, Any]:
-    shots_url = os.getenv("SHOTS_BASE_URL", "https://legend-shots.onrender.com")
-
+async def chart(symbol: str = Query(..., min_length=1), pivot: Optional[str] = None) -> Dict[str, Any]:
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.get(f"{shots_url}/screenshot", params={"symbol": symbol})
-            if response.status_code == 200:
-                data = response.json()
-                url = data.get("chart_url")
-                if isinstance(url, str) and url:
-                    return {"chart_url": url}
+            response = await client.get(f"{SHOTS_BASE_URL}/screenshot", params={"symbol": symbol})
+        if response.status_code == 200:
+            data = response.json()
+            url = data.get("chart_url")
+            if isinstance(url, str) and url:
+                return {"chart_url": url}
     except Exception:
         pass
 

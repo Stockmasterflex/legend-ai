@@ -49,6 +49,7 @@ type Run = {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://legend-api.onrender.com"
+const USE_REMOTE_SPARKLINE = process.env.NEXT_PUBLIC_USE_REMOTE_SPARKLINE === '1'
 
 async function fetchWithRetry<T>(url: string, tries = 3, backoffMs = 500): Promise<T> {
   let lastErr: any
@@ -69,6 +70,9 @@ async function fetchJSON<T>(url: string): Promise<T> { return fetchWithRetry<T>(
 
 // Attempt to fetch sparkline data from Yahoo chart API; if blocked, fall back to synthetic deterministic series
 async function fetchSparkline(symbol: string, points = 60): Promise<number[]> {
+  if (!USE_REMOTE_SPARKLINE) {
+    return generateFallbackSparkline(symbol, points)
+  }
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=6mo&interval=1d`
     const r = await fetch(url)
@@ -81,7 +85,10 @@ async function fetchSparkline(symbol: string, points = 60): Promise<number[]> {
       }
     }
   } catch {}
-  // Fallback: pseudo-random but deterministic by symbol
+  return generateFallbackSparkline(symbol, points)
+}
+
+function generateFallbackSparkline(symbol: string, points = 60): number[] {
   const seed = Array.from(symbol).reduce((a, c) => a + c.charCodeAt(0), 0)
   let x = seed % 97 + 3
   const series: number[] = []
@@ -92,6 +99,17 @@ async function fetchSparkline(symbol: string, points = 60): Promise<number[]> {
     series.push(Math.max(1, last + delta * 2))
   }
   return series
+}
+
+async function fetchChartUrl(symbol: string): Promise<string | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/chart?symbol=${encodeURIComponent(symbol)}`)
+    if (!r.ok) return null
+    const j = await r.json()
+    return typeof j?.chart_url === 'string' ? j.chart_url : null
+  } catch {
+    return null
+  }
 }
 
 export default function DemoPage() {
@@ -311,12 +329,9 @@ export default function DemoPage() {
   // Inline chart loader for dropdown preview
   const loadChart = async (symbol: string, pivot?: number | null) => {
     try {
-      const q = new URLSearchParams({ symbol })
-      if (typeof pivot === 'number' && Number.isFinite(pivot)) q.set('pivot', String(pivot))
-      const res = await fetch(`${API_BASE}/api/v1/chart?${q.toString()}`, { cache: 'no-store' })
-      const data = await res.json()
-      setChartUrls(prev => ({ ...prev, [symbol]: data?.chart_url || null }))
-      if (!data?.chart_url) console.warn('No chart_url from API for', symbol, data)
+      const url = await fetchChartUrl(symbol)
+      setChartUrls(prev => ({ ...prev, [symbol]: url }))
+      if (!url) console.warn('No chart_url from API for', symbol)
     } catch (e) {
       console.error('Failed to load chart:', e)
       setChartUrls(prev => ({ ...prev, [symbol]: null }))
