@@ -365,7 +365,7 @@ async def _attach_chart_urls(pattern: PatternName, rows: List[Dict[str, Any]]) -
     if not rows:
         return
     semaphore = asyncio.Semaphore(max(1, DEFAULT_CHART_CONCURRENCY))
-    async with httpx.AsyncClient(timeout=25.0) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
         async def worker(row: Dict[str, Any]) -> None:
             params = {"symbol": row["symbol"], "pattern": pattern}
             overlays = row.get("overlays") if isinstance(row.get("overlays"), dict) else None
@@ -396,7 +396,7 @@ async def _fetch_chart_url(
     params = params or {"symbol": symbol}
     url = f"{SHOTS_BASE_URL.rstrip('/')}/screenshot"
     own_client = client is None
-    session = client or httpx.AsyncClient(timeout=25.0)
+    session = client or httpx.AsyncClient(timeout=httpx.Timeout(60.0))
     overlay_applied = bool(overlays)
     meta: Dict[str, Any] = {
         "source": SHOTS_BASE_URL,
