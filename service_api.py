@@ -484,14 +484,39 @@ def candidates_by_date(
 
 # ---- Analytics endpoints ----
 
+_sector_cache: Dict[str, Any] = {}
+_sector_cache_ttl_seconds = int(os.getenv("SECTOR_CACHE_TTL", "3600"))
+
+
+def _cache_get(key: str) -> Optional[str]:
+    ent = _sector_cache.get(key)
+    if not ent:
+        return None
+    value, ts = ent
+    if (time.time() - ts) > _sector_cache_ttl_seconds:
+        _sector_cache.pop(key, None)
+        return None
+    return value
+
+
+def _cache_set(key: str, value: Optional[str]) -> None:
+    _sector_cache[key] = (value, time.time())
+
+
 @lru_cache(maxsize=2048)
 def get_sector_safe(symbol: Optional[str]) -> Optional[str]:
     if not symbol:
         return None
     try:
+        key = str(symbol).upper()
+        hit = _cache_get(key)
+        if hit is not None:
+            return hit
         import yfinance as yf
-        info = yf.Ticker(symbol).info
-        return info.get("sector")
+        info = yf.Ticker(key).info
+        val = info.get("sector")
+        _cache_set(key, val)
+        return val
     except Exception:
         return None
 
