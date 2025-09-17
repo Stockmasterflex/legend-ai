@@ -1,7 +1,9 @@
+import fs from 'fs';
 import puppeteer from 'puppeteer';
 
 export async function launchBrowser() {
-  const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+  const configuredPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  const executablePath = configuredPath && fs.existsSync(configuredPath) ? configuredPath : undefined;
   const headless = process.env.PUPPETEER_HEADLESS || 'new';
   return puppeteer.launch({
     headless,

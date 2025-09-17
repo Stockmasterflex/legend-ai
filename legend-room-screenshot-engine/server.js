@@ -93,7 +93,12 @@ app.all('/screenshot', async (req, res) => {
   } catch (err) {
     console.error('screenshot error', err);
     const fallback = `https://dummyimage.com/1200x628/0b1221/9be7ff.png&text=${encodeURIComponent(symbol)}+Chart`;
-    return res.status(200).json({ chart_url: fallback, error: 'shot-failed', overlay_counts: overlayCounts });
+    return res.status(200).json({
+      chart_url: fallback,
+      error: 'shot-failed',
+      message: err instanceof Error ? err.message : String(err),
+      overlay_counts: overlayCounts,
+    });
   }
 });
 
