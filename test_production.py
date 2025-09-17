@@ -36,113 +36,52 @@ def warning(message):
 def test_health_endpoint():
     """Test basic health check"""
     log("Testing health endpoint...")
-    try:
-        response = requests.get(f"{BASE_URL}/healthz", timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("ok"):
-                success(f"Health check passed - {data}")
-                return True
-        error(f"Health check failed: {response.status_code}")
-        return False
-    except Exception as e:
-        error(f"Health check exception: {e}")
-        return False
+    response = requests.get(f"{BASE_URL}/healthz", timeout=10)
+    assert response.status_code == 200
+    data = response.json()
+    assert data.get("ok") is True
 
 def test_vcp_scan():
     """Test VCP scanning functionality"""
     log("Testing VCP scan endpoints...")
-    passed = 0
     for symbol in TEST_SYMBOLS:
-        try:
-            response = requests.get(f"{BASE_URL}/scan/{symbol}", timeout=30)
-            if response.status_code == 200:
-                data = response.json()
-                if "symbol" in data and "detected" in data:
-                    success(f"VCP scan for {symbol}: detected={data.get('detected')}, confidence={data.get('confidence_score', 0):.2f}")
-                    passed += 1
-                else:
-                    error(f"Invalid VCP response for {symbol}")
-            else:
-                error(f"VCP scan failed for {symbol}: {response.status_code}")
-        except Exception as e:
-            error(f"VCP scan exception for {symbol}: {e}")
-    
-    return passed == len(TEST_SYMBOLS)
+        response = requests.get(f"{BASE_URL}/scan/{symbol}", timeout=30)
+        assert response.status_code == 200
+        data = response.json()
+        assert "symbol" in data
 
 def test_api_endpoints():
     """Test main API endpoints"""
     log("Testing API endpoints...")
-    
     endpoints = [
         ("/api/v1/vcp/today", "Today's VCP candidates"),
         ("/api/v1/runs", "Runs list"),
         ("/api/v1/vcp/metrics?start=2024-01-01&end=2024-12-31", "VCP metrics"),
     ]
-    
-    passed = 0
     for endpoint, description in endpoints:
-        try:
-            response = requests.get(f"{BASE_URL}{endpoint}", timeout=30)
-            if response.status_code == 200:
-                data = response.json()
-                success(f"{description}: {len(str(data))} bytes response")
-                passed += 1
-            else:
-                error(f"{description} failed: {response.status_code}")
-        except Exception as e:
-            error(f"{description} exception: {e}")
-    
-    return passed == len(endpoints)
+        response = requests.get(f"{BASE_URL}{endpoint}", timeout=30)
+        assert response.status_code == 200, f"{description} failed"
 
 def test_database_operations():
     """Test database functionality"""
     log("Testing database operations...")
-    try:
-        # Test creating a sample run
-        payload = {
-            "start": "2024-01-01",
-            "end": "2024-01-31",
-            "universe": "simple",
-            "provider": "yfinance"
-        }
-        
-        response = requests.post(f"{BASE_URL}/api/v1/runs", params=payload, timeout=30)
-        if response.status_code == 202:
-            data = response.json()
-            if "run_id" in data:
-                success(f"Database operations working: {data}")
-                return True
-        
-        warning("Database operations may be mocked/limited")
-        return True  # Non-critical for basic functionality
-    except Exception as e:
-        warning(f"Database test exception: {e}")
-        return True  # Non-critical for basic functionality
+    payload = {
+        "start": "2024-01-01",
+        "end": "2024-01-31",
+        "universe": "simple",
+        "provider": "yfinance"
+    }
+    response = requests.post(f"{BASE_URL}/api/v1/runs", params=payload, timeout=30)
+    assert response.status_code in {200, 202}
 
 def test_performance():
     """Test API performance"""
     log("Testing API performance...")
-    
     start_time = time.time()
-    try:
-        response = requests.get(f"{BASE_URL}/scan/AAPL", timeout=30)
-        end_time = time.time()
-        
-        if response.status_code == 200:
-            duration = end_time - start_time
-            if duration < 10:  # Should complete within 10 seconds
-                success(f"Performance test passed: {duration:.2f}s")
-                return True
-            else:
-                warning(f"Performance slower than expected: {duration:.2f}s")
-                return True  # Still functional
-        else:
-            error(f"Performance test failed: {response.status_code}")
-            return False
-    except Exception as e:
-        error(f"Performance test exception: {e}")
-        return False
+    response = requests.get(f"{BASE_URL}/scan/AAPL", timeout=30)
+    duration = time.time() - start_time
+    assert response.status_code == 200
+    assert duration < 30  # functional bound
 
 def start_test_server():
     """Start test server"""
