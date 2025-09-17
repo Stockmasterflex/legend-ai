@@ -8,7 +8,7 @@
 
 ## Phase 5 – Deploy & Verify
 - [x] Deploy API + frontend + shots via Makefile scripts. _Render + Vercel redeploys triggered via `make deploy` / `make deploy-shots`._
-- [ ] Run `make check`, `make top5`, and capture frontend scan results post-deploy.
+- [x] Run `make check`, `make top5`, and capture frontend scan results post-deploy. _Prod chart + scan endpoints verified (longer runtimes but returning charts and overlays); top5 reports basic wedge/cup samples._
 
 ## Phase 6 – Stretch Goals
 - [ ] Investigate pagination / streaming results for `/api/v1/scan`.
