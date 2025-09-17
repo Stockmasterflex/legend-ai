@@ -60,7 +60,7 @@ services:
     name: legend-shots
     env: node
     rootDir: legend-room-screenshot-engine
-    buildCommand: npm install
+    buildCommand: npm install && npx puppeteer browsers install chrome
     startCommand: node server.js
     plan: starter
     envVars:
@@ -75,5 +75,4 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
-
 
