@@ -70,7 +70,7 @@ app.all('/screenshot', async (req, res) => {
       }
       const fileUrl = `file://${htmlPath}?${params.toString()}`;
       await page.setViewport({ width: 1200, height: 628, deviceScaleFactor: 1 });
-      await page.goto(fileUrl, { waitUntil: 'networkidle0', timeout: 20000 });
+      await page.goto(fileUrl, { waitUntil: 'networkidle0', timeout: 45000 });
       await new Promise((r) => setTimeout(r, 2200));
       const filename = `${symbol}-${Date.now()}.png`;
       const outPath = path.join(reportsDir, filename);
