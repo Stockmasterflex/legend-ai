@@ -3,7 +3,14 @@ import puppeteer from 'puppeteer';
 
 export async function launchBrowser() {
   const configuredPath = process.env.PUPPETEER_EXECUTABLE_PATH;
-  const executablePath = configuredPath && fs.existsSync(configuredPath) ? configuredPath : undefined;
+  const fallbackPath = (() => {
+    try {
+      return puppeteer.executablePath();
+    } catch (err) {
+      return undefined;
+    }
+  })();
+  const executablePath = configuredPath && fs.existsSync(configuredPath) ? configuredPath : fallbackPath;
   const headless = process.env.PUPPETEER_HEADLESS || 'new';
   return puppeteer.launch({
     headless,
