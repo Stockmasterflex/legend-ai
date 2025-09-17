@@ -61,7 +61,7 @@ services:
     env: node
     rootDir: legend-room-screenshot-engine
     buildCommand: npm install
-    startCommand: node screenshotEngine.js
+    startCommand: node server.js
     plan: starter
     envVars:
       - key: PORT

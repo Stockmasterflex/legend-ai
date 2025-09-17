@@ -21,4 +21,4 @@ ENV PORT=3010 \
 
 EXPOSE 3010
 
-CMD ["node","screenshotEngine.js"]
+CMD ["node","server.js"]

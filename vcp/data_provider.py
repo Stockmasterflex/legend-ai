@@ -5,9 +5,13 @@ import pandas as pd
 import yfinance as yf
 
 
+_LAST_FETCH_TS: float | None = None
+
+
 class DataProvider:
     def __init__(self, source: str | None = None):
         self.source = source or os.getenv("VCP_PROVIDER", "yfinance")
+        self.min_interval = float(os.getenv("DATA_PROVIDER_MIN_INTERVAL", "0.2"))
 
     def _retry(self, fn: Callable[[], pd.DataFrame], tries: int = 3, backoff: float = 0.75) -> pd.DataFrame:
         last: Exception | None = None
@@ -21,6 +25,14 @@ class DataProvider:
         raise last  # type: ignore[misc]
 
     def fetch(self, symbol: str, period="18mo", interval="1d") -> pd.DataFrame:
+        global _LAST_FETCH_TS
+        if self.min_interval > 0:
+            now = time.time()
+            if _LAST_FETCH_TS is not None:
+                delta = now - _LAST_FETCH_TS
+                if delta < self.min_interval:
+                    time.sleep(self.min_interval - delta)
+            _LAST_FETCH_TS = time.time()
         if self.source == "yfinance":
             def _fetch():
                 return yf.download(symbol, period=period, interval=interval, auto_adjust=True, progress=False)

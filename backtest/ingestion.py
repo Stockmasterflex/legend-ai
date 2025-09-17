@@ -7,11 +7,16 @@ DATA_ROOT = Path("backtest/data/prices")
 DATA_ROOT.mkdir(parents=True, exist_ok=True)
 
 
+def _cache_path(symbol: str, interval: str) -> Path:
+    safe_interval = interval.replace("/", "-")
+    return DATA_ROOT / f"{symbol}_{safe_interval}.parquet"
+
+
 def load_prices(symbol: str, period: str = "18mo", interval: str = "1d", refresh: bool = False) -> pd.DataFrame:
     """Load prices with simple parquet caching.
     If refresh is True, or cache is stale (last Date < today), refetch and overwrite.
     """
-    cache = DATA_ROOT / f"{symbol}.parquet"
+    cache = _cache_path(symbol, interval)
     if cache.exists() and not refresh:
         try:
             df_cached = pd.read_parquet(cache)
@@ -30,3 +35,5 @@ def load_prices(symbol: str, period: str = "18mo", interval: str = "1d", refresh
     df.to_parquet(cache, index=False)
     return df
 
+
+__all__ = ["load_prices"]

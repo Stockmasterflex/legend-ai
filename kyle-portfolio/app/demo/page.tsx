@@ -48,7 +48,54 @@ type Run = {
   num_success?: number
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://legend-api.onrender.com"
+type ScanLevels = { entry: number; stop: number; targets: number[] }
+
+type ChartMeta = {
+  fallback: boolean
+  overlay_applied: boolean
+  source: string
+  overlay_counts?: { lines?: number; boxes?: number; labels?: number; arrows?: number; zones?: number }
+  error?: string
+  duration_ms?: number
+}
+
+type ScanRow = {
+  symbol: string
+  score: number
+  entry: number
+  stop: number
+  targets: number[]
+  chart_url?: string | null
+  overlays?: any
+  pattern?: string
+  meta?: any
+  key_levels?: ScanLevels
+  avg_price?: number
+  avg_volume?: number
+  atr14?: number
+  chart_meta?: ChartMeta | null
+}
+
+type PatternOption = 'vcp'|'cup_handle'|'hns'|'flag'|'wedge'|'double'
+type UniverseOption = 'sp500'|'nasdaq100'
+type TimeframeOption = '1d'|'1wk'|'60m'
+
+const PATTERN_LABELS: Record<PatternOption, string> = {
+  vcp: 'VCP',
+  cup_handle: 'Cup & Handle',
+  hns: 'Head & Shoulders',
+  flag: 'Flag / Pennant',
+  wedge: 'Wedge',
+  double: 'Double Top / Bottom',
+}
+
+const TIMEFRAME_LABELS: Record<TimeframeOption, string> = {
+  '1d': 'Daily',
+  '1wk': 'Weekly',
+  '60m': '60 min',
+}
+
+const API_BASE = (process.env.NEXT_PUBLIC_VCP_API_BASE as string) || (process.env.NEXT_PUBLIC_API_BASE as string) || "https://legend-api.onrender.com"
 const USE_REMOTE_SPARKLINE = process.env.NEXT_PUBLIC_USE_REMOTE_SPARKLINE === '1'
 
 async function fetchWithRetry<T>(url: string, tries = 3, backoffMs = 500): Promise<T> {
@@ -101,14 +148,31 @@ function generateFallbackSparkline(symbol: string, points = 60): number[] {
   return series
 }
 
-async function fetchChartUrl(symbol: string): Promise<string | null> {
+async function fetchChart(
+  symbol: string,
+  opts?: { pivot?: number|null, entry?: number|null, stop?: number|null, target?: number|null, pattern?: string, overlays?: any }
+): Promise<{ url: string | null, meta?: ChartMeta }> {
   try {
-    const r = await fetch(`${API_BASE}/api/v1/chart?symbol=${encodeURIComponent(symbol)}`)
-    if (!r.ok) return null
+    const q = new URLSearchParams({ symbol })
+    if (opts?.pivot != null) q.set('pivot', String(opts.pivot))
+    if (opts?.entry != null) q.set('entry', String(opts.entry))
+    if (opts?.stop != null) q.set('stop', String(opts.stop))
+    if (opts?.target != null) q.set('target', String(opts.target))
+    if (opts?.pattern) q.set('pattern', opts.pattern)
+    const hasOverlays = opts?.overlays && typeof opts.overlays === 'object' && Object.keys(opts.overlays).length > 0
+    const endpoint = `${API_BASE}/api/v1/chart?${q.toString()}`
+    const init: RequestInit | undefined = hasOverlays
+      ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overlays: opts?.overlays }) }
+      : undefined
+    const r = await fetch(endpoint, init)
+    if (!r.ok) return { url: null }
     const j = await r.json()
-    return typeof j?.chart_url === 'string' ? j.chart_url : null
+    return {
+      url: typeof j?.chart_url === 'string' ? j.chart_url : null,
+      meta: j?.meta as ChartMeta | undefined,
+    }
   } catch {
-    return null
+    return { url: null }
   }
 }
 
@@ -129,9 +193,43 @@ export default function DemoPage() {
   const [sentMap, setSentMap] = React.useState<Record<string, Sentiment>>({})
   // Inline chart preview cache per symbol
   const [chartUrls, setChartUrls] = React.useState<Record<string, string | null>>({})
+  const [scanPattern, setScanPattern] = React.useState<PatternOption>('vcp')
+  const [scanUniverse, setScanUniverse] = React.useState<UniverseOption>('sp500')
+  const [scanTimeframe, setScanTimeframe] = React.useState<TimeframeOption>('1d')
+  const [minPrice, setMinPrice] = React.useState<string>('20')
+  const [minVolume, setMinVolume] = React.useState<string>('750000')
+  const [maxAtrRatio, setMaxAtrRatio] = React.useState<string>('0.08')
+  const [showOverlays, setShowOverlays] = React.useState(true)
+  const [scanLoading, setScanLoading] = React.useState(false)
+  const [scanError, setScanError] = React.useState<string | null>(null)
+  const [scanResults, setScanResults] = React.useState<ScanRow[]>([])
+  const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({})
+  const [chartMeta, setChartMeta] = React.useState<Record<string, ChartMeta | undefined>>({})
 
   const start = React.useMemo(() => new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10), [])
   const end = React.useMemo(() => new Date().toISOString().slice(0, 10), [])
+  const priceFormatter = React.useMemo(() => new Intl.NumberFormat(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }), [])
+  const scoreFormatter = React.useMemo(() => new Intl.NumberFormat(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), [])
+  const volumeFormatter = React.useMemo(() => new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }), [])
+
+  const formatPrice = React.useCallback((value?: number | null) => {
+    if (value == null || Number.isNaN(value)) return '—'
+    return `$${priceFormatter.format(value)}`
+  }, [priceFormatter])
+
+  const formatTargets = React.useCallback((targets?: number[]) => {
+    if (!Array.isArray(targets) || targets.length === 0) return '—'
+    return targets.map(t => `$${priceFormatter.format(t)}`).join(', ')
+  }, [priceFormatter])
+
+  const copyText = React.useCallback(async (label: string, value?: string | null) => {
+    if (!value) return
+    try {
+      await navigator.clipboard.writeText(value)
+    } catch (err) {
+      console.error('clipboard copy failed', label, err)
+    }
+  }, [])
 
   const load = React.useCallback(async () => {
     setLoading(true)
@@ -215,6 +313,106 @@ export default function DemoPage() {
   React.useEffect(() => {
     load()
   }, [load])
+
+  const runScan = React.useCallback(async () => {
+    setScanLoading(true)
+    setScanError(null)
+    try {
+      const minPriceVal = Number(minPrice || 0) || 0
+      const minVolumeVal = Number(minVolume || 0) || 0
+      const maxAtrVal = maxAtrRatio.trim() ? Number(maxAtrRatio) : 0
+      const qs = new URLSearchParams({
+        pattern: scanPattern,
+        universe: scanUniverse,
+        limit: '100',
+        timeframe: scanTimeframe,
+        min_price: String(minPriceVal),
+        min_volume: String(minVolumeVal),
+      })
+      if (maxAtrVal > 0) {
+        qs.set('max_atr_ratio', String(maxAtrVal))
+      }
+      const resp = await fetchWithRetry<{ results: ScanRow[] }>(`${API_BASE}/api/v1/scan?${qs.toString()}`, 2, 600)
+      const rows = Array.isArray(resp?.results) ? resp.results : []
+      const sanitized = rows.map((row) => ({
+        ...row,
+        pattern: row.pattern || scanPattern,
+        score: Number(row.score ?? 0),
+        entry: Number(row.entry ?? row?.key_levels?.entry ?? 0),
+        stop: Number(row.stop ?? row?.key_levels?.stop ?? 0),
+        targets: Array.isArray(row.targets) ? row.targets.map((t) => Number(t)) : Array.isArray(row.key_levels?.targets) ? row.key_levels!.targets.map(Number) : [],
+        chart_meta: row.chart_meta ?? null,
+      }))
+      setScanResults(sanitized)
+      setExpandedRows({})
+      const map: Record<string, string | null> = {}
+      const metaMap: Record<string, ChartMeta | undefined> = {}
+      sanitized.forEach(r => {
+        if (typeof r.chart_url === 'string') map[r.symbol] = r.chart_url
+        if (r.chart_meta) metaMap[r.symbol] = r.chart_meta
+      })
+      if (Object.keys(map).length) {
+        setChartUrls(prev => ({ ...prev, ...map }))
+      }
+      if (Object.keys(metaMap).length) {
+        setChartMeta(prev => ({ ...prev, ...metaMap }))
+      }
+      if (!sanitized.length) {
+        setScanError('No matches found')
+      }
+    } catch (e: any) {
+      setScanError(e?.message || 'Scan failed')
+      setExpandedRows({})
+      setScanResults([])
+    } finally {
+      setScanLoading(false)
+    }
+  }, [scanPattern, scanUniverse, scanTimeframe, minPrice, minVolume, maxAtrRatio])
+
+  const ensureScanChart = async (row: ScanRow): Promise<string | null> => {
+    const existingMeta = chartMeta[row.symbol]
+    if (chartUrls[row.symbol] && existingMeta && (!!existingMeta.overlay_applied) === showOverlays) {
+      return chartUrls[row.symbol] ?? null
+    }
+    try {
+      const primaryTarget = Array.isArray(row.targets) && row.targets.length ? row.targets[0] : null
+      const { url, meta } = await fetchChart(row.symbol, {
+        entry: row.entry ?? row.key_levels?.entry ?? null,
+        stop: row.stop ?? row.key_levels?.stop ?? null,
+        target: primaryTarget ?? row.key_levels?.targets?.[0] ?? null,
+        pattern: row.pattern || scanPattern,
+        overlays: showOverlays ? row.overlays : undefined,
+      })
+      setChartUrls(prev => ({ ...prev, [row.symbol]: url }))
+      if (meta) {
+        setChartMeta(prev => ({ ...prev, [row.symbol]: meta }))
+      }
+      return url ?? null
+    } catch (err) {
+      console.error('chart fetch failed', err)
+      setChartUrls(prev => ({ ...prev, [row.symbol]: null }))
+      setChartMeta(prev => ({ ...prev, [row.symbol]: { fallback: true, overlay_applied: showOverlays, source: 'error', error: String(err) } }))
+      return null
+    }
+  }
+
+  const toggleScanRow = async (row: ScanRow) => {
+    const willExpand = !expandedRows[row.symbol]
+    setExpandedRows(prev => ({ ...prev, [row.symbol]: willExpand }))
+    if (willExpand) {
+      await ensureScanChart(row)
+    }
+  }
+
+  React.useEffect(() => {
+    const activeSymbols = Object.entries(expandedRows).filter(([, open]) => open).map(([sym]) => sym)
+    if (!activeSymbols.length) return
+    activeSymbols.forEach(sym => {
+      const row = scanResults.find(r => r.symbol === sym)
+      if (row) void ensureScanChart(row)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showOverlays])
 
   const rescan = async () => {
     setLoading(true)
@@ -326,11 +524,18 @@ export default function DemoPage() {
     }
   }
 
-  // Inline chart loader for dropdown preview
-  const loadChart = async (symbol: string, pivot?: number | null) => {
+// Inline chart loader for dropdown preview
+  const loadChart = async (symbol: string, row?: Partial<Candidate & { entry?: number, stop?: number, target?: number, pattern?: string }>) => {
     try {
-      const url = await fetchChartUrl(symbol)
+      const { url, meta } = await fetchChart(symbol, {
+        pivot: row?.pivot ?? null,
+        entry: (row as any)?.entry ?? null,
+        stop: (row as any)?.stop ?? null,
+        target: (row as any)?.target ?? null,
+        pattern: (row as any)?.pattern ?? undefined,
+      })
       setChartUrls(prev => ({ ...prev, [symbol]: url }))
+      if (meta) setChartMeta(prev => ({ ...prev, [symbol]: meta }))
       if (!url) console.warn('No chart_url from API for', symbol)
     } catch (e) {
       console.error('Failed to load chart:', e)
@@ -370,6 +575,204 @@ export default function DemoPage() {
         </div>
       </div>
 
+      <div className="card p-4 space-y-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="text-xs muted">Universe</label>
+            <select className="select select-sm" value={scanUniverse} onChange={(e) => setScanUniverse(e.target.value as UniverseOption)}>
+              <option value="sp500">S&amp;P 500</option>
+              <option value="nasdaq100">NASDAQ-100</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs muted">Pattern</label>
+            <select className="select select-sm" value={scanPattern} onChange={(e) => setScanPattern(e.target.value as PatternOption)}>
+              {Object.entries(PATTERN_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs muted">Timeframe</label>
+            <select className="select select-sm" value={scanTimeframe} onChange={(e) => setScanTimeframe(e.target.value as TimeframeOption)}>
+              {Object.entries(TIMEFRAME_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs muted">Min Price ($)</label>
+            <input className="input input-sm w-24" type="number" min={0} value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs muted">Min Volume (30d avg)</label>
+            <input className="input input-sm w-28" type="number" min={0} value={minVolume} onChange={(e) => setMinVolume(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs muted">Max ATR / Price</label>
+            <input className="input input-sm w-24" type="number" step="0.01" min={0} value={maxAtrRatio} onChange={(e) => setMaxAtrRatio(e.target.value)} />
+          </div>
+          <label className="flex items-center gap-2 text-xs">
+            <input type="checkbox" className="checkbox checkbox-xs" checked={showOverlays} onChange={(e) => setShowOverlays(e.target.checked)} />
+            Overlays
+          </label>
+          <button className="btn btn-primary" onClick={runScan} disabled={scanLoading}>
+            {scanLoading ? <span className="flex items-center gap-2"><span className="loading loading-spinner loading-xs" />Scanning…</span> : 'Scan'}
+          </button>
+          {scanResults.length > 0 && (
+            <span className="text-xs text-neutral-400">{scanResults.length} matches</span>
+          )}
+        </div>
+        {scanError && (
+          <div className={`text-sm ${scanError?.startsWith?.('No matches') ? 'text-neutral-400' : (scanResults.length ? 'text-amber-400' : 'text-red-400')}`}>
+            {scanError}
+          </div>
+        )}
+        {scanResults.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="table table-sm w-full">
+              <thead>
+                <tr>
+                  <th>Ticker</th>
+                  <th>Pattern</th>
+                  <th>Score</th>
+                  <th>Key Levels</th>
+                  <th>Avg Price</th>
+                  <th>Avg Volume</th>
+                  <th>ATR</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scanResults.map((row) => {
+                  const isExpanded = !!expandedRows[row.symbol]
+                  const levels = row.key_levels || { entry: row.entry, stop: row.stop, targets: row.targets }
+                  const evidence: string[] = Array.isArray(row.meta?.evidence) ? row.meta.evidence : []
+                  const meta = chartMeta[row.symbol]
+                  const chartApiParams = new URLSearchParams({ symbol: row.symbol })
+                  if (levels?.entry) chartApiParams.set('entry', String(levels.entry))
+                  if (levels?.stop) chartApiParams.set('stop', String(levels.stop))
+                  if (levels?.targets && levels.targets.length) chartApiParams.set('target', String(levels.targets[0]))
+                  if (row.pattern) chartApiParams.set('pattern', row.pattern)
+                  const chartApi = `${API_BASE}/api/v1/chart?${chartApiParams.toString()}`
+                  return (
+                    <React.Fragment key={row.symbol}>
+                      <tr className="cursor-pointer hover:bg-base-200" onClick={() => toggleScanRow(row)}>
+                        <td className="font-semibold tracking-wide">
+                          <div className="flex items-center gap-2">
+                            <span>{row.symbol}</span>
+                            {meta?.fallback && <span className="badge badge-xs">fallback</span>}
+                          </div>
+                        </td>
+                        <td>{PATTERN_LABELS[row.pattern as PatternOption] ?? (row.pattern?.toUpperCase() || '—')}</td>
+                        <td>{Number.isFinite(row.score) ? scoreFormatter.format(row.score) : '—'}</td>
+                        <td>
+                          <div className="text-xs">
+                            <div>Entry: {formatPrice(levels?.entry)}</div>
+                            <div>Stop: {formatPrice(levels?.stop)}</div>
+                            <div>Targets: {formatTargets(levels?.targets)}</div>
+                          </div>
+                        </td>
+                        <td>{formatPrice(row.avg_price)}</td>
+                        <td>{row.avg_volume ? volumeFormatter.format(row.avg_volume) : '—'}</td>
+                        <td>{row.atr14 ? `$${priceFormatter.format(row.atr14)}` : '—'}</td>
+                        <td className="text-right space-x-2">
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleScanRow(row)
+                            }}
+                          >
+                            {isExpanded ? 'Hide' : 'Details'}
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              void ensureScanChart(row).then((url) => {
+                                const next = url ?? chartUrls[row.symbol]
+                                if (next) window.open(next, '_blank', 'noopener')
+                              })
+                            }}
+                          >
+                            View
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              void ensureScanChart(row).then((url) => {
+                                const next = url ?? chartUrls[row.symbol]
+                                void copyText('chart-url', next || '')
+                              })
+                            }}
+                          >
+                            Copy Chart
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              void copyText('chart-api', chartApi)
+                            }}
+                          >
+                            Copy API
+                          </button>
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={8} className="space-y-3">
+                            {chartUrls[row.symbol] === undefined && (
+                              <div className="py-3 text-sm text-neutral-400">Loading chart…</div>
+                            )}
+                            {chartUrls[row.symbol] === null && (
+                              <div className="py-3 text-sm text-red-400">Chart unavailable for {row.symbol}</div>
+                            )}
+                            {chartUrls[row.symbol] && (
+                              <img src={chartUrls[row.symbol] as string} alt={`${row.symbol} chart`} className="w-full rounded-md border border-base-200" />
+                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                              <div className="space-y-1">
+                                <h4 className="font-semibold text-sm">Evidence</h4>
+                                {evidence.length ? evidence.map(ev => (
+                                  <div key={ev} className="badge badge-outline badge-xs mr-1">{ev}</div>
+                                )) : <div className="text-neutral-400">No evidence captured</div>}
+                              </div>
+                              <div className="space-y-1">
+                                <h4 className="font-semibold text-sm">Chart Meta</h4>
+                                <div>Source: {meta?.source || 'n/a'}</div>
+                                <div>Overlay: {meta?.overlay_applied ? 'on' : 'off'}</div>
+                                {meta?.duration_ms != null && <div>Render: {meta.duration_ms} ms</div>}
+                                {meta?.overlay_counts && (
+                                  <div>Shapes: {Object.entries(meta.overlay_counts).filter(([, count]) => count).map(([key, count]) => `${key}:${count}`).join(' ') || '—'}</div>
+                                )}
+                                {meta?.error && <div className="text-amber-400">{meta.error}</div>}
+                              </div>
+                              <div className="space-y-1">
+                                <h4 className="font-semibold text-sm">Analytics</h4>
+                                <div>Avg Price: {formatPrice(row.avg_price)}</div>
+                                <div>Avg Volume: {row.avg_volume ? volumeFormatter.format(row.avg_volume) : '—'}</div>
+                                <div>ATR14: {row.atr14 ? `$${priceFormatter.format(row.atr14)}` : '—'}</div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          !scanLoading && !scanError && (
+            <p className="text-sm text-neutral-400">Scan the universe to surface fresh pattern candidates.</p>
+          )
+        )}
+      </div>
+
       {/* Create Run */}
       <div className="card p-4 flex flex-wrap items-end gap-3">
         <div>
@@ -395,6 +798,9 @@ export default function DemoPage() {
         </div>
         <button className="btn" onClick={createRun} disabled={creating}>{creating ? 'Enqueuing…' : 'Create Run'}</button>
       </div>
+
+      {/* Live Scanner */}
+      <LiveScanner />
 
       {/* KPI header */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -475,8 +881,8 @@ export default function DemoPage() {
                         className="select select-sm"
                         defaultValue=""
                         onChange={(e) => {
-                          if (e.target.value === 'show') {
-                            loadChart(r.symbol, r.pivot ?? undefined)
+if (e.target.value === 'show') {
+                            loadChart(r as any)
                           } else if (e.target.value === 'hide') {
                             setChartUrls(prev => ({ ...prev, [r.symbol]: null }))
                           }
@@ -559,4 +965,112 @@ function fmtPct(x?: number) {
 function fmtNum(x?: number) {
   if (typeof x !== 'number' || Number.isNaN(x)) return '—'
   return x >= 100 ? x.toFixed(2) : x.toFixed(3)
+}
+
+function LiveScanner() {
+  const [universe, setUniverse] = React.useState<UniverseOption>('sp500')
+  const [pattern, setPattern] = React.useState<PatternOption>('vcp')
+  const [timeframe, setTimeframe] = React.useState<TimeframeOption>('1d')
+  const [limit, setLimit] = React.useState(50)
+  const [rows, setRows] = React.useState<ScanRow[]>([])
+  const [loading, setLoading] = React.useState(false)
+  const [err, setErr] = React.useState<string | undefined>()
+  const [charts, setCharts] = React.useState<Record<string, string | null>>({})
+  const [overlay, setOverlay] = React.useState(true)
+
+  const scan = async () => {
+    setLoading(true); setErr(undefined)
+    try {
+      const qs = new URLSearchParams({ pattern, universe, limit: String(limit), timeframe })
+      const resp = await fetchWithRetry<{ results: ScanRow[] }>(`${API_BASE}/api/v1/scan?${qs.toString()}`, 2, 600)
+      setRows(Array.isArray(resp?.results) ? resp.results : [])
+    } catch (e: any) {
+      setErr(e?.message || 'scan failed')
+    } finally { setLoading(false) }
+  }
+
+  const loadChart = async (row: ScanRow) => {
+    const { url } = await fetchChart(row.symbol, {
+      entry: row.entry ?? row.key_levels?.entry ?? null,
+      stop: row.stop ?? row.key_levels?.stop ?? null,
+      target: row.targets?.[0] ?? row.key_levels?.targets?.[0] ?? null,
+      pattern,
+      overlays: overlay ? row.overlays : undefined,
+    })
+    setCharts(prev => ({ ...prev, [row.symbol]: url }))
+  }
+
+  return (
+    <div className="card p-4 space-y-3">
+      <div className="flex items-end gap-3 flex-wrap">
+        <div>
+          <label className="text-xs muted">Universe</label>
+          <select className="select select-sm" value={universe} onChange={e=>setUniverse(e.target.value as UniverseOption)}>
+            <option value="sp500">S&amp;P 500</option>
+            <option value="nasdaq100">NASDAQ-100</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs muted">Pattern</label>
+          <select className="select select-sm" value={pattern} onChange={e=>setPattern(e.target.value as PatternOption)}>
+            {Object.entries(PATTERN_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs muted">Timeframe</label>
+          <select className="select select-sm" value={timeframe} onChange={e=>setTimeframe(e.target.value as TimeframeOption)}>
+            {Object.entries(TIMEFRAME_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs muted">Limit</label>
+          <input className="input input-sm w-24" type="number" value={limit} min={10} max={500} onChange={e=>setLimit(parseInt(e.target.value || '50', 10) || 50)} />
+        </div>
+        <label className="flex items-center gap-2 text-xs">
+          <input type="checkbox" className="checkbox checkbox-xs" checked={overlay} onChange={(e)=>setOverlay(e.target.checked)} />
+          Overlays
+        </label>
+        <button className="btn btn-primary" onClick={scan} disabled={loading}>
+          {loading ? <span className="flex items-center gap-2"><span className="loading loading-spinner loading-xs" />Scanning…</span> : 'Scan'}
+        </button>
+        {!!err && <div className="text-xs text-red-300">{err}</div>}
+      </div>
+      {!!rows?.length && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left muted">
+                <th className="px-2 py-2">Symbol</th>
+                <th className="px-2 py-2">Score</th>
+                <th className="px-2 py-2">Entry / Stop</th>
+                <th className="px-2 py-2">Targets</th>
+                <th className="px-2 py-2">Chart</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.symbol} className="border-t border-white/5">
+                  <td className="px-2 py-2 font-medium">{r.symbol}</td>
+                  <td className="px-2 py-2">{Number.isFinite(r.score) ? r.score.toFixed(1) : '—'}</td>
+                  <td className="px-2 py-2">
+                    <div>Entry: {r.entry ? r.entry.toFixed(2) : '—'}</div>
+                    <div>Stop: {r.stop ? r.stop.toFixed(2) : '—'}</div>
+                  </td>
+                  <td className="px-2 py-2">{r.targets?.length ? r.targets.map(t => t.toFixed(2)).join(', ') : '—'}</td>
+                  <td className="px-2 py-2 space-x-2">
+                    <button className="btn btn-ghost btn-xs" onClick={()=>loadChart(r)}>Preview</button>
+                    {charts[r.symbol] && <a className="btn btn-ghost btn-xs" href={charts[r.symbol] as string} target="_blank" rel="noreferrer">Open</a>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
 }

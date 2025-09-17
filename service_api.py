@@ -1,26 +1,38 @@
-from fastapi import FastAPI, Depends, Query, Request
-from typing import Dict, Any, Optional
-from pathlib import Path
-import pandas as pd
-from vcp.vcp_detector import VCPDetector
-from settings import load_vcp_settings, is_mock_enabled
-from backtest.run_backtest import scan_once
-from backtest.ingestion import load_prices
-from backtest.simulate import summarize_range, REPORT_ROOT
-from service_db import Base as RunsBase, engine as runs_engine, get_db as get_runs_db, BacktestRun
-from sqlalchemy.orm import Session
+import asyncio
+import json
+import logging
 import os
 import time
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
-from starlette.middleware.cors import CORSMiddleware
-from uuid import uuid4
-from pythonjsonlogger import jsonlogger
-import logging
-import httpx
-from functools import lru_cache
-from fastapi import APIRouter
+from concurrent.futures import ThreadPoolExecutor
+import threading
 from datetime import datetime, date
-from typing import List
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import uuid4
+
+import httpx
+import pandas as pd
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from pythonjsonlogger import jsonlogger
+from sqlalchemy.orm import Session
+from starlette.middleware.cors import CORSMiddleware
+
+from backtest.ingestion import load_prices
+from backtest.run_backtest import scan_once
+from backtest.simulate import REPORT_ROOT, summarize_range
+from functools import lru_cache
+
+from service_db import BacktestRun, Base as RunsBase, engine as runs_engine, get_db as get_runs_db
+from service_universe import UniverseName, get_universe
+from settings import is_mock_enabled, load_vcp_settings
+from signals.patterns import PatternName, PatternResult, detect as detect_pattern
+from vcp.vcp_detector import VCPDetector
+
+try:
+    import redis
+except ImportError:  # pragma: no cover - optional dependency
+    redis = None  # type: ignore[assignment]
 
 app = FastAPI(title="Legend AI — VCP API", version="0.1.0")
 
@@ -78,6 +90,12 @@ async def add_request_id_logging(request: Request, call_next):
 # Prometheus
 REQUESTS = Counter("legend_requests_total", "HTTP requests", ["path", "method", "status"])
 LATENCY = Histogram("legend_request_latency_ms", "Latency", buckets=(5, 10, 25, 50, 100, 250, 500, 1000, 2000))
+CHART_REQUESTS = Counter("legend_chart_requests_total", "Chart proxy requests", ["fallback"])
+CHART_LATENCY = Histogram(
+    "legend_chart_latency_ms",
+    "Latency for shots rendering",
+    buckets=(50, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000),
+)
 
 @app.get("/metrics")
 def metrics(request: Request):
@@ -143,6 +161,349 @@ def create_run_demo(payload: dict):
 app.include_router(demo_router, prefix="/api", tags=["demo"])
 
 SHOTS_BASE_URL = os.getenv("SHOTS_BASE_URL", "https://legend-shots.onrender.com")
+DUMMY_CHART_URL_TMPL = "https://dummyimage.com/1200x628/0b1221/9be7ff.png&text={symbol}+Chart"
+
+DEFAULT_SCAN_PERIOD = os.getenv("SCAN_DEFAULT_PERIOD", "18mo")
+DEFAULT_SCAN_WORKERS = int(os.getenv("SCAN_WORKERS", str(max(4, min(12, (os.cpu_count() or 4))))))
+DEFAULT_CHART_CONCURRENCY = int(os.getenv("SCAN_CHART_CONCURRENCY", "4"))
+SYMBOL_SCAN_LIMIT = int(os.getenv("SCAN_SYMBOL_LIMIT", "0"))
+SCAN_CACHE_TTL = int(os.getenv("SCAN_CACHE_TTL", "240"))
+MIN_PRICE_DEFAULT = float(os.getenv("SCAN_MIN_PRICE", "5"))
+MIN_VOLUME_DEFAULT = float(os.getenv("SCAN_MIN_VOLUME", "500000"))
+MAX_ATR_RATIO_DEFAULT = float(os.getenv("SCAN_MAX_ATR_RATIO", "0.08"))
+
+_timeframe_defaults = {
+    "1d": {"period": os.getenv("SCAN_PERIOD_1D", "18mo"), "interval": "1d", "min_bars": 180},
+    "1wk": {"period": os.getenv("SCAN_PERIOD_1W", "5y"), "interval": "1wk", "min_bars": 160},
+    "60m": {"period": os.getenv("SCAN_PERIOD_60M", "60d"), "interval": "60m", "min_bars": 240},
+}
+
+_redis_client = None
+if os.getenv("REDIS_URL") and redis is not None:  # pragma: no branch - simple init
+    try:
+        _redis_client = redis.Redis.from_url(os.getenv("REDIS_URL"), decode_responses=True)
+    except Exception as exc:  # pragma: no cover - redis optional
+        logger.warning("redis init failed", extra={"error": str(exc)})
+        _redis_client = None
+
+_local_scan_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+_cache_lock = threading.Lock()
+
+_PATTERN_ALIASES: Dict[str, PatternName] = {
+    "vcp": "vcp",
+    "cup_handle": "cup_handle",
+    "cup-handle": "cup_handle",
+    "cup": "cup_handle",
+    "cuphandle": "cup_handle",
+    "hns": "hns",
+    "head_and_shoulders": "hns",
+    "head-shoulders": "hns",
+    "headshoulders": "hns",
+    "flag": "flag",
+    "pennant": "flag",
+    "flag_pennant": "flag",
+    "wedge": "wedge",
+    "double": "double",
+    "double_top": "double",
+    "double_bottom": "double",
+}
+
+
+def _canonical_pattern(name: str) -> PatternName:
+    key = (name or "").strip().lower().replace(" ", "_").replace("-", "_")
+    if key not in _PATTERN_ALIASES:
+        raise HTTPException(status_code=400, detail=f"Unsupported pattern '{name}'")
+    return _PATTERN_ALIASES[key]
+
+
+def _canonical_universe(name: str) -> UniverseName:
+    key = (name or "").strip().lower()
+    if key not in {"sp500", "nasdaq100"}:
+        raise HTTPException(status_code=400, detail=f"Unsupported universe '{name}'")
+    return key  # type: ignore[return-value]
+
+
+def _cache_key(pattern: PatternName, symbol: str, timeframe: str, min_price: float, min_volume: float) -> str:
+    return f"scan:{pattern}:{timeframe}:{symbol.upper()}:{int(min_price)}:{int(min_volume)}"
+
+
+def _cache_get(key: str) -> Optional[Dict[str, Any]]:
+    if _redis_client is not None:
+        try:
+            payload = _redis_client.get(key)
+            if payload:
+                return json.loads(payload)
+        except Exception as exc:  # pragma: no cover - redis optional
+            logger.debug("scan cache redis get failed", extra={"error": str(exc)})
+    else:
+        with _cache_lock:
+            cached = _local_scan_cache.get(key)
+        if cached:
+            expires_at, data = cached
+            if expires_at > time.time():
+                return json.loads(json.dumps(data))
+            with _cache_lock:
+                _local_scan_cache.pop(key, None)
+    return None
+
+
+def _cache_set(key: str, value: Dict[str, Any]) -> None:
+    expires_at = time.time() + SCAN_CACHE_TTL
+    if _redis_client is not None:
+        try:
+            _redis_client.setex(key, SCAN_CACHE_TTL, json.dumps(value))
+            return
+        except Exception as exc:  # pragma: no cover - redis optional
+            logger.debug("scan cache redis set failed", extra={"error": str(exc)})
+    with _cache_lock:
+        _local_scan_cache[key] = (expires_at, json.loads(json.dumps(value)))
+
+
+def _resolve_timeframe_config(timeframe: str) -> Dict[str, Any]:
+    tf = timeframe.lower()
+    if tf not in _timeframe_defaults:
+        raise HTTPException(status_code=400, detail=f"Unsupported timeframe '{timeframe}'")
+    return _timeframe_defaults[tf]
+
+
+def _scan_symbol(
+    pattern: PatternName,
+    symbol: str,
+    *,
+    timeframe: str,
+    min_price: float,
+    min_volume: float,
+    max_atr_ratio: float,
+) -> Optional[Dict[str, Any]]:
+    cache_key = _cache_key(pattern, symbol, timeframe, min_price, min_volume)
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        atr_cached = cached.get("atr14")
+        if max_atr_ratio and atr_cached and cached.get("entry"):
+            if atr_cached / max(float(cached["entry"]), 1e-6) > max_atr_ratio:
+                return None
+        return json.loads(json.dumps(cached))
+    cfg = _resolve_timeframe_config(timeframe)
+    try:
+        df = load_prices(symbol, period=cfg.get("period", DEFAULT_SCAN_PERIOD), interval=cfg.get("interval", "1d"), refresh=False)
+    except Exception as exc:
+        logger.debug("scan load failed", extra={"symbol": symbol, "pattern": pattern, "error": str(exc)})
+        return None
+    if df is None or len(df) < int(cfg.get("min_bars", 120)):
+        return None
+    try:
+        prices = df["Close"].astype(float)
+        avg_price = float(prices.tail(30).mean()) if len(prices) >= 30 else float(prices.mean())
+    except Exception:
+        avg_price = 0.0
+    if avg_price < min_price:
+        return None
+    try:
+        volumes = df.get("Volume")
+        avg_volume = float(volumes.tail(30).mean()) if volumes is not None and len(volumes) >= 30 else float(volumes.mean()) if volumes is not None else 0.0
+    except Exception:
+        avg_volume = 0.0
+    if avg_volume < min_volume:
+        return None
+    try:
+        outcome = detect_pattern(pattern, df, symbol, timeframe=timeframe)
+    except Exception as exc:
+        logger.debug("pattern detect failed", extra={"symbol": symbol, "pattern": pattern, "error": str(exc)})
+        return None
+    if not outcome:
+        return None
+    score = float(outcome.get("score", 0.0))
+    entry = outcome.get("entry")
+    stop = outcome.get("stop")
+    targets = outcome.get("targets") or []
+    overlays = outcome.get("overlays")
+    if entry is None or stop is None or not targets:
+        return None
+    try:
+        entry_val = float(entry)
+        stop_val = float(stop)
+        targets_val = [float(t) for t in targets][:3]
+    except Exception:
+        return None
+    atr_val = None
+    for key in ("atr14", "atr"):
+        if key in outcome and outcome[key] is not None:
+            atr_val = float(outcome[key])
+            break
+    if atr_val and entry_val:
+        atr_ratio = atr_val / max(entry_val, 1e-6)
+        if max_atr_ratio and atr_ratio > max_atr_ratio:
+            return None
+    key_levels = outcome.get("key_levels") if isinstance(outcome.get("key_levels"), dict) else None
+    row = {
+        "symbol": symbol,
+        "score": round(score, 2),
+        "entry": entry_val,
+        "stop": stop_val,
+        "targets": targets_val,
+        "pattern": pattern,
+        "overlays": overlays,
+        "meta": {k: v for k, v in outcome.items() if k not in {"score", "entry", "stop", "targets", "overlays", "pattern", "key_levels"}},
+        "avg_price": avg_price,
+        "avg_volume": avg_volume,
+    }
+    if key_levels:
+        row["key_levels"] = key_levels
+    if atr_val is not None:
+        row["atr14"] = round(float(atr_val), 4)
+    _cache_set(cache_key, row)
+    return json.loads(json.dumps(row))
+
+
+def _bounded_symbols(symbols: List[str]) -> List[str]:
+    if SYMBOL_SCAN_LIMIT > 0:
+        return symbols[: SYMBOL_SCAN_LIMIT]
+    return symbols
+
+
+async def _attach_chart_urls(pattern: PatternName, rows: List[Dict[str, Any]]) -> None:
+    if not rows:
+        return
+    semaphore = asyncio.Semaphore(max(1, DEFAULT_CHART_CONCURRENCY))
+    async with httpx.AsyncClient(timeout=25.0) as client:
+        async def worker(row: Dict[str, Any]) -> None:
+            params = {"symbol": row["symbol"], "pattern": pattern}
+            overlays = row.get("overlays") if isinstance(row.get("overlays"), dict) else None
+            price_levels = overlays.get("priceLevels") if overlays else None
+            if isinstance(price_levels, dict):
+                for key in ("entry", "stop"):
+                    val = price_levels.get(key)
+                    if val is not None:
+                        params[key] = str(val)
+                targets = price_levels.get("targets")
+                if isinstance(targets, list) and targets:
+                    params["target"] = str(targets[0])
+
+            async with semaphore:
+                row["chart_url"] = await _fetch_chart_url(row["symbol"], params=params, overlays=overlays, client=client)
+
+        await asyncio.gather(*(worker(r) for r in rows))
+
+
+async def _fetch_chart_url(
+    symbol: str,
+    params: Optional[Dict[str, Any]] = None,
+    overlays: Optional[Dict[str, Any]] = None,
+    client: Optional[httpx.AsyncClient] = None,
+    *,
+    include_meta: bool = False,
+) -> Any:
+    params = params or {"symbol": symbol}
+    url = f"{SHOTS_BASE_URL.rstrip('/')}/screenshot"
+    own_client = client is None
+    session = client or httpx.AsyncClient(timeout=25.0)
+    overlay_applied = bool(overlays)
+    meta: Dict[str, Any] = {
+        "source": SHOTS_BASE_URL,
+        "overlay_applied": overlay_applied,
+        "fallback": False,
+    }
+    start_ts = time.time()
+    try:
+        if overlays:
+            response = await session.post(url, params=params, json={"overlays": overlays})
+        else:
+            response = await session.get(url, params=params)
+        if response.status_code == 200:
+            try:
+                data = response.json()
+            except Exception:
+                data = {}
+            chart_url = data.get("chart_url") or data.get("url")
+            if isinstance(chart_url, str) and chart_url:
+                meta["fallback"] = bool(data.get("dry_run") or data.get("error"))
+                if data.get("error"):
+                    meta["error"] = str(data.get("error"))
+                if data.get("overlay_counts"):
+                    meta.setdefault("overlay_counts", data.get("overlay_counts"))
+                duration_ms = (time.time() - start_ts) * 1000.0
+                meta["duration_ms"] = round(duration_ms, 2)
+                CHART_LATENCY.observe(duration_ms)
+                CHART_REQUESTS.labels(fallback=str(meta["fallback"]).lower()).inc()
+                if include_meta:
+                    return chart_url, meta
+                return chart_url
+            meta["error"] = f"invalid response from shots status={response.status_code}"
+        else:
+            meta["error"] = f"shots status {response.status_code}"
+    except Exception as exc:
+        logger.debug("chart proxy error", extra={"symbol": symbol, "error": str(exc)})
+        meta["error"] = str(exc)
+    finally:
+        if own_client:
+            await session.aclose()
+    dummy = DUMMY_CHART_URL_TMPL.format(symbol=symbol.upper())
+    meta.update({
+        "source": "dummy",
+        "fallback": True,
+        "overlay_applied": overlay_applied,
+    })
+    duration_ms = (time.time() - start_ts) * 1000.0
+    meta["duration_ms"] = round(duration_ms, 2)
+    CHART_LATENCY.observe(duration_ms)
+    CHART_REQUESTS.labels(fallback="true").inc()
+    if include_meta:
+        return dummy, meta
+    return dummy
+
+
+async def _run_pattern_scan(
+    pattern: PatternName,
+    universe: UniverseName,
+    limit: int,
+    *,
+    timeframe: str,
+    min_price: float,
+    min_volume: float,
+    max_atr_ratio: float,
+) -> Dict[str, Any]:
+    symbols = _bounded_symbols(get_universe(universe))
+    workers = max(2, min(DEFAULT_SCAN_WORKERS, len(symbols)))
+    results: List[Dict[str, Any]] = []
+    if not symbols:
+        return {"pattern": pattern, "universe": universe, "count": 0, "results": []}
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [
+            executor.submit(
+                _scan_symbol,
+                pattern,
+                sym,
+                timeframe=timeframe,
+                min_price=min_price,
+                min_volume=min_volume,
+                max_atr_ratio=max_atr_ratio,
+            )
+            for sym in symbols
+        ]
+        for future in futures:
+            try:
+                row = future.result()
+            except Exception as exc:
+                logger.debug("scan worker crashed", extra={"pattern": pattern, "error": str(exc)})
+                continue
+            if row:
+                results.append(row)
+    results = [r for r in results if r.get("score")]
+    results.sort(key=lambda r: r.get("score", 0.0), reverse=True)
+    count = len(results)
+    trimmed = results[:limit]
+    await _attach_chart_urls(pattern, trimmed)
+    for row in trimmed:
+        row["targets"] = [round(float(t), 4) for t in row.get("targets", [])]
+        row["score"] = round(float(row.get("score", 0.0)), 2)
+        row["entry"] = round(float(row.get("entry", 0.0)), 4)
+        row["stop"] = round(float(row.get("stop", 0.0)), 4)
+    return {
+        "pattern": pattern,
+        "universe": universe,
+        "count": count,
+        "results": trimmed,
+    }
 
 # -------- Utilities: fetch OHLCV via yfinance (cached) --------
 @lru_cache(maxsize=256)
@@ -555,17 +916,105 @@ def analytics_overview(
     }
 
 
-@app.get("/api/v1/chart")
-async def chart(symbol: str = Query(..., min_length=1), pivot: Optional[str] = None) -> Dict[str, Any]:
-    try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.get(f"{SHOTS_BASE_URL}/screenshot", params={"symbol": symbol})
-        if response.status_code == 200:
-            data = response.json()
-            url = data.get("chart_url")
-            if isinstance(url, str) and url:
-                return {"chart_url": url}
-    except Exception:
-        pass
+@app.get("/api/v1/scan")
+async def scan_v1(
+    pattern: str = Query(..., description="vcp|cup_handle|hns|flag|wedge|double"),
+    universe: str = Query("sp500", description="sp500|nasdaq100"),
+    limit: int = Query(100, ge=1, le=200),
+    timeframe: str = Query("1d", description="1d|1wk|60m"),
+    min_price: Optional[float] = Query(None, ge=0),
+    min_volume: Optional[float] = Query(None, ge=0),
+    max_atr_ratio: Optional[float] = Query(None, ge=0.0, le=1.0),
+) -> Dict[str, Any]:
+    canon_pattern = _canonical_pattern(pattern)
+    canon_universe = _canonical_universe(universe)
+    payload = await _run_pattern_scan(
+        canon_pattern,
+        canon_universe,
+        limit,
+        timeframe=timeframe,
+        min_price=min_price if min_price is not None else MIN_PRICE_DEFAULT,
+        min_volume=min_volume if min_volume is not None else MIN_VOLUME_DEFAULT,
+        max_atr_ratio=max_atr_ratio if max_atr_ratio is not None else MAX_ATR_RATIO_DEFAULT,
+    )
+    return payload
 
-    return {"chart_url": f"https://dummyimage.com/1200x628/0b1221/9be7ff.png&text={symbol}+Chart"}
+
+@app.get("/api/v1/scan/pattern")
+async def scan_pattern(
+    pattern: str = Query(..., description="VCP|CUP|HNS|FLAG|WEDGE|DOUBLE"),
+    universe: str = Query("sp500", description="sp500|nasdaq100"),
+    limit: int = Query(200, ge=1, le=2000),
+    timeframe: str = Query("1d", description="1d|1wk|60m"),
+) -> Dict[str, Any]:
+    canon_pattern = _canonical_pattern(pattern)
+    canon_universe = _canonical_universe(universe)
+    payload = await _run_pattern_scan(
+        canon_pattern,
+        canon_universe,
+        limit,
+        timeframe=timeframe,
+        min_price=MIN_PRICE_DEFAULT,
+        min_volume=MIN_VOLUME_DEFAULT,
+        max_atr_ratio=MAX_ATR_RATIO_DEFAULT,
+    )
+    rows = [
+        {
+            "symbol": row["symbol"],
+            "confidence": row.get("score", 0.0),
+            "entry": row.get("entry"),
+            "stop": row.get("stop"),
+            "target": (row.get("targets") or [None])[0],
+            "pattern": canon_pattern.upper(),
+            "chart_url": row.get("chart_url"),
+            "key_levels": row.get("key_levels"),
+            "avg_price": row.get("avg_price"),
+            "avg_volume": row.get("avg_volume"),
+            "atr14": row.get("atr14"),
+        }
+        for row in payload["results"]
+    ]
+    return {"pattern": canon_pattern.upper(), "universe": canon_universe, "rows": rows}
+
+
+@app.api_route("/api/v1/chart", methods=["GET", "POST"])
+async def chart(
+    request: Request,
+    symbol: str = Query(..., min_length=1),
+    pivot: Optional[str] = None,
+    entry: Optional[str] = None,
+    stop: Optional[str] = None,
+    target: Optional[str] = None,
+    pattern: Optional[str] = None,
+) -> Dict[str, Any]:
+    params = {"symbol": symbol}
+    for key, value in (("pivot", pivot), ("entry", entry), ("stop", stop), ("target", target), ("pattern", pattern)):
+        if value is not None and str(value).strip():
+            params[key] = str(value)
+
+    overlays: Optional[Dict[str, Any]] = None
+    if request.method == "POST":
+        try:
+            payload = await request.json()
+            if isinstance(payload, dict):
+                overlays = payload.get("overlays")
+        except Exception:
+            overlays = None
+    else:
+        overlays_param = request.query_params.get("overlays")
+        if overlays_param:
+            try:
+                overlays = json.loads(overlays_param)
+            except Exception:
+                overlays = None
+
+    chart_url, meta = await _fetch_chart_url(symbol, params=params, overlays=overlays, include_meta=True)
+    if overlays:
+        meta["overlay_counts"] = {
+            "lines": len(overlays.get("lines", []) or []),
+            "boxes": len(overlays.get("boxes", []) or []),
+            "labels": len(overlays.get("labels", []) or []),
+            "arrows": len(overlays.get("arrows", []) or []),
+            "zones": len(overlays.get("zones", []) or []),
+        }
+    return {"chart_url": chart_url, "meta": meta}

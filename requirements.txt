@@ -18,4 +18,5 @@ requests
 pytz
 pytest
 httpx
+lxml
 
