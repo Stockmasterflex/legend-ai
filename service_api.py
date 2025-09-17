@@ -351,6 +351,10 @@ def _scan_symbol(
         row["key_levels"] = key_levels
     if atr_val is not None:
         row["atr14"] = round(float(atr_val), 4)
+    sector = get_sector_safe(symbol)
+    if sector:
+        row["sector"] = sector
+        row.setdefault("meta", {})["sector"] = sector
     _cache_set(cache_key, row)
     return json.loads(json.dumps(row))
 
