@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <nav className="flex items-center gap-3">
                 <a className="btn btn-ghost" href="/projects">Projects</a>
                 <a className="btn btn-ghost" href="/about">About</a>
+                <a className="btn btn-ghost" href="/blog">Blog</a>
                 <a className="btn btn-primary" href="/contact">Contact</a>
               </nav>
             </div>
