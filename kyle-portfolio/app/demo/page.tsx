@@ -8,6 +8,7 @@ type ChartMeta = {
   fallback: boolean
   overlay_applied: boolean
   source: string
+  dry_run?: boolean
   overlay_counts?: { lines?: number; boxes?: number; labels?: number; arrows?: number; zones?: number }
   error?: string
   duration_ms?: number
@@ -43,6 +44,7 @@ type Metric = {
 }
 
 const API_BASE = (process.env.NEXT_PUBLIC_VCP_API_BASE as string) || (process.env.NEXT_PUBLIC_API_BASE as string) || 'https://legend-api.onrender.com'
+const SHOTS_BASE = (process.env.NEXT_PUBLIC_SHOTS_BASE as string) || 'https://legend-shots.onrender.com'
 
 const PATTERN_LABELS: Record<PatternOption, string> = {
   vcp: 'VCP',
@@ -171,6 +173,7 @@ export default function DemoPage() {
   const [scanResults, setScanResults] = React.useState<ScanRow[]>([])
   const [scanLoading, setScanLoading] = React.useState(false)
   const [scanError, setScanError] = React.useState<string | null>(null)
+  const [usingSample, setUsingSample] = React.useState(false)
 
   const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({})
   const [chartUrls, setChartUrls] = React.useState<Record<string, string | null>>({})
@@ -189,10 +192,8 @@ export default function DemoPage() {
     })
   }, [])
 
-  const runScan = React.useCallback(async () => {
-    setScanLoading(true)
-    setScanError(null)
-    try {
+  const buildScanQuery = React.useCallback(
+    (opts?: { sample?: boolean }) => {
       const qs = new URLSearchParams({
         pattern: scanPattern,
         universe: scanUniverse,
@@ -202,43 +203,75 @@ export default function DemoPage() {
         min_volume: String(Number(minVolume) || 0),
       })
       if (maxAtrRatio.trim()) {
-        qs.set('max_atr_ratio', maxAtrRatio)
+        qs.set('max_atr_ratio', maxAtrRatio.trim())
       }
-      const payload = await fetchWithRetry<{ results: ScanRow[] }>(`${API_BASE}/api/v1/scan?${qs.toString()}`, 2, 600)
-      const rows = Array.isArray(payload?.results) ? payload.results : []
-      const sanitized = rows.map((row) => {
-        const levels = row.key_levels || {
-          entry: row.entry,
-          stop: row.stop,
-          targets: row.targets,
-        }
-        return {
-          ...row,
-          pattern: row.pattern || scanPattern,
-          score: Number(row.score ?? 0),
-          entry: Number(levels?.entry ?? row.entry ?? 0),
-          stop: Number(levels?.stop ?? row.stop ?? 0),
-          targets: Array.isArray(levels?.targets) ? levels.targets.map(Number) : [],
-          key_levels: {
-            entry: Number(levels?.entry ?? 0),
-            stop: Number(levels?.stop ?? 0),
+      if (opts?.sample) {
+        qs.set('sample', 'true')
+      }
+      return qs
+    },
+    [scanPattern, scanUniverse, scanTimeframe, minPrice, minVolume, maxAtrRatio]
+  )
+
+  const runScan = React.useCallback(
+    async (opts?: { sample?: boolean }) => {
+      setScanLoading(true)
+      setScanError(null)
+      setUsingSample(Boolean(opts?.sample))
+      try {
+        const qs = buildScanQuery(opts)
+        const payload = await fetchWithRetry<{ results: ScanRow[]; is_sample?: boolean }>(
+          `${API_BASE}/api/v1/scan?${qs.toString()}`,
+          2,
+          600
+        )
+        const rows = Array.isArray(payload?.results) ? payload.results : []
+        const sanitized = rows.map((row) => {
+          const levels = row.key_levels || {
+            entry: row.entry,
+            stop: row.stop,
+            targets: row.targets,
+          }
+          return {
+            ...row,
+            pattern: row.pattern || scanPattern,
+            score: Number(row.score ?? 0),
+            entry: Number(levels?.entry ?? row.entry ?? 0),
+            stop: Number(levels?.stop ?? row.stop ?? 0),
             targets: Array.isArray(levels?.targets) ? levels.targets.map(Number) : [],
-          },
-          sector: typeof row.sector === 'string' ? row.sector : typeof row.meta?.sector === 'string' ? row.meta.sector : undefined,
-          chart_meta: row.chart_meta ?? null,
+            key_levels: {
+              entry: Number(levels?.entry ?? 0),
+              stop: Number(levels?.stop ?? 0),
+              targets: Array.isArray(levels?.targets) ? levels.targets.map(Number) : [],
+            },
+            sector:
+              typeof row.sector === 'string'
+                ? row.sector
+                : typeof row.meta?.sector === 'string'
+                  ? row.meta.sector
+                  : undefined,
+            chart_meta: row.chart_meta ?? null,
+          }
+        })
+
+        setUsingSample(Boolean(opts?.sample || payload?.is_sample))
+        if (!sanitized.length && !opts?.sample) {
+          setScanError('No candidates matched these filters. Try adjusting inputs or view sample data.')
         }
-      })
-      setScanResults(sanitized)
-      setExpandedRows({})
-      setChartUrls({})
-      setChartMeta({})
-    } catch (err: any) {
-      setScanError(err?.message || 'Scan failed')
-      setScanResults([])
-    } finally {
-      setScanLoading(false)
-    }
-  }, [scanPattern, scanUniverse, scanTimeframe, minPrice, minVolume, maxAtrRatio])
+        setScanResults(sanitized)
+        setExpandedRows({})
+        setChartUrls({})
+        setChartMeta({})
+      } catch (err: any) {
+        setUsingSample(Boolean(opts?.sample))
+        setScanError(err?.message || 'Scan failed')
+        setScanResults([])
+      } finally {
+        setScanLoading(false)
+      }
+    },
+    [buildScanQuery, scanPattern]
+  )
 
   React.useEffect(() => {
     ;(async () => {
@@ -248,6 +281,13 @@ export default function DemoPage() {
       } catch {
         setHealthy(false)
       }
+      // probes shots health for DRY_RUN awareness (best-effort)
+      try {
+        const sh = await fetchWithRetry<{ ok: boolean; dryRun?: boolean }>(`${SHOTS_BASE}/healthz`, 1, 300)
+        if (sh?.dryRun) {
+          console.info('shots running in dry-run mode')
+        }
+      } catch {}
       runScan()
     })()
   }, [runScan])
@@ -259,16 +299,17 @@ export default function DemoPage() {
       return sector === selectedSector.toLowerCase()
     })
   }, [scanResults, selectedSector])
+  const hasResults = filteredResults.length > 0
 
   const metrics = React.useMemo(() => {
     if (!filteredResults.length) {
-    const defaults: Metric[] = [
-      { title: 'Win Rate', value: '0.0%', tooltip: 'Percentage of setups above the quality threshold', trend: 'neutral' },
-      { title: 'Avg Return', value: '0.0%', tooltip: 'Average upside from entry to first target', trend: 'neutral' },
-      { title: 'Hit Rate', value: '0.0%', tooltip: 'Percentage of symbols with liquidity > 1M shares', trend: 'neutral' },
-      { title: 'Median Hold', value: '—', tooltip: 'Estimated holding period based on ATR vs. risk', trend: 'neutral' },
-    ]
-    return defaults
+      const defaults: Metric[] = [
+        { title: 'Win Rate', value: '0.0%', tooltip: 'Percentage of setups above the quality threshold', trend: 'neutral' },
+        { title: 'Avg Return', value: '0.0%', tooltip: 'Average upside from entry to first target', trend: 'neutral' },
+        { title: 'Hit Rate', value: '0.0%', tooltip: 'Percentage of symbols with liquidity > 1M shares', trend: 'neutral' },
+        { title: 'Median Hold', value: '—', tooltip: 'Estimated holding period based on ATR vs. risk', trend: 'neutral' },
+      ]
+      return defaults
     }
     const winRate = filteredResults.filter((row) => row.score >= 80).length / filteredResults.length
     const returns = filteredResults
@@ -374,6 +415,11 @@ export default function DemoPage() {
               healthy === null ? 'bg-white/40 animate-pulse' : healthy ? 'bg-emerald-400' : 'bg-rose-500'
             }`}
           />
+          {usingSample && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-200">
+              Sample data
+            </span>
+          )}
         </h1>
         {error && <span className="text-sm text-rose-300">{error}</span>}
       </div>
@@ -500,6 +546,13 @@ export default function DemoPage() {
           >
             {scanLoading ? 'Scanning…' : 'Run Scan'}
           </button>
+          <button
+            className="rounded border border-slate-500/60 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700/60 disabled:opacity-60"
+            onClick={() => runScan({ sample: true })}
+            disabled={scanLoading}
+          >
+            {usingSample && !scanLoading ? 'Refresh Sample' : 'View Sample'}
+          </button>
         </div>
       </div>
 
@@ -512,6 +565,22 @@ export default function DemoPage() {
       {scanError && (
         <div className="rounded border border-rose-500/60 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
           {scanError}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              className="rounded bg-rose-500/20 px-3 py-1 text-xs font-medium text-rose-100 hover:bg-rose-500/30"
+              onClick={() => runScan()}
+              disabled={scanLoading}
+            >
+              Retry
+            </button>
+            <button
+              className="rounded border border-amber-400/40 px-3 py-1 text-xs font-medium text-amber-200 hover:bg-amber-500/20 disabled:opacity-60"
+              onClick={() => runScan({ sample: true })}
+              disabled={scanLoading}
+            >
+              Load Sample
+            </button>
+          </div>
         </div>
       )}
 
@@ -530,7 +599,7 @@ export default function DemoPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-700/60 text-slate-100">
-            {filteredResults.map((row) => {
+            {hasResults ? filteredResults.map((row) => {
               const isExpanded = !!expandedRows[row.symbol]
               const plan = row.key_levels || { entry: row.entry, stop: row.stop, targets: row.targets }
               const volumeText = row.avg_volume ?
@@ -605,6 +674,43 @@ export default function DemoPage() {
                             ) : (
                               <div className="flex h-48 items-center justify-center text-slate-400">No chart loaded yet.</div>
                             )}
+                            {meta && (
+                              <div className="flex flex-wrap items-center gap-2 border-t border-slate-700/80 px-3 py-2 text-xs text-slate-300">
+                            {meta.dry_run && (
+                                  <span className="rounded-full border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-amber-200">
+                                    Placeholder chart
+                                  </span>
+                                )}
+                                {!meta.dry_run && meta.fallback && (
+                                  <span className="rounded-full border border-rose-400/30 bg-rose-500/20 px-2 py-0.5 text-rose-200">
+                                    Fallback image
+                                  </span>
+                                )}
+                            {(meta.dry_run || meta.fallback) && (
+                              <button
+                                className="ml-auto rounded bg-slate-700/80 px-2 py-0.5 text-xs text-slate-200 hover:bg-slate-600"
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  await ensureChart(row)
+                                }}
+                              >
+                                Retry screenshot
+                              </button>
+                            )}
+                                {meta.duration_ms != null && (
+                                  <span>Render: {(meta.duration_ms / 1000).toFixed(2)}s</span>
+                                )}
+                                {meta.overlay_counts && (
+                                  <span>
+                                    Overlays:{' '}
+                                    {Object.entries(meta.overlay_counts)
+                                      .filter(([, count]) => (count ?? 0) > 0)
+                                      .map(([key, count]) => `${key}:${count}`)
+                                      .join(' ') || '—'}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="md:col-span-2 space-y-3">
                             <div>
@@ -625,12 +731,6 @@ export default function DemoPage() {
                                 <div className="flex justify-between"><dt>Source</dt><dd>{meta?.source || '—'}</dd></div>
                                 <div className="flex justify-between"><dt>Overlays</dt><dd>{meta?.overlay_applied ? 'On' : 'Off'}</dd></div>
                                 <div className="flex justify-between"><dt>Render</dt><dd>{meta?.duration_ms ? `${(meta.duration_ms / 1000).toFixed(1)} s` : '—'}</dd></div>
-                                {meta?.overlay_counts && (
-                                  <div className="flex justify-between"><dt>Shapes</dt><dd>{Object.entries(meta.overlay_counts)
-                                    .filter(([, count]) => (count ?? 0) > 0)
-                                    .map(([key, count]) => `${key}:${count}`)
-                                    .join(' ') || '—'}</dd></div>
-                                )}
                                 {meta?.error && <div className="text-amber-400">{meta.error}</div>}
                               </dl>
                             </div>
@@ -641,12 +741,30 @@ export default function DemoPage() {
                   )}
                 </React.Fragment>
               )
-            })}
-
-            {!filteredResults.length && !scanLoading && (
+            }) : (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-slate-400">
-                  No results yet. Adjust filters and run the scanner.
+                <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-300">
+                  {scanLoading
+                    ? 'Running scan…'
+                    : usingSample
+                      ? 'Sample dataset currently contains no candidates.'
+                      : 'No candidates found for these filters.'}
+                  {!scanLoading && !usingSample && (
+                    <div className="mt-3 flex justify-center gap-2 text-xs">
+                      <button
+                        className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-500"
+                        onClick={() => runScan()}
+                      >
+                        Retry Scan
+                      </button>
+                      <button
+                        className="rounded border border-amber-400/40 px-3 py-1 text-amber-200 hover:bg-amber-500/20"
+                        onClick={() => runScan({ sample: true })}
+                      >
+                        Load Sample Data
+                      </button>
+                    </div>
+                  )}
                 </td>
               </tr>
             )}

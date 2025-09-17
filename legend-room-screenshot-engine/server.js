@@ -47,6 +47,7 @@ app.all('/screenshot', async (req, res) => {
 
   if (String(process.env.DRY_RUN || '0') === '1') {
     const dummy = `https://dummyimage.com/1200x628/0b1221/9be7ff.png&text=${encodeURIComponent(symbol)}+Chart`;
+    console.log('shots_dry_run', { symbol, overlay_counts: overlayCounts });
     return res.json({ chart_url: dummy, dry_run: true, overlay_counts: overlayCounts });
   }
 
@@ -102,8 +103,30 @@ app.all('/screenshot', async (req, res) => {
   }
 });
 
-app.get('/healthz', (_req, res) => {
-  res.json({ ok: true, service: 'legend-shots' });
+app.get('/healthz', async (_req, res) => {
+  const dryRun = String(process.env.DRY_RUN || '0') === '1'
+  const payload = { ok: true, service: 'legend-shots', dryRun };
+
+  if (dryRun) {
+    payload.browserVersion = null;
+    return res.json(payload);
+  }
+
+  let browser;
+  try {
+    browser = await launchBrowser();
+    payload.browserVersion = await browser.version();
+    return res.json(payload);
+  } catch (err) {
+    payload.ok = false;
+    payload.browserVersion = null;
+    payload.error = err instanceof Error ? err.message : String(err);
+    return res.status(503).json(payload);
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+  }
 });
 
 const port = process.env.PORT || 3010;

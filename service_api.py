@@ -117,6 +117,58 @@ SAMPLE_RUN = {
     "is_sample": True,
 }
 
+
+def _sample_scan_payload(pattern: PatternName, universe: str, limit: Optional[int] = None) -> Dict[str, Any]:
+    rows = []
+
+    def _maybe_float(value: Any) -> Optional[float]:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    for item in SAMPLE_RUN.get("patterns", []):
+        symbol = item.get("ticker") or item.get("symbol")
+        if not symbol:
+            continue
+        score = _maybe_float(item.get("score")) or 75.0
+        entry = _maybe_float(item.get("r_breakout"))
+        atr = _maybe_float(item.get("atr"))
+        stop = entry - atr if entry is not None and atr is not None else None
+        target = entry + (atr * 2) if entry is not None and atr is not None else None
+        key_levels = {
+            "entry": entry,
+            "stop": stop,
+            "targets": [target] if target is not None else [],
+        }
+        rows.append({
+            "symbol": symbol,
+            "score": score,
+            "entry": entry,
+            "stop": stop,
+            "targets": key_levels["targets"],
+            "pattern": pattern,
+            "overlays": {"priceLevels": key_levels},
+            "chart_url": DUMMY_CHART_URL_TMPL.format(symbol=symbol),
+            "avg_price": entry,
+            "avg_volume": None,
+            "atr14": atr,
+            "key_levels": key_levels,
+            "meta": {"evidence": ["sample payload"], "is_sample": True},
+            "chart_meta": {"fallback": True, "overlay_applied": False, "source": "dummy", "dry_run": True},
+        })
+
+    if limit is not None:
+        rows = rows[: max(1, min(limit, len(rows)))]
+
+    return {
+        "pattern": pattern,
+        "universe": universe,
+        "count": len(rows),
+        "results": rows,
+        "is_sample": True,
+    }
+
 @demo_router.get("/health")
 def demo_health():
     from datetime import datetime, timezone
@@ -171,6 +223,7 @@ SCAN_CACHE_TTL = int(os.getenv("SCAN_CACHE_TTL", "240"))
 MIN_PRICE_DEFAULT = float(os.getenv("SCAN_MIN_PRICE", "5"))
 MIN_VOLUME_DEFAULT = float(os.getenv("SCAN_MIN_VOLUME", "500000"))
 MAX_ATR_RATIO_DEFAULT = float(os.getenv("SCAN_MAX_ATR_RATIO", "0.08"))
+SCAN_SAMPLE_ENABLE = os.getenv("SCAN_SAMPLE_ENABLE", "0").strip() in {"1", "true", "TRUE", "yes", "on"}
 
 _timeframe_defaults = {
     "1d": {"period": os.getenv("SCAN_PERIOD_1D", "18mo"), "interval": "1d", "min_bars": 180},
@@ -421,6 +474,8 @@ async def _fetch_chart_url(
             chart_url = data.get("chart_url") or data.get("url")
             if isinstance(chart_url, str) and chart_url:
                 meta["fallback"] = bool(data.get("dry_run") or data.get("error"))
+                if "dry_run" in data:
+                    meta["dry_run"] = bool(data.get("dry_run"))
                 if data.get("error"):
                     meta["error"] = str(data.get("error"))
                 if data.get("overlay_counts"):
@@ -446,6 +501,7 @@ async def _fetch_chart_url(
         "source": "dummy",
         "fallback": True,
         "overlay_applied": overlay_applied,
+        "dry_run": meta.get("dry_run", False),
     })
     duration_ms = (time.time() - start_ts) * 1000.0
     meta["duration_ms"] = round(duration_ms, 2)
@@ -836,67 +892,122 @@ def analytics_overview(
     cand_dir = root / "daily_candidates"
     out_dir = root / "outcomes"
     # Load all candidates/outcomes for the run window
-    cdfs = []
-    odfs = []
-    for p in sorted(cand_dir.glob("*.csv")):
-        df = pd.read_csv(p)
-        if len(df):
-            df["date"] = p.stem
-            cdfs.append(df)
-    for p in sorted(out_dir.glob("*_outcomes.csv")):
-        df = pd.read_csv(p)
-        if len(df):
-            df["date_detected"] = p.stem.replace("_outcomes", "")
-            odfs.append(df)
-    cands = pd.concat(cdfs, ignore_index=True) if cdfs else pd.DataFrame(columns=["date","symbol","confidence","pivot","price","notes"]) 
-    outs = pd.concat(odfs, ignore_index=True) if odfs else pd.DataFrame(columns=["date_detected","symbol","trigger_date","triggered","success","exit_date","max_runup_30d","max_drawdown_30d","r_multiple"]) 
+    cdfs: List[pd.DataFrame] = []
+    odfs: List[pd.DataFrame] = []
+    try:
+        for p in sorted(cand_dir.glob("*.csv")):
+            try:
+                df = pd.read_csv(p)
+                if len(df):
+                    df["date"] = p.stem
+                    cdfs.append(df)
+            except Exception:
+                logger.warning("analytics candidates load failed", extra={"file": str(p)})
+        for p in sorted(out_dir.glob("*_outcomes.csv")):
+            try:
+                df = pd.read_csv(p)
+                if len(df):
+                    df["date_detected"] = p.stem.replace("_outcomes", "")
+                    odfs.append(df)
+            except Exception:
+                logger.warning("analytics outcomes load failed", extra={"file": str(p)})
+    except Exception:
+        # Directory listing failed; treat as empty
+        pass
+
+    cands = pd.concat(cdfs, ignore_index=True) if cdfs else pd.DataFrame(columns=["date", "symbol", "confidence", "pivot", "price", "notes"])
+    outs = pd.concat(odfs, ignore_index=True) if odfs else pd.DataFrame(columns=["date_detected", "symbol", "trigger_date", "triggered", "success", "exit_date", "max_runup_30d", "max_drawdown_30d", "r_multiple"])
 
     # Optional sector filter (best-effort)
-    if sector and len(cands):
-        cands["sector"] = cands["symbol"].map(lambda s: get_sector_safe(s))
-        cands = cands[cands["sector"].fillna("") == sector]
+    if sector and len(cands) and "symbol" in cands.columns:
+        try:
+            cands["sector"] = cands["symbol"].map(lambda s: get_sector_safe(s))
+            cands = cands[cands["sector"].fillna("") == sector]
+        except Exception:
+            logger.warning("analytics sector filter failed", extra={"sector": sector})
 
     # Pattern distribution (currently only VCP; ignore non-VCP requests)
     if pattern and pattern.upper() != "VCP":
         cands = cands.iloc[0:0]
         outs = outs.iloc[0:0]
     total = int(len(cands))
-    success = int(outs["success"].sum()) if len(outs) else 0
+
+    confidence_series = pd.to_numeric(cands["confidence"], errors="coerce") if "confidence" in cands.columns else pd.Series(dtype=float)
+    avg_confidence = float(confidence_series.mean()) if not confidence_series.empty else 0.0
+
+    success_series = pd.to_numeric(outs["success"], errors="coerce") if "success" in outs.columns else pd.Series(dtype=float)
+    success = int(success_series.sum()) if not success_series.empty else 0
     triggered = int(len(outs))
+
     dist = [{
         "name": "VCP",
         "count": total,
-        "successRate": round((success / max(triggered,1)) * 100, 1) if triggered else 0.0,
-        "avgConfidence": round(float(cands["confidence"].mean()), 1) if len(cands) else 0.0,
+        "successRate": round((success / max(triggered, 1)) * 100, 1) if triggered else 0.0,
+        "avgConfidence": round(avg_confidence, 1) if avg_confidence else 0.0,
         "color": "#10B981",
     }]
 
     # Recent candidates (last day available)
-    recent_day = cands["date"].max() if len(cands) else None
-    recent = []
+    recent_day = cands["date"].max() if len(cands) and "date" in cands.columns else None
+    recent: List[Dict[str, Any]] = []
     if recent_day:
-        last_df = cands[cands["date"] == recent_day].copy()
-        for _, r in last_df.iterrows():
-            recent.append({
-                "symbol": r["symbol"],
-                "price": float(r.get("price", 0)),
-                "pivot": float(r.get("pivot", 0)) if pd.notnull(r.get("pivot")) else None,
-                "confidence": float(r.get("confidence", 0)),
-                "sector": get_sector_safe(str(r.get("symbol"))),
-                "pattern": "VCP",
-                "detected": str(r.get("date")),
-            })
+        try:
+            last_df = cands[cands["date"] == recent_day].copy()
+            for _, r in last_df.iterrows():
+                def _num(val: Any) -> Optional[float]:
+                    try:
+                        return float(val)
+                    except (TypeError, ValueError):
+                        return None
+
+                recent.append({
+                    "symbol": r.get("symbol"),
+                    "price": _num(r.get("price")) or 0.0,
+                    "pivot": _num(r.get("pivot")),
+                    "confidence": _num(r.get("confidence")) or 0.0,
+                    "sector": get_sector_safe(str(r.get("symbol"))),
+                    "pattern": "VCP",
+                    "detected": str(r.get("date")),
+                })
+        except Exception:
+            recent = []
 
     # Performance timeline (daily aggregates)
-    timeline = []
-    if len(cands):
-        by_day = cands.groupby("date").size().to_dict()
-        success_by_day = outs.groupby("date_detected")["success"].sum().to_dict() if len(outs) and "success" in outs.columns else {}
-        triggers_by_day = outs.groupby("date_detected").size().to_dict() if len(outs) else {}
-        if len(outs) and "r_multiple" in outs.columns:
-            avg_r_by_day = outs.groupby("date_detected")["r_multiple"].mean().to_dict()
-        else:
-            avg_r_by_day = {}
+    timeline: List[Dict[str, Any]] = []
+    if len(cands) and "date" in cands.columns:
+        try:
+            by_day = cands.groupby("date").size().to_dict()
+        except Exception:
+            by_day = {}
+        success_by_day: Dict[str, float] = {}
+        if not success_series.empty and "date_detected" in outs.columns:
+            try:
+                success_by_day = (
+                    outs.assign(success=pd.to_numeric(outs["success"], errors="coerce").fillna(0))
+                    .groupby("date_detected")["success"]
+                    .sum()
+                    .to_dict()
+                )
+            except Exception:
+                success_by_day = {}
+        triggers_by_day: Dict[str, int] = {}
+        if len(outs) and "date_detected" in outs.columns:
+            try:
+                triggers_by_day = outs.groupby("date_detected").size().to_dict()
+            except Exception:
+                triggers_by_day = {}
+        avg_r_by_day: Dict[str, float] = {}
+        if len(outs) and "r_multiple" in outs.columns and "date_detected" in outs.columns:
+            try:
+                avg_r_by_day = (
+                    outs.assign(r_multiple=pd.to_numeric(outs["r_multiple"], errors="coerce"))
+                    .groupby("date_detected")["r_multiple"]
+                    .mean()
+                    .dropna()
+                    .to_dict()
+                )
+            except Exception:
+                avg_r_by_day = {}
         for d in sorted(set(cands["date"].tolist())):
             tl = {
                 "period": d,
@@ -907,6 +1018,21 @@ def analytics_overview(
             }
             timeline.append(tl)
 
+    # Data status
+    data_status = "empty"
+    if len(cands) or len(outs):
+        data_status = "ok" if (len(cands) and len(outs)) else "partial"
+
+    # Compute v2 KPIs while preserving existing keys for FE
+    avg_r = 0.0
+    if len(outs) and "r_multiple" in outs.columns:
+        try:
+            avg_r = float(pd.to_numeric(outs["r_multiple"], errors="coerce").dropna().mean() or 0.0)
+        except Exception:
+            avg_r = 0.0
+    win_rate = (success / max(triggered, 1)) if triggered else 0.0
+    trades = triggered
+
     return {
         "pattern_distribution": dist,
         "recent_candidates": recent,
@@ -915,8 +1041,13 @@ def analytics_overview(
             "active_patterns": len(recent),
             "success_rate": dist[0]["successRate"] if dist else 0.0,
             "avg_confidence": dist[0]["avgConfidence"] if dist else 0.0,
-            "market_coverage": int(cands["symbol"].nunique()) if len(cands) else 0,
-        }
+            "market_coverage": int(cands["symbol"].nunique()) if len(cands) and "symbol" in cands.columns else 0,
+            # New stable fields for analytics consumers
+            "win_rate": round(float(win_rate), 4),
+            "avg_r": round(float(avg_r), 4),
+            "trades": int(trades),
+        },
+        "data_status": data_status,
     }
 
 
@@ -929,9 +1060,16 @@ async def scan_v1(
     min_price: Optional[float] = Query(None, ge=0),
     min_volume: Optional[float] = Query(None, ge=0),
     max_atr_ratio: Optional[float] = Query(None, ge=0.0, le=1.0),
+    sample: bool = Query(False, description="Return a sample payload instead of scanning"),
 ) -> Dict[str, Any]:
     canon_pattern = _canonical_pattern(pattern)
     canon_universe = _canonical_universe(universe)
+    if sample:
+        if SCAN_SAMPLE_ENABLE:
+            return _sample_scan_payload(canon_pattern, canon_universe, limit)
+        else:
+            # Feature disabled; return empty payload with hint
+            return {"pattern": canon_pattern, "universe": canon_universe, "count": 0, "results": [], "is_sample": False}
     payload = await _run_pattern_scan(
         canon_pattern,
         canon_universe,
