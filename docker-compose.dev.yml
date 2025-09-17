@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  shots:
+    build: ./legend-room-screenshot-engine
+    environment:
+      - PORT=3010
+      - DRY_RUN=1
+    ports:
+      - "3010:3010"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3010/screenshot"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      - SERVICE_DATABASE_URL=sqlite:////app/legend_runs.db
+      - REDIS_URL=redis://redis:6379/0
+      - SHOTS_BASE_URL=http://shots:3010
+      - ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - LEGEND_MOCK=0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+    depends_on:
+      redis:
+        condition: service_started
+      shots:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SERVICE_DATABASE_URL=sqlite:////app/legend_runs.db
+    volumes:
+      - ./:/app
+    depends_on:
+      - redis
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SERVICE_DATABASE_URL=sqlite:////app/legend_runs.db
+    volumes:
+      - ./:/app
+    depends_on:
+      - redis
+
+  front:
+    image: node:22-bookworm-slim
+    working_dir: /app/kyle-portfolio
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - NEXT_PUBLIC_VCP_API_BASE=http://localhost:8000
+    command: bash -lc "npm ci || npm i && npx next dev -H 0.0.0.0 -p 3000"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    depends_on:
+      - api
+

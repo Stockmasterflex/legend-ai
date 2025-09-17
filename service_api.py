@@ -19,6 +19,7 @@ import logging
 import requests
 from functools import lru_cache
 from fastapi import APIRouter
+from pydantic import BaseModel, Field
 from datetime import datetime, date
 from typing import List
 
@@ -60,16 +61,34 @@ logging.getLogger("legend.sentiment").setLevel(logging.INFO)
 async def add_request_id_logging(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID", str(uuid4()))
     start = time.time()
-    response = await call_next(request)
-    duration_ms = int((time.time() - start) * 1000)
-    response.headers["X-Request-ID"] = request_id
+    try:
+        response = await call_next(request)
+        status = response.status_code
+    except Exception:
+        # Treat uncaught exceptions as 500 for metrics purposes
+        status = 500
+        raise
+    finally:
+        duration_ms = int((time.time() - start) * 1000)
+        path = str(request.url.path)
+        method = request.method
+        try:
+            REQUESTS.labels(path=path, method=method, status=str(status)).inc()
+            LATENCY.observe(duration_ms)
+        except Exception:
+            pass
+    # When response exists, attach header and log
+    try:
+        response.headers["X-Request-ID"] = request_id
+    except Exception:
+        pass
     logger.info(
         "request",
         extra={
             "request_id": request_id,
             "path": str(request.url.path),
             "method": request.method,
-            "status_code": response.status_code,
+            "status_code": status,
             "duration_ms": duration_ms,
         },
     )
@@ -144,24 +163,23 @@ app.include_router(demo_router, prefix="/api", tags=["demo"])
 
 SHOTS_BASE_URL = os.getenv("SHOTS_BASE_URL", "http://127.0.0.1:3010")
 
-# -------- Utilities: fetch OHLCV via yfinance (cached) --------
-@lru_cache(maxsize=256)
-def yf_history_cached(symbol: str, period: str = "6mo"):
-    import yfinance as yf
-    t = yf.Ticker(symbol)
-    df = t.history(period=period, auto_adjust=False)
-    if df is None or df.empty:
+# -------- Utilities: fetch OHLCV via DataProvider (cached) --------
+from vcp.data_provider import DataProvider
+
+@lru_cache(maxsize=512)
+def prices_cached(symbol: str, period: str = "6mo"):
+    try:
+        df = DataProvider().fetch(symbol, period=period, interval="1d")
+        return df if df is not None else pd.DataFrame()
+    except Exception:
         return pd.DataFrame()
-    df.index.name = "Date"
-    df.reset_index(inplace=True)
-    return df
 
 # -------- Indicators/Signals/Sentiment endpoints (Phase 3/4) --------
 @app.get("/api/v1/indicators")
 def api_indicators(symbol: str = Query(...), period: str = Query("6mo")) -> Dict[str, Any]:
     try:
         from indicators.ta import compute_all_indicators
-        df = yf_history_cached(symbol.upper(), period=period)
+        df = prices_cached(symbol.upper(), period=period)
         if df.empty:
             raise RuntimeError("no_data")
         out = compute_all_indicators(df)
@@ -185,7 +203,7 @@ def api_signals(symbol: str = Query(...)) -> Dict[str, Any]:
     try:
         from indicators.ta import compute_all_indicators
         from signals.core import score_from_indicators
-        df = yf_history_cached(symbol.upper(), period="6mo")
+        df = prices_cached(symbol.upper(), period="6mo")
         if df.empty:
             raise RuntimeError("no_data")
         ind = compute_all_indicators(df)
@@ -322,8 +340,24 @@ def list_runs(limit: int = Query(50, ge=1, le=500), status: Optional[str] = Quer
         return {"runs": [sample_run], "is_sample": True}
 
 
+class CreateRunRequest(BaseModel):
+    start: str = Field(..., description="ISO date, e.g., 2024-01-01")
+    end: str = Field(..., description="ISO date, e.g., 2024-03-31")
+    universe: str = Field("simple", description="'simple' or file:<path>")
+    provider: str = Field("yfinance", description="data provider id")
+    detector_version: str = Field("v1", description="detector version label")
+
+
 @app.post("/api/v1/runs", status_code=202)
-def create_run(start: str, end: str, universe: str = Query("simple"), provider: str = Query("yfinance"), detector_version: str = Query("v1"), request: Request = None) -> Dict[str, Any]:
+def create_run(
+    body: Optional[CreateRunRequest] = None,
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    universe: str = Query("simple"),
+    provider: str = Query("yfinance"),
+    detector_version: str = Query("v1"),
+    request: Request = None,
+) -> Dict[str, Any]:
     # lightweight rate limit on write endpoint
     try:
         from rate_limit import SimpleRateLimiter
@@ -336,7 +370,16 @@ def create_run(start: str, end: str, universe: str = Query("simple"), provider: 
     try:
         RunsBase.metadata.create_all(bind=runs_engine)
         from jobs import enqueue_backtest  # lazy import to avoid hard dependency
-        return enqueue_backtest(start, end, universe, provider, detector_version)
+        if body is not None:
+            s, e = body.start, body.end
+            uni, prov, det = body.universe, body.provider, body.detector_version
+        else:
+            # Backward-compatible query param support
+            if not start or not end:
+                return {"status": "error", "message": "start and end are required"}
+            s, e = start, end
+            uni, prov, det = universe, provider, detector_version
+        return enqueue_backtest(s, e, uni, prov, det)
     except Exception:
         # Return a mock submission so the UI proceeds
         return {
@@ -441,14 +484,39 @@ def candidates_by_date(
 
 # ---- Analytics endpoints ----
 
+_sector_cache: Dict[str, Any] = {}
+_sector_cache_ttl_seconds = int(os.getenv("SECTOR_CACHE_TTL", "3600"))
+
+
+def _cache_get(key: str) -> Optional[str]:
+    ent = _sector_cache.get(key)
+    if not ent:
+        return None
+    value, ts = ent
+    if (time.time() - ts) > _sector_cache_ttl_seconds:
+        _sector_cache.pop(key, None)
+        return None
+    return value
+
+
+def _cache_set(key: str, value: Optional[str]) -> None:
+    _sector_cache[key] = (value, time.time())
+
+
 @lru_cache(maxsize=2048)
 def get_sector_safe(symbol: Optional[str]) -> Optional[str]:
     if not symbol:
         return None
     try:
+        key = str(symbol).upper()
+        hit = _cache_get(key)
+        if hit is not None:
+            return hit
         import yfinance as yf
-        info = yf.Ticker(symbol).info
-        return info.get("sector")
+        info = yf.Ticker(key).info
+        val = info.get("sector")
+        _cache_set(key, val)
+        return val
     except Exception:
         return None
 
