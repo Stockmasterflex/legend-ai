@@ -67,7 +67,9 @@ services:
       - key: PORT
         value: 3010
       - key: DRY_RUN
-        value: "1"
+        value: "0"
+      - key: PUPPETEER_CACHE_DIR
+        value: /opt/render/.cache/puppeteer
       # Optional Cloudinary
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
@@ -75,4 +77,3 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
-
