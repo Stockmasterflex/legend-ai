@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { PortableText } from '@portabletext/react'
@@ -30,18 +31,41 @@ function formatDate(input?: string) {
 }
 
 export async function generateStaticParams() {
-  const slugs: { slug: string }[] = await sanityClient.fetch(`*[_type=="post" && !draft]{"slug": slug.current}`)
-  return slugs.map((entry) => ({ slug: entry.slug }))
+  try {
+    const slugs: { slug: string }[] = await sanityClient.fetch(`*[_type=="post" && !draft]{"slug": slug.current}`)
+    return slugs
+      .filter((entry) => typeof entry.slug === 'string' && entry.slug.length)
+      .map((entry) => ({ slug: entry.slug }))
+  } catch (error) {
+    console.warn('[blog] failed to fetch slugs from Sanity', error)
+    return []
+  }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const post = await sanityClient.fetch<PostPayload | null>(postBySlugQuery, { slug: params.slug })
-  if (!post) return {}
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  let post: PostPayload | null = null
+  try {
+    post = await sanityClient.fetch<PostPayload | null>(postBySlugQuery, { slug: params.slug })
+  } catch (error) {
+    console.warn('[blog] metadata fetch failed', error)
+  }
+  if (!post) {
+    return { title: 'Legend AI Blog', description: 'Legend AI insights and updates.' }
+  }
   const image = post.cover ? urlFor(post.cover).width(1200).height(630).url() : undefined
+  const canonical = `${siteUrl}/blog/${params.slug}`
   return {
     title: post.title,
     description: post.description,
+    alternates: { canonical },
     openGraph: {
+      title: post.title,
+      description: post.description,
+      url: canonical,
+      images: image ? [image] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
       title: post.title,
       description: post.description,
       images: image ? [image] : [],
@@ -50,7 +74,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BlogPost({ params }: { params: { slug: string } }) {
-  const post = await sanityClient.fetch<PostPayload | null>(postBySlugQuery, { slug: params.slug })
+  let post: PostPayload | null = null
+  try {
+    post = await sanityClient.fetch<PostPayload | null>(postBySlugQuery, { slug: params.slug })
+  } catch (error) {
+    console.warn('[blog] post fetch failed', error)
+  }
   if (!post) return notFound()
 
   return (
@@ -80,3 +109,4 @@ export default async function BlogPost({ params }: { params: { slug: string } })
     </main>
   )
 }
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legend-ai.vercel.app'

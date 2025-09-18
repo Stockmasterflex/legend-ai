@@ -1,0 +1,56 @@
+# Orchestrator Rules - What to watch and how to respond
+poll_interval_seconds: 30
+
+cooldowns:
+  deploy: 300      # 5 minutes between deploys
+  notify: 60       # 1 minute between notifications
+  ai_prompt: 120   # 2 minutes between AI prompts
+
+checks:
+  # Service Health Checks
+  - id: api_health
+    type: http
+    service: api
+    critical: true
+    on_fail:
+      - notify: "API is down"
+      - ai_prompt: debug_api.md
+      - auto_deploy: api
+
+  - id: shots_health
+    type: http
+    service: shots
+    critical: false
+    on_fail:
+      - notify: "Screenshot service unhealthy"
+      - ai_prompt: fix_screenshots.md
+
+  - id: frontend_health
+    type: http
+    service: frontend
+    critical: true
+    on_fail:
+      - notify: "Frontend unreachable"
+      - ai_prompt: debug_frontend.md
+
+  # Code Quality Checks
+  - id: test_coverage
+    type: command
+    cmd: "python -m pytest --co -q 2>/dev/null | wc -l"
+    expect_min: 10
+    on_fail:
+      - ai_prompt: write_tests.md
+
+  - id: git_activity
+    type: git
+    min_commits_today: 1
+    on_low:
+      - ai_prompt: daily_priorities.md
+
+  # Analytics Quality
+  - id: analytics_check
+    type: api_quality
+    endpoint: "/api/v1/analytics/overview?run_id=1"
+    required_keys: ["kpis", "pattern_distribution"]
+    on_fail:
+      - ai_prompt: fix_analytics.md

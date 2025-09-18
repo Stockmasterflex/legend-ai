@@ -1,0 +1,1451 @@
+legend-shots listening on :3010
+legend-shots listening on :3010
+screenshot error TypeError: page.waitForTimeout is not a function
+    at file:///Users/kyleholthaus/Projects/LegendAI/legend-room-screenshot-engine/server.js:74:18
+legend-shots listening on :3010
+shot_render_success {
+  symbol: 'AAPL',
+  duration_ms: 5949,
+  overlay_counts: { lines: 1, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'AAPL-1758093410169.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 10577,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758100525390.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5679,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758100540923.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4937,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758100546060.png'
+}
+shot_render_success {
+  symbol: 'HSIC',
+  duration_ms: 6856,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'HSIC-1758100567189.png'
+}
+shot_render_success {
+  symbol: 'HPQ',
+  duration_ms: 6875,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'HPQ-1758100567206.png'
+}
+shot_render_success {
+  symbol: 'HST',
+  duration_ms: 6901,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'HST-1758100567256.png'
+}
+shot_render_success {
+  symbol: 'AAPL',
+  duration_ms: 5483,
+  overlay_counts: { lines: 1, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'AAPL-1758100573139.png'
+}
+shot_render_success {
+  symbol: 'AVGO',
+  duration_ms: 7363,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'AVGO-1758100686755.png'
+}
+shot_render_success {
+  symbol: 'AVB',
+  duration_ms: 7403,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'AVB-1758100686785.png'
+}
+shot_render_success {
+  symbol: 'ARE',
+  duration_ms: 7452,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'ARE-1758100686835.png'
+}
+shot_render_success {
+  symbol: 'ATO',
+  duration_ms: 7548,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'ATO-1758100686861.png'
+}
+shot_render_success {
+  symbol: 'AVY',
+  duration_ms: 5808,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'AVY-1758100692618.png'
+}
+shot_render_success {
+  symbol: 'CRWD',
+  duration_ms: 5857,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'CRWD-1758100701773.png'
+}
+shot_render_success {
+  symbol: 'AMGN',
+  duration_ms: 5906,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'AMGN-1758100701820.png'
+}
+shot_render_success {
+  symbol: 'AMD',
+  duration_ms: 5986,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'AMD-1758100701913.png'
+}
+shot_render_success {
+  symbol: 'CSCO',
+  duration_ms: 6263,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'CSCO-1758100702185.png'
+}
+shot_render_success {
+  symbol: 'CSGP',
+  duration_ms: 5504,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'CSGP-1758100707302.png'
+}
+shot_render_success {
+  symbol: 'MO',
+  duration_ms: 7035,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MO-1758102007319.png'
+}
+shot_render_success {
+  symbol: 'MNST',
+  duration_ms: 7120,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MNST-1758102007441.png'
+}
+shot_render_success {
+  symbol: 'MOH',
+  duration_ms: 7160,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MOH-1758102007458.png'
+}
+shot_render_success {
+  symbol: 'MOS',
+  duration_ms: 7354,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MOS-1758102007634.png'
+}
+shot_render_success {
+  symbol: 'MPC',
+  duration_ms: 5429,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MPC-1758102012834.png'
+}
+shot_render_success {
+  symbol: 'MAR',
+  duration_ms: 5738,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MAR-1758102021367.png'
+}
+shot_render_success {
+  symbol: 'LULU',
+  duration_ms: 5780,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'LULU-1758102021417.png'
+}
+shot_render_success {
+  symbol: 'MCHP',
+  duration_ms: 5852,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MCHP-1758102021504.png'
+}
+shot_render_success {
+  symbol: 'LRCX',
+  duration_ms: 5916,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'LRCX-1758102021561.png'
+}
+shot_render_success {
+  symbol: 'MDLZ',
+  duration_ms: 5550,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MDLZ-1758102026999.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 12052,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758141773329.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7223,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758141781071.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7012,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758141788751.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7164,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758141796056.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 8555,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758141805181.png'
+}
+shot_render_success {
+  symbol: 'DG',
+  duration_ms: 8266,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'DG-1758141850165.png'
+}
+shot_render_success {
+  symbol: 'BAX',
+  duration_ms: 8306,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'BAX-1758141850214.png'
+}
+shot_render_success {
+  symbol: 'BALL',
+  duration_ms: 8360,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'BALL-1758141850227.png'
+}
+shot_render_success {
+  symbol: 'AAPL',
+  duration_ms: 8180,
+  overlay_counts: { lines: 1, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'AAPL-1758141858596.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7031,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142071921.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5208,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142077359.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4898,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142082711.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5548,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142088448.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5597,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142094125.png'
+}
+shot_render_success {
+  symbol: 'AVB',
+  duration_ms: 6785,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'AVB-1758142128342.png'
+}
+shot_render_success {
+  symbol: 'ATO',
+  duration_ms: 6852,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'ATO-1758142128406.png'
+}
+shot_render_success {
+  symbol: 'ARE',
+  duration_ms: 6892,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'ARE-1758142128442.png'
+}
+shot_render_success {
+  symbol: 'AAPL',
+  duration_ms: 5216,
+  overlay_counts: { lines: 1, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'AAPL-1758142133805.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7125,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142462856.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5197,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142468254.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4628,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142473073.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4626,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142477807.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5684,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142483595.png'
+}
+shot_render_success {
+  symbol: 'MCK',
+  duration_ms: 7911,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MCK-1758142515789.png'
+}
+shot_render_success {
+  symbol: 'MCHP',
+  duration_ms: 7920,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MCHP-1758142515787.png'
+}
+shot_render_success {
+  symbol: 'MCD',
+  duration_ms: 7972,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'MCD-1758142515849.png'
+}
+shot_render_success {
+  symbol: 'AAPL',
+  duration_ms: 5600,
+  overlay_counts: { lines: 1, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'AAPL-1758142521568.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7802,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142852914.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6981,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142860246.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7071,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142867928.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6682,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142874846.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6601,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758142881442.png'
+}
+shot_render_success {
+  symbol: 'NDAQ',
+  duration_ms: 11599,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'NDAQ-1758142918630.png'
+}
+shot_render_success {
+  symbol: 'NEM',
+  duration_ms: 11637,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'NEM-1758142918706.png'
+}
+shot_render_success {
+  symbol: 'NEE',
+  duration_ms: 11786,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'NEE-1758142918823.png'
+}
+shot_render_success {
+  symbol: 'AAPL',
+  duration_ms: 8485,
+  overlay_counts: { lines: 1, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'AAPL-1758142927537.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7531,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143005511.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5089,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143010795.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5398,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143016528.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4800,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143021442.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4746,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143026214.png'
+}
+shot_render_success {
+  symbol: 'NDAQ',
+  duration_ms: 6042,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'NDAQ-1758143046791.png'
+}
+shot_render_success {
+  symbol: 'NEM',
+  duration_ms: 6033,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'NEM-1758143046805.png'
+}
+shot_render_success {
+  symbol: 'NEE',
+  duration_ms: 6044,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'NEE-1758143046907.png'
+}
+shot_render_success {
+  symbol: 'AAPL',
+  duration_ms: 6759,
+  overlay_counts: { lines: 1, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'AAPL-1758143054057.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 8303,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143386503.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 8311,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143395124.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 9687,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143405903.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 9409,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143416201.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 9193,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143425684.png'
+}
+shot_render_success {
+  symbol: 'DLTR',
+  duration_ms: 10658,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'DLTR-1758143457728.png'
+}
+shot_render_success {
+  symbol: 'DLR',
+  duration_ms: 10710,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'DLR-1758143457793.png'
+}
+shot_render_success {
+  symbol: 'DIS',
+  duration_ms: 10892,
+  overlay_counts: { lines: 2, boxes: 0, labels: 1, arrows: 0, zones: 0 },
+  file: 'DIS-1758143457964.png'
+}
+shot_render_success {
+  symbol: 'AAPL',
+  duration_ms: 7681,
+  overlay_counts: { lines: 1, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'AAPL-1758143465827.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 8577,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143808205.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7594,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143816587.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6374,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143827086.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 9067,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143870553.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 9560,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143880647.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7636,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758143899746.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7555,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758144342821.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6175,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758144349216.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6841,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758144381978.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6804,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758144432206.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5577,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758144437990.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6339,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758144474902.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7467,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758144944154.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6655,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758144951075.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6988,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758144969206.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7610,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758145433143.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5830,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758145439206.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5722,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758145456917.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6948,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758145895852.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5451,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758145901585.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6066,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758145918617.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7382,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758146366169.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6591,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758146373001.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6496,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758146390480.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6743,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758146839416.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5951,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758146845568.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6208,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758146862967.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6742,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758147310317.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5517,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758147316064.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5632,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758147333100.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6788,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758147778246.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5338,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758147783796.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5540,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758147801244.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7354,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758148247074.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6069,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758148253379.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6258,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758148270576.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7133,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758148720495.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5716,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758148726493.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7299,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758148745284.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6623,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758149191910.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5069,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758149197193.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6382,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758149214960.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6307,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758149666486.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4906,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758149671571.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6169,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758149688688.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6224,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758150130854.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5018,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758150136089.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5526,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758150153159.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6704,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758150607189.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6151,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758150613523.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6213,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758150631711.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6387,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758151081384.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5504,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758151087053.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5669,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758151103700.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6751,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758151545428.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5263,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758151550920.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5811,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758151568191.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6593,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758152011619.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5246,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758152017034.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5442,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758152033621.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6457,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758152461923.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5198,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758152467306.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5471,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758152482981.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6964,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758152931373.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6350,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758152937955.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6452,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758152955062.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6605,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758153397899.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5249,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758153403416.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6446,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758153421647.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6490,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758153866511.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5452,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758153872178.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6336,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758153890896.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6626,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758154386383.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5580,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758154392138.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5896,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758154407955.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6768,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758154852516.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5947,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758154858682.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6742,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758154876810.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6552,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758155319144.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4993,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758155324344.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6317,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758155341929.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6669,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758155784858.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6375,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758155791464.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5894,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758155808796.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6583,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758156250954.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4818,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758156255951.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5716,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758156272502.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7307,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758156715790.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5668,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758156721759.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6831,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758156740439.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6743,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758157183216.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5606,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758157189035.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5598,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758157206236.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7062,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758157650019.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5729,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758157656033.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6987,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758157674950.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6925,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758158127905.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5591,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758158133703.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5834,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758158149932.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7020,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758158592669.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5262,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758158598151.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7115,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758158615231.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7174,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758159057788.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6503,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758159064506.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6489,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758159081206.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6499,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758159522838.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5134,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758159528172.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5728,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758159544189.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 10886,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758159991400.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5919,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758159997652.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5868,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758160014397.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6816,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758160457825.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4842,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758160462910.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6323,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758160479407.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6463,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758160920772.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5020,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758160926023.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5763,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758160942872.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6555,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758161386371.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5155,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758161391744.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5502,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758161408487.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6100,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758161851570.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 4812,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758161856583.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5699,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758161873802.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7089,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758162319389.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6308,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758162326036.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5536,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758162342451.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7894,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758162792559.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6801,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758162799850.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6691,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758162818962.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6401,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758163259330.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5445,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758163264942.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5340,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758163282280.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6834,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758163723720.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5174,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758163729054.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5462,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758163745089.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6305,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758164184808.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5341,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758164190343.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5273,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758164206295.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6527,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758164647549.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6384,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758164654148.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5929,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758164671466.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7001,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758165112597.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5202,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758165118012.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5746,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758165135546.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6721,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758165578816.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5273,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758165584287.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5565,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758165600585.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6485,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758166045612.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5085,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758166050889.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5770,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758166067301.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7641,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758166509187.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7630,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758166517068.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5734,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758166534253.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 7159,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758166975682.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5155,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758166981098.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5790,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758166998067.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 6681,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758167416096.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5225,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758167421546.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5762,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758167438773.png'
+}

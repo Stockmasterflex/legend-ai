@@ -20,7 +20,7 @@ export default function GiscusComments(props: Partial<GiscusProps> = {}) {
 
   return (
     <Giscus
-      repo={repo!}
+      repo={repo as `${string}/${string}`}
       repoId={repoId!}
       category={category!}
       categoryId={categoryId!}

@@ -1,0 +1,31 @@
+{
+  "project_name": "Legend AI",
+  "services": {
+    "api": {
+      "name": "Scanner API",
+      "url_env": "LEGEND_API",
+      "health_path": "/healthz",
+      "render_id_env": "API_SERVICE_ID"
+    },
+    "shots": {
+      "name": "Screenshot Engine",
+      "url_env": "LEGEND_SHOTS",
+      "health_path": "/healthz",
+      "render_id_env": "SHOTS_SERVICE_ID"
+    },
+    "frontend": {
+      "name": "Next.js Frontend",
+      "url_env": "LEGEND_FRONTEND",
+      "health_path": "/",
+      "deploy_hook_env": "VERCEL_DEPLOY_HOOK_URL"
+    }
+  },
+  "ai_tools": {
+    "cursor": { "enabled": true, "prompt_prefix": ".cursor-prompt-" },
+    "codex": { "enabled": true, "prompt_prefix": "codex-" }
+  },
+  "notifications": {
+    "slack_webhook_env": "SLACK_WEBHOOK_URL",
+    "enabled": false
+  }
+}

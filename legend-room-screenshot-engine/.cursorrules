@@ -1,0 +1,55 @@
+# Legend AI — Cursor/Codex Project Rules
+# Purpose: Give Codex the exact operating rules for this repo.
+
+## ENV & SECRETS
+- Never hardcode secrets in files. Use environment vars that are preloaded via `direnv`:
+  - Base URLs: $LEGEND_API, $LEGEND_FRONTEND, $LEGEND_SHOTS
+  - Vercel: $VERCEL_DEPLOY_HOOK_URL, $VERCEL_TOKEN
+  - Render: $RENDER_TOKEN, $API_SERVICE_ID, $SHOTS_SERVICE_ID
+  - Backend: $SERVICE_DATABASE_URL, $REDIS_URL, $ALLOWED_ORIGINS, $ALLOWED_ORIGIN_REGEX, $VCP_PROVIDER, $NEWSAPI_KEY
+  - Cloudinary: $CLOUDINARY_URL / ($CLOUDINARY_API_KEY, $CLOUDINARY_API_SECRET, $CLOUDINARY_CLOUD_NAME)
+- When running scripts, assume env is already loaded by `.envrc` (direnv). If not, instruct user to run `direnv allow`.
+
+## TASKS Codex SHOULD DO
+- Implement features/fixes across FastAPI backend, shots microservice, and Next.js frontend.
+- Add env-driven configs (NO secrets in repo).
+- Use provided scripts:
+  - `scripts/legend_check.sh` → health checks
+  - `scripts/legend_deploy.sh` → deploy API + Vercel; optional shots deploy
+  - `scripts/legend_logs.sh` → fetch Render logs
+
+## DEPLOYMENT
+- Trigger API redeploy via Render REST:
+  - POST https://api.render.com/v1/services/$API_SERVICE_ID/deploys (Authorization: Bearer $RENDER_TOKEN)
+- Trigger frontend via Vercel Deploy Hook:
+  - POST $VERCEL_DEPLOY_HOOK_URL
+- Trigger shots via Render deploy with $SHOTS_SERVICE_ID when needed.
+
+## BACKEND GUIDELINES (FastAPI)
+- Respect existing routes:
+  - GET $LEGEND_API/healthz
+  - GET $LEGEND_API/api/v1/signals?symbol=SYMBOL
+  - GET $LEGEND_API/api/v1/chart?symbol=SYMBOL  (returns { chart_url })
+- Never break the API shape consumed by the frontend. Add new fields behind feature flags if needed.
+
+## SHOTS SERVICE (legend-shots)
+- Expose:
+  - GET $LEGEND_SHOTS/healthz -> { ok: true }
+  - GET $LEGEND_SHOTS/screenshot?symbol=SYMBOL -> { chart_url }
+- Headless browser path: $PUPPETEER_EXECUTABLE_PATH or fallback as configured.
+- For local dev: don't require cloud unless necessary; support $DRY_RUN=1 to return placeholder images.
+
+## FRONTEND (Next.js on Vercel)
+- Read API base from NEXT_PUBLIC_VCP_API_BASE or $LEGEND_API.
+- No secrets client-side. Only NEXT_PUBLIC_… vars are allowed in browser.
+- Use env-aware fetchers; avoid absolute literals.
+
+## QUALITY BAR
+- Add typed interfaces for API responses.
+- Include minimal smoke tests where feasible.
+- Write migration-safe changes; do not block boot on optional providers (NEWSAPI_KEY etc.).
+
+## SAFE OUTPUT
+- Codex MUST NOT print secret values in chat or commit messages.
+- If a value is required at runtime, refer to its env var name only.
+

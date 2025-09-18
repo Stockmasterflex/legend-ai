@@ -1,0 +1,13 @@
+legend-shots listening on :3010
+screenshot error TypeError: page.waitForTimeout is not a function
+    at file:///Users/kyleholthaus/Projects/LegendAI/legend-room-screenshot-engine/server.js:38:18
+screenshot error TypeError: page.waitForTimeout is not a function
+    at file:///Users/kyleholthaus/Projects/LegendAI/legend-room-screenshot-engine/server.js:38:18
+screenshot error TypeError: page.waitForTimeout is not a function
+    at file:///Users/kyleholthaus/Projects/LegendAI/legend-room-screenshot-engine/server.js:38:18
+screenshot error TypeError: page.waitForTimeout is not a function
+    at file:///Users/kyleholthaus/Projects/LegendAI/legend-room-screenshot-engine/server.js:38:18
+screenshot error TypeError: page.waitForTimeout is not a function
+    at file:///Users/kyleholthaus/Projects/LegendAI/legend-room-screenshot-engine/server.js:38:18
+screenshot error TypeError: page.waitForTimeout is not a function
+    at file:///Users/kyleholthaus/Projects/LegendAI/legend-room-screenshot-engine/server.js:38:18
