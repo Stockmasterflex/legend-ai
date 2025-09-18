@@ -176,7 +176,7 @@ def ai_chat(messages, model="gpt-4-turbo"):
         return response.choices[0].message.content
     except Exception as e:
         LOGGER.exception("ai_chat failed")
-        raise
+        return f"[AI unavailable: {e}]"
 
 
 def ai_request(prompt, model="gpt-4-turbo"):

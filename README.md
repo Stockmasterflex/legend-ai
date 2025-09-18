@@ -22,6 +22,12 @@ Endpoints
 	•	GET /scan/{symbol} → single-symbol VCP JSON
 	•	GET /api/v1/vcp/today → runs scan_once(“today”) and returns rows
 
+Environment toggles
+	•	`SCAN_REDIS_CACHE` (0/1) — enable Redis-backed scan response caching (requires `REDIS_URL`)
+	•	`SCAN_RESPONSE_CACHE_TTL` — TTL (seconds) for cached scan responses (defaults to `SCAN_CACHE_TTL`)
+	•	`SCAN_RATE_LIMIT` / `SCAN_RATE_WINDOW` — per-client cap for `/api/v1/scan` (default 60 requests per 60 seconds)
+	•	`CHART_RATE_LIMIT` / `CHART_RATE_WINDOW` — per-client cap for `/api/v1/chart` (default 120 requests per 60 seconds)
+
 Next steps
 	•	Replace yfinance with Polygon/Tiingo/Norgate in data_provider.py
 	•	Expand universe + add ATR stops + precision@K metrics

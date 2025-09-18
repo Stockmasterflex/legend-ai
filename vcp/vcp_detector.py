@@ -93,6 +93,12 @@ class VCPDetector:
 
         current_price = float(df["Close"].iloc[-1])
         avg_volume_50d = float(df["Volume"].iloc[-50:].mean())
+        lookback_window = 252 if len(df) >= 252 else len(df)
+        high_52w = float(df["High"].tail(lookback_window).max()) if lookback_window else current_price
+        if high_52w <= 0 or current_price / max(high_52w, 1e-6) < 0.85:
+            signal.notes.append("Price not within 15% of 52-week high")
+            log.debug("VCP %s rejected: 52w proximity %.2f", symbol, current_price / max(high_52w, 1e-6))
+            return signal
         if current_price < self.min_price or avg_volume_50d < self.min_volume:
             signal.notes.append(f"Failed liquidity filters (price={current_price:.2f}, avg50v={avg_volume_50d:.0f})")
             log.debug("VCP %s rejected: liquidity price=%.2f avg50v=%.0f", symbol, current_price, avg_volume_50d)
@@ -172,6 +178,14 @@ class VCPDetector:
             return signal
 
         signal.contractions = contractions
+        cup_high = max(float(c.high_price) for c in contractions if c.high_price)
+        cup_low = min(float(c.low_price) for c in contractions if c.low_price)
+        cup_depth_pct = (cup_high - cup_low) / max(cup_high, 1e-6)
+        if cup_depth_pct < 0.30 or cup_depth_pct > 0.50:
+            signal.notes.append(f"Cup depth {cup_depth_pct:.2%} outside 30-50% range")
+            log.debug("VCP %s rejected: cup depth %.2f", symbol, cup_depth_pct)
+            return signal
+
         signal.final_contraction_tightness = contractions[-1].percent_drop
         max_allow = self.final_contraction_max * 1.35
         if signal.final_contraction_tightness is None or signal.final_contraction_tightness > max_allow:
@@ -186,6 +200,10 @@ class VCPDetector:
             )
             return signal
         relaxed_final = signal.final_contraction_tightness > self.final_contraction_max
+        if signal.final_contraction_tightness < 0.10 or signal.final_contraction_tightness > 0.15:
+            signal.notes.append(f"Handle depth {signal.final_contraction_tightness:.2%} outside 10-15% range")
+            log.debug("VCP %s rejected: handle depth %.4f", symbol, signal.final_contraction_tightness or -1)
+            return signal
 
         # Volume dry-up: last 10d < vol_dryup_ratio * 50d
         vol10 = float(df["Volume"].iloc[-10:].mean())
@@ -204,6 +222,11 @@ class VCPDetector:
                 vol50,
                 ratio,
             )
+            return signal
+        handle_volume = float(contractions[-1].avg_volume or 0.0)
+        if handle_volume and vol50 and handle_volume > vol50 * 0.75:
+            signal.notes.append("Handle volume not sufficiently dry")
+            log.debug("VCP %s rejected: handle volume %.0f vs avg50 %.0f", symbol, handle_volume, vol50)
             return signal
 
         pivot = float(df["High"].iloc[-self.pivot_window:].max())

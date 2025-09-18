@@ -4,18 +4,29 @@ Overview
 - Next.js 14 + TypeScript + Tailwind CSS
 - App Router, dark finance theme, responsive
 - Pages: Home, About, Projects, Blog, Contact
-- Protected demo section on Projects via NEXT_PUBLIC_LEGEND_ROOM_DEMO_PASSWORD (client-side gate for demos only)
+- Admin-authenticated projects area backed by Auth.js credentials
 - Demo page at /demo showing live KPIs and candidates via your VCP API
 
 Getting Started
-1) Copy .env.example to .env and set NEXT_PUBLIC_LEGEND_ROOM_DEMO_PASSWORD
+1) Copy .env.example to .env and set NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_VCP_API_BASE, NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET, AUTH_ADMIN_EMAIL, AUTH_ADMIN_PASSWORD, AUTH_SECRET, NEXTAUTH_URL
 2) Install deps: npm install
 3) Ensure your FastAPI backend is running on http://127.0.0.1:8000 (see repo root README for make api)
 4) Run the site: npm run dev (http://localhost:3000) or npm run demo (pre-sets API base)
 
 Deploy
 - Optimized for Vercel: import repo folder `kyle-portfolio`.
-- Set env vars in Vercel: NEXT_PUBLIC_LEGEND_ROOM_DEMO_PASSWORD, NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_VCP_API_BASE
+- Set env vars in Vercel: NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_VCP_API_BASE, NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET, SANITY_API_VERSION (optional), SANITY_USE_CDN, STUDIO_USERNAME, STUDIO_PASSWORD, SANITY_READ_TOKEN (optional for server-side previews), AUTH_SECRET, AUTH_ADMIN_EMAIL, AUTH_ADMIN_PASSWORD, NEXTAUTH_URL
+
+Blog (Sanity CMS)
+- Studio mounted at `/studio` and protected with basic auth via `STUDIO_USERNAME`/`STUDIO_PASSWORD` (leave unset to disable gate; Sanity auth still applies).
+- `.env.example` lists required keys. Add your Sanity project ID and dataset, then restart `npm run dev`.
+- Schemas support rich text, inline charts/attachments, cover images, tags, and SEO overrides.
+- Posts published in Sanity appear on `/blog`; the site revalidates every 60s.
+
+Authentication
+- Credentials-based admin login provided by Auth.js/NextAuth (see `/login`).
+- Set `AUTH_ADMIN_EMAIL`, `AUTH_ADMIN_PASSWORD`, and `AUTH_SECRET` (or `NEXTAUTH_SECRET`) in your environment.
+- Protected routes (e.g., `/projects`) use SSR checks; unauthenticated visitors are redirected to `/login`.
 
 Notes
 - Client-side password gating is for demo UX, not security. Use real auth for production.

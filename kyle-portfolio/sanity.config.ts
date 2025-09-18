@@ -6,15 +6,13 @@ import post from './sanity/schemas/post'
 import author from './sanity/schemas/author'
 import tag from './sanity/schemas/tag'
 import settings from './sanity/schemas/settings'
-
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'demo'
-const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
+import { sanityDataset, sanityProjectId } from './sanity/env'
 
 export default defineConfig({
   name: 'legendStudio',
   title: 'Legend AI Studio',
-  projectId,
-  dataset,
+  projectId: sanityProjectId,
+  dataset: sanityDataset,
   basePath: '/studio',
   plugins: [deskTool(), visionTool()],
   schema: {

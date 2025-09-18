@@ -1,12 +1,17 @@
 import {createClient} from '@sanity/client'
-
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'demo'
-const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
+import {
+  sanityApiVersion,
+  sanityDataset,
+  sanityProjectId,
+  sanityReadToken,
+  sanityUseCdn,
+} from '../env'
 
 export const sanityClient = createClient({
-  projectId,
-  dataset,
-  apiVersion: '2025-01-01',
-  useCdn: true,
+  projectId: sanityProjectId,
+  dataset: sanityDataset,
+  apiVersion: sanityApiVersion,
+  useCdn: sanityUseCdn && process.env.NODE_ENV === 'production',
   perspective: 'published',
+  token: typeof window === 'undefined' ? sanityReadToken : undefined,
 })

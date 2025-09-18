@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { sanityClient } from '@/sanity/lib/client'
 import { allPostsQuery } from '@/sanity/lib/queries'
 import { urlFor } from '@/sanity/lib/image'
+import JsonLd from '@/components/JsonLd'
 
 export const revalidate = 60
 
@@ -31,6 +32,7 @@ interface Post {
   description?: string
   date?: string
   cover?: any
+  coverAlt?: string
   tags?: { title: string; slug: string }[]
 }
 
@@ -55,10 +57,22 @@ export default async function BlogIndex() {
     console.warn('[blog] failed to fetch posts from Sanity', error)
   }
   const hasPosts = posts.length > 0
-  const configured = (process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'demo') !== 'demo'
+  const blogJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: 'Legend AI Blog',
+    url: `${siteUrl}/blog`,
+    blogPost: posts.map((post) => ({
+      '@type': 'BlogPosting',
+      headline: post.title,
+      url: `${siteUrl}/blog/${post.slug}`,
+      datePublished: post.date,
+    })),
+  }
 
   return (
     <main className="prose prose-invert prose-zinc mx-auto max-w-3xl px-4 py-10">
+      <JsonLd id="legend-blog" data={blogJsonLd} />
       <h1 className="text-white">Legend AI Blog</h1>
       <p className="text-slate-300">
         Strategy notes, scan breakdowns, and platform updates straight from the Legend AI desk.
@@ -67,24 +81,12 @@ export default async function BlogIndex() {
         <div className="not-prose mt-8 rounded-xl border border-slate-800/80 bg-slate-900/60 p-6 text-sm text-slate-300">
           <p className="font-medium text-white">No posts yet.</p>
           <p className="mt-2">
-            {configured
-              ? 'Use Legend Studio to publish your first update. Posts go live as soon as you publish in Sanity.'
-              : 'Connect your Sanity project by setting NEXT_PUBLIC_SANITY_PROJECT_ID and NEXT_PUBLIC_SANITY_DATASET, then create posts in /studio.'}
+            Use Legend Studio to publish your first update. Posts go live as soon as you press publish in Sanity.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link href="/studio" className="btn btn-primary text-sm">
               Open Studio
             </Link>
-            {!configured && (
-              <a
-                className="btn btn-ghost text-sm"
-                href="https://www.sanity.io/docs"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Sanity Docs
-              </a>
-            )}
           </div>
         </div>
       )}
@@ -97,7 +99,7 @@ export default async function BlogIndex() {
                   <div className="relative h-56 w-full overflow-hidden bg-slate-950">
                     <Image
                       src={urlFor(post.cover).width(1200).height(630).url()}
-                      alt={post.title}
+                      alt={post.coverAlt || post.title}
                       fill
                       className="object-cover transition-transform duration-500 hover:scale-105"
                       sizes="(min-width: 768px) 768px, 100vw"
