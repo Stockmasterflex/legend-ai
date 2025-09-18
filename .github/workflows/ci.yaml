@@ -41,7 +41,7 @@ jobs:
         working-directory: kyle-portfolio
         run: npm ci
       - name: Lint (Next)
-        if: exists('kyle-portfolio/package.json')
+        if: ${{ hashFiles('kyle-portfolio/package.json') != '' }}
         working-directory: kyle-portfolio
         run: npm run lint --if-present
       - name: Build
