@@ -32,6 +32,34 @@ class VCPSignal:
     notes: List[str] = field(default_factory=list)
 
 
+def clamp_stop_loss(entry: float, stop: float, max_pct: float = 0.08) -> float:
+    """Clamp stop so that risk is not worse than max_pct below entry.
+    Example: entry=100, stop=50, max_pct=0.08 -> 92.0
+    """
+    try:
+        entry = float(entry)
+        stop = float(stop)
+        floor = entry * (1.0 - float(max_pct))
+        return float(floor if stop < floor else stop)
+    except Exception:
+        return stop
+
+
+def within_52wk_band(price: float, high_52w: float, band: float = 0.15) -> bool:
+    """Return True if price is within `band` of 52-week high (default 15%).
+    E.g., with band=0.15, require price >= 0.85 * high_52w.
+    """
+    try:
+        price = float(price)
+        high_52w = float(high_52w)
+        band = float(band)
+        if high_52w <= 0:
+            return False
+        return price >= (1.0 - band) * high_52w
+    except Exception:
+        return False
+
+
 class VCPDetector:
     def __init__(self,
                  min_price: float = 10.0,

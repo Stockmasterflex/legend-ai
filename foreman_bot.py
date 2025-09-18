@@ -16,6 +16,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import base64
 from datetime import datetime
+from typing import Dict, List
 
 # --- CONFIGURATION ---
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
@@ -27,6 +28,24 @@ FOREMAN_SCHEDULE_CHANNEL_ID = os.environ.get("FOREMAN_SCHEDULE_CHANNEL_ID", "")
 
 app = slack_bolt.App(token=SLACK_BOT_TOKEN)
 openai.api_key = OPENAI_API_KEY
+
+
+_original_chat_post = app.client.chat_postMessage
+
+
+def _chat_post_with_journal(*args, **kwargs):
+    text = kwargs.get("text")
+    try:
+        return _original_chat_post(*args, **kwargs)
+    finally:
+        try:
+            snippet = text if isinstance(text, str) else json.dumps(text) if text is not None else ""
+            log_journal("slack", "Slack message", snippet)
+        except Exception:
+            LOGGER.exception("Failed to journal Slack message")
+
+
+app.client.chat_postMessage = _chat_post_with_journal  # type: ignore[assignment]
 
 # Resolve repository root regardless of whether this file lives at repo root or in foreman-bot/
 _THIS_FILE = Path(__file__).resolve()
@@ -91,6 +110,28 @@ def learn(event: str, ok: bool):
     except Exception:
         LOGGER.exception("learn() failed to update learning store")
 
+
+def log_journal(tool, title, body):
+    from datetime import datetime, timezone
+    import os
+
+    path = os.getenv("JOURNAL_PATH", ".orchestrator/journal.jsonl")
+    entry = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "tool": tool,
+        "author": "foreman_bot",
+        "channel": "slack",
+        "title": title,
+        "body": body,
+        "tags": [],
+    }
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        LOGGER.exception("Failed to append journal entry")
+
 # --- HELP TEXT ---
 HELP_TEXT = """
 *Foreman Bot (Epic Edition)* - Your AI Development Partner
@@ -113,6 +154,45 @@ Commands:
 Scheduled:
 - Daily project report at 9 AM PT (set FOREMAN_SCHEDULE_CHANNEL_ID)
 """
+
+
+@app.message(re.compile(r"^remember\s+(.*)", re.IGNORECASE))
+def remember_handler(message, say, context, logger):
+    note = context['matches'][0].strip()
+    log_journal("slack", "Remember", note)
+    say(f"🧠 Noted: {note}")
+
+
+@app.message(re.compile(r"^summary\s+(today|this week)$", re.IGNORECASE))
+def summary_handler(message, say, context, logger):
+    period = context['matches'][0].lower()
+    import json, datetime, os
+    path = os.getenv("JOURNAL_PATH", ".orchestrator/journal.jsonl")
+    now = datetime.datetime.utcnow()
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0) if period == "today" else now - datetime.timedelta(days=7)
+    lines = []
+    if os.path.exists(path):
+        with open(path) as f:
+            for line in f:
+                try:
+                    row = json.loads(line)
+                    ts = datetime.datetime.fromisoformat(row["ts"].replace("Z", "+00:00")).replace(tzinfo=None)
+                    if ts >= start:
+                        lines.append(row)
+                except Exception:
+                    pass
+    out: Dict[str, List[str]] = {}
+    for r in lines:
+        out.setdefault(r.get("tool", "unknown"), []).append(f"- {r.get('title', 'untitled')}: {str(r.get('body', ''))[:200]}")
+    if not out:
+        say(f"Nothing logged for {period}.")
+        return
+    blocks = [f"*Summary ({period})*"]
+    for tool, items in out.items():
+        blocks.append(f"*{tool}*")
+        blocks.extend(items[:10])
+    log_journal("foreman", f"Summary {period}", f"items={len(lines)}")
+    say("\n".join(blocks))
 
 # --- HELPER FUNCTIONS ---
 def _safe_repo_path(p: str) -> Path:
@@ -153,12 +233,14 @@ def run_command(command, channel_id, post_to_slack=True):
             if result.stderr:
                 output += f"🚨 *Errors/Warnings:*\n```{result.stderr}```"
             app.client.chat_postMessage(channel=channel_id, text=output)
+            log_journal("warp", f"Command: {cmd}", output)
         return result.stdout, result.stderr
     except Exception as e:
         LOGGER.exception("run_command failed")
         learn(f"cmd:{command}", False)
         if post_to_slack:
             app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Command Failed:*\n```{str(e)}```")
+            log_journal("warp", f"Command failed: {command}", str(e))
         return None, str(e)
 
 def create_github_pr(channel_id, branch_name, title, body=""):
@@ -173,10 +255,14 @@ def ai_chat(messages, model="gpt-4-turbo"):
     """Generic chat helper that supports text and vision inputs."""
     try:
         response = openai.chat.completions.create(model=model, messages=messages)
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        log_journal("openai", "AI response", content or "")
+        return content
     except Exception as e:
         LOGGER.exception("ai_chat failed")
-        return f"[AI unavailable: {e}]"
+        error_message = f"[AI unavailable: {e}]"
+        log_journal("openai", "AI failure", error_message)
+        return error_message
 
 
 def ai_request(prompt, model="gpt-4-turbo"):
@@ -259,6 +345,7 @@ def generate_project_report(channel_id, is_scheduled=False):
     report_prompt = f"You are a senior project manager. Analyze the following data and generate a concise status report with two sections: 'What's Done Recently' (from commits) and 'What's Left To Do' (from TODOs).\n\n--- COMMITS ---\n{commits}\n\n--- TODOs ---\n{todos}"
     report = ai_request(report_prompt)
     app.client.chat_postMessage(channel=channel_id, text=f"*Legend AI Project Status Report*\n\n{report}")
+    log_journal("foreman", "Project Status Report", report)
 
 # --- EPIC FEATURES ---
 def write_tests(file_path, channel_id):
@@ -363,10 +450,11 @@ def suggest_tasks(channel_id):
         for file_path in files_to_analyze:
             if os.path.exists(file_path):
                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    code_context += f"--- START {file_path} ---\n{f.read()}\n--- END {file_path} ---\n\n"
-        prompt = f"You are a world-class senior engineer. Analyze this code. Generate a list of 3-5 concrete tasks formatted as '# TODO:' or '# FIXME:'. Provide the file path for each.\n\n--- CODE ---\n{code_context}"
-        suggestions = ai_request(prompt)
-        app.client.chat_postMessage(channel=channel_id, text=f"💡 *Here are some suggested tasks:*\n```{suggestions}```\nYou can ask me to implement them with the `fix` command!")
+        code_context += f"--- START {file_path} ---\n{f.read()}\n--- END {file_path} ---\n\n"
+    prompt = f"You are a world-class senior engineer. Analyze this code. Generate a list of 3-5 concrete tasks formatted as '# TODO:' or '# FIXME:'. Provide the file path for each.\n\n--- CODE ---\n{code_context}"
+    suggestions = ai_request(prompt)
+    app.client.chat_postMessage(channel=channel_id, text=f"💡 *Here are some suggested tasks:*\n```{suggestions}```\nYou can ask me to implement them with the `fix` command!")
+    log_journal("foreman", "Task Suggestions", suggestions)
     except Exception as e:
         LOGGER.exception("suggest_tasks failed")
         app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Task suggestion failed:*\n```{str(e)}```")
@@ -383,9 +471,11 @@ def prepare_for_deployment(channel_id):
         run_command('git commit -m "feat: Add configuration for Render deployment"', channel_id, False)
         run_command("git push", channel_id)
         app.client.chat_postMessage(channel=channel_id, text="✅ Deployment files created and pushed. You are now ready to set up the 'Background Worker' on Render.")
+        log_journal("warp", "Prepare Deployment", "Deployment files updated and pushed")
     except Exception as e:
         LOGGER.exception("prepare_for_deployment failed")
         app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Prepare for deployment failed:*\n```{str(e)}```")
+        log_journal("warp", "Prepare Deployment failed", str(e))
 
 # --- ACTION HANDLERS ---
 @app.action("deploy_confirm_button")
@@ -649,6 +739,7 @@ def cleanup_bot_branches(channel_id):
 
 def deploy_all_command(channel_id):
     try:
+        summary = []
         app.client.chat_postMessage(channel=channel_id, text="🚀 Deploying API + shots (Render) and triggering Vercel…")
         render_token = os.environ.get("RENDER_TOKEN", "").strip()
         api_sid = os.environ.get("API_SERVICE_ID", "").strip()
@@ -661,29 +752,39 @@ def deploy_all_command(channel_id):
             try:
                 requests.post(f"https://api.render.com/v1/services/{shots_sid}/deploys", headers=headers, json={}).raise_for_status()
                 app.client.chat_postMessage(channel=channel_id, text="✅ Render: shots deploy triggered")
+                summary.append("Render shots deploy triggered")
             except Exception as e:
                 app.client.chat_postMessage(channel=channel_id, text=f"❌ Render shots: {e}")
+                summary.append(f"Render shots failed: {e}")
         if headers and api_sid:
             try:
                 requests.post(f"https://api.render.com/v1/services/{api_sid}/deploys", headers=headers, json={}).raise_for_status()
                 app.client.chat_postMessage(channel=channel_id, text="✅ Render: API deploy triggered")
+                summary.append("Render API deploy triggered")
             except Exception as e:
                 app.client.chat_postMessage(channel=channel_id, text=f"❌ Render API: {e}")
+                summary.append(f"Render API failed: {e}")
         if vercel_hook:
             try:
                 requests.post(vercel_hook, timeout=10)
                 app.client.chat_postMessage(channel=channel_id, text="✅ Vercel hook triggered")
+                summary.append("Vercel hook triggered")
             except Exception as e:
                 app.client.chat_postMessage(channel=channel_id, text=f"❌ Vercel hook failed: {e}")
+                summary.append(f"Vercel hook failed: {e}")
         app.client.chat_postMessage(channel=channel_id, text="⏳ Checking API health…")
         try:
             resp = requests.get("https://legend-api.onrender.com/healthz", timeout=15)
             app.client.chat_postMessage(channel=channel_id, text=f"API /healthz: {resp.status_code} {resp.text[:200]}")
+            summary.append(f"API health: {resp.status_code}")
         except Exception as e:
             app.client.chat_postMessage(channel=channel_id, text=f"API check failed: {e}")
+            summary.append(f"API check failed: {e}")
+        log_journal("warp", "Deploy Result", " | ".join(summary) if summary else "Deployment attempted")
     except Exception:
         LOGGER.exception("deploy_all_command failed")
         app.client.chat_postMessage(channel=channel_id, text="🔥 Deploy all failed.")
+        log_journal("warp", "Deploy Result", "error: deploy_all_command failed")
 
 
 if __name__ == "__main__":
