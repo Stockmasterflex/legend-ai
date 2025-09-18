@@ -81,11 +81,11 @@ services:
   # Foreman Bot - AI Development Assistant
   - type: worker
     name: foreman-bot
-    env: python
+    runtime: python
     # The build command is now less critical, but we keep it for caching.
-    buildCommand: 'pip install -r foreman-bot/requirements.txt'
+    buildCommand: pip install -r requirements.txt
     # This is the UNBREAKABLE start command. It does everything in one go.
-    startCommand: 'cd foreman-bot && pip install -r requirements.txt && python3 foreman_bot.py'
+    startCommand: python foreman_bot.py
     autoDeploy: true
     envVars:
       - fromGroup: legend-ai-secrets

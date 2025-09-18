@@ -57,3 +57,9 @@ urllib3==2.5.0
 uvicorn==0.35.0
 websockets==15.0.1
 yfinance==0.2.66
+slack_bolt
+openai
+schedule
+black
+flake8
+pyyaml
