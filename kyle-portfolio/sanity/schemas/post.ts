@@ -48,6 +48,7 @@ export default defineType({
       of: [
         { type: 'block' },
         defineField({
+          name: 'image',
           type: 'image',
           title: 'Image',
           options: { hotspot: true },
