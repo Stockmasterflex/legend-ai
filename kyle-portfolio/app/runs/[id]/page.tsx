@@ -2,7 +2,7 @@
 import React from 'react'
 import Sparkline from '@/components/Sparkline'
 
-const API_BASE = process.env.NEXT_PUBLIC_VCP_API_BASE || 'http://127.0.0.1:8000'
+const API_BASE = process.env.NEXT_PUBLIC_VCP_API_BASE || 'https://legend-api.onrender.com'
 
 type Candidate = { date: string; symbol: string; confidence: number; pivot: number; price: number; notes?: string }
 type Summary = {

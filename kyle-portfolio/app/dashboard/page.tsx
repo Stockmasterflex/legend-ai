@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 
-const API_BASE = process.env.NEXT_PUBLIC_VCP_API_BASE || 'http://127.0.0.1:8000'
+const API_BASE = process.env.NEXT_PUBLIC_VCP_API_BASE || 'https://legend-api.onrender.com'
 
 async function fetchJSON<T>(url: string): Promise<T> { const r = await fetch(url, { cache: 'no-store' }); if (!r.ok) throw new Error(`${r.status}`); return r.json() }
 
