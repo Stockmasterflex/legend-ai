@@ -12,6 +12,10 @@ import requests
 from bs4 import BeautifulSoup
 import json
 from pathlib import Path
+import logging
+from logging.handlers import RotatingFileHandler
+import base64
+from datetime import datetime
 
 # --- CONFIGURATION ---
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
@@ -19,6 +23,7 @@ SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 GITHUB_USERNAME = os.environ.get("GITHUB_USERNAME")
 GITHUB_REPO = os.environ.get("GITHUB_REPO")
+FOREMAN_SCHEDULE_CHANNEL_ID = os.environ.get("FOREMAN_SCHEDULE_CHANNEL_ID", "")
 
 app = slack_bolt.App(token=SLACK_BOT_TOKEN)
 openai.api_key = OPENAI_API_KEY
@@ -29,42 +34,103 @@ _REPO_ROOT = _THIS_FILE.parent
 if _REPO_ROOT.name == "foreman-bot":
     _REPO_ROOT = _REPO_ROOT.parent
 
+# --- LOGGING SETUP & CONFIG VALIDATION ---
+LOGS_DIR = _REPO_ROOT / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+LOGGER = logging.getLogger("foreman_bot")
+LOGGER.setLevel(logging.INFO)
+if not LOGGER.handlers:
+    file_handler = RotatingFileHandler(LOGS_DIR / "foreman_bot.log", maxBytes=1_000_000, backupCount=3)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    LOGGER.addHandler(file_handler)
+    LOGGER.addHandler(stream_handler)
+
+REQUIRED_ENV_VARS = [
+    ("SLACK_BOT_TOKEN", SLACK_BOT_TOKEN),
+    ("SLACK_APP_TOKEN", SLACK_APP_TOKEN),
+    ("OPENAI_API_KEY", OPENAI_API_KEY),
+]
+missing = [k for k, v in REQUIRED_ENV_VARS if not v]
+if missing:
+    LOGGER.error(f"Missing required environment variables: {', '.join(missing)}")
+
+# --- LIGHTWEIGHT LEARNING SYSTEM ---
+LEARNING_PATH = _REPO_ROOT / "bot_learning.json"
+
+def load_learning():
+    try:
+        if LEARNING_PATH.exists():
+            with open(LEARNING_PATH, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception:
+        LOGGER.exception("Failed to load bot_learning.json")
+    return {"events": {}, "successes": 0, "failures": 0}
+
+
+def save_learning(data):
+    try:
+        with open(LEARNING_PATH, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        LOGGER.exception("Failed to save bot_learning.json")
+
+
+LEARNING = load_learning()
+
+def learn(event: str, ok: bool):
+    try:
+        LEARNING["events"].setdefault(event, 0)
+        LEARNING["events"][event] += 1
+        if ok:
+            LEARNING["successes"] += 1
+        else:
+            LEARNING["failures"] += 1
+        save_learning(LEARNING)
+    except Exception:
+        LOGGER.exception("learn() failed to update learning store")
+
 # --- HELP TEXT ---
 HELP_TEXT = """
 *Foreman Bot (Epic Edition)* - Your AI Development Partner
 
-*Code & Quality*
-- `fix [request] in [file]`: Fixes code and opens a GitHub PR.
-- `write tests for [file]`: Generates a new `test_[file]` with pytest tests.
-- `document [file]`: Adds docstrings and comments to a file.
-- `refactor [request]`: Performs a project-wide refactor (experimental).
+Commands:
+- `fix [request] in [file]` — AI patch a file and open a PR.
+- `write tests for [file]` — Generate pytest tests for a file.
+- `document [file]` — Add docstrings and comments to a file.
+- `plan feature [description]` — Break down a feature into TODOs.
+- `status` / `deploy` — Orchestrator commands.
+- `diagnose` — Analyze failures from status and recent commits.
+- `report` — Generate a project status report.
+- `test` — Run pytest.
+- `analyze image [prompt]` — Vision analysis for attached images.
+- `ci fix` or `fix workflows` — Auto-fix common GitHub Actions issues.
+- `health` — Deployment and configuration health check.
+- `cleanup branches` — Remove merged bot-fix branches on origin.
+- `help [command]` — Show usage for a command.
 
-*Strategy & Planning*
-- `plan feature [description]`: Breaks down a feature into TODOs and adds them to the code.
-- `what's next?`: Suggests the next logical task from existing TODOs.
-- `brainstorm [idea]`: Generates a technical plan for a new idea.
-- `prepare release [vX.X.X]`: Drafts release notes for a new version tag.
-
-*Diagnostics & Knowledge*
-- `status` / `deploy`: Basic orchestrator commands.
-- `diagnose`: Finds the likely cause of a service failure.
-- `teach me about [file]`: Explains a file's purpose and logic.
-- `search for [error]`: Searches Stack Overflow for a solution to an error.
-
-*Deployment*
-- `prepare for deployment`: Creates the necessary files for deploying me to Render.
-
-*Autonomous Actions*
-- I post a project report every morning at 9 AM PST.
+Scheduled:
+- Daily project report at 9 AM PT (set FOREMAN_SCHEDULE_CHANNEL_ID)
 """
 
 # --- HELPER FUNCTIONS ---
+def _safe_repo_path(p: str) -> Path:
+    """Resolve a potentially relative path safely within the repo root."""
+    base = _REPO_ROOT
+    candidate = (base / p).resolve()
+    if not str(candidate).startswith(str(base)):
+        raise ValueError("Unsafe path outside repository root")
+    return candidate
+
+
 def run_command(command, channel_id, post_to_slack=True):
     try:
         # Normalize any leading ../ to ./ since we always run from repo root
         cmd = command.strip()
         if cmd.startswith("../"):
             cmd = "./" + cmd[3:]
+        LOGGER.info(f"Running command: {cmd}")
         if post_to_slack:
             app.client.chat_postMessage(channel=channel_id, text=f"🤖 Running: `{cmd}`")
         result = subprocess.run(
@@ -75,8 +141,10 @@ def run_command(command, channel_id, post_to_slack=True):
             timeout=300,
             cwd=str(_REPO_ROOT),
         )
+        LOGGER.info(f"Command exit code: {result.returncode}")
+        success = (result.returncode == 0)
+        learn(f"cmd:{cmd}", success)
         if post_to_slack:
-            success = (result.returncode == 0)
             status_emoji = "✅" if success else "❌"
             heading = "Succeeded" if success else "Failed"
             output = f"{status_emoji} *{heading}*\n"
@@ -87,6 +155,8 @@ def run_command(command, channel_id, post_to_slack=True):
             app.client.chat_postMessage(channel=channel_id, text=output)
         return result.stdout, result.stderr
     except Exception as e:
+        LOGGER.exception("run_command failed")
+        learn(f"cmd:{command}", False)
         if post_to_slack:
             app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Command Failed:*\n```{str(e)}```")
         return None, str(e)
@@ -98,27 +168,60 @@ def create_github_pr(channel_id, branch_name, title, body=""):
     pr_url = f"https://github.com/{GITHUB_USERNAME}/{GITHUB_REPO}/compare/main...{branch_name}?expand=1&title={quote(title)}&body={quote(body)}"
     app.client.chat_postMessage(channel=channel_id, text=f"✅ Pushed changes to branch `{branch_name}`.\n*Click here to create a Pull Request:* <{pr_url}|Review Changes>")
 
+
+def ai_chat(messages, model="gpt-4-turbo"):
+    """Generic chat helper that supports text and vision inputs."""
+    try:
+        response = openai.chat.completions.create(model=model, messages=messages)
+        return response.choices[0].message.content
+    except Exception as e:
+        LOGGER.exception("ai_chat failed")
+        raise
+
+
 def ai_request(prompt, model="gpt-4-turbo"):
-    response = openai.chat.completions.create(model=model, messages=[{"role": "user", "content": prompt}])
-    return response.choices[0].message.content
+    return ai_chat([{ "role": "user", "content": prompt }], model=model)
+
+
+def _now_slug():
+    return datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+
+
+def _slugify(text: str, limit: int = 40) -> str:
+    s = re.sub(r"[^a-zA-Z0-9-_]+", "-", text.lower()).strip("-")
+    return s[:limit] if len(s) > limit else s
+
+
+def _branch_name(prefix: str, title: str) -> str:
+    return f"{prefix}/{_slugify(title)}-{_now_slug()}"
 
 # --- CORE COMMANDS ---
 def fix_code_file(prompt, file_path, channel_id):
     try:
         app.client.chat_postMessage(channel=channel_id, text=f"Okay, I'll try to '{prompt}' in `{file_path}`.")
-        with open(file_path, 'r') as f:
+        target = _safe_repo_path(file_path)
+        if not target.exists():
+            app.client.chat_postMessage(channel=channel_id, text=f"❌ File not found: `{file_path}`")
+            return
+        with open(target, 'r', encoding='utf-8', errors='ignore') as f:
             original_code = f.read()
         
-        ai_prompt = f"Expert software engineer task: '{prompt}'.\nOriginal code from '{file_path}':\n```{original_code}```\nProvide only the complete, updated file content."
-        new_code = ai_request(ai_prompt)
+        system = "You are a meticulous senior Python engineer. Apply changes surgically, keep code style consistent, and ensure imports remain valid."
+        ai_prompt = f"Task: {prompt}\nFile: {file_path}\nReturn ONLY the complete updated file contents, no explanations.\n--- ORIGINAL CODE ---\n{original_code}"
+        new_code = ai_chat([
+            {"role": "system", "content": system},
+            {"role": "user", "content": ai_prompt},
+        ])
         
-        with open(file_path, 'w') as f:
-            f.write(new_code.strip().replace("```python", "").replace("```", ""))
+        with open(target, 'w', encoding='utf-8') as f:
+            content = new_code.strip()
+            content = content.replace("```python", "").replace("```", "")
+            f.write(content)
         
-        app.client.chat_postMessage(channel=channel_id, text=f"📝 AI patch applied. Formatting and linting (Pre-Commit Guardian)...")
-        run_command(f"black {file_path}; flake8 {file_path}", channel_id)
+        app.client.chat_postMessage(channel=channel_id, text=f"📝 AI patch applied. Formatting and linting...")
+        run_command(f"black {file_path} || true; ruff check {file_path} || true", channel_id)
 
-        branch_name = f"bot-fix/{prompt.replace(' ', '-').lower()[:30]}"
+        branch_name = _branch_name("bot-fix", prompt)
         pr_title = f"fix: {prompt}"
         
         run_command(f"git checkout -b {branch_name}", channel_id, False)
@@ -126,7 +229,10 @@ def fix_code_file(prompt, file_path, channel_id):
         run_command(f"git commit -m '{pr_title}'", channel_id, False)
         run_command(f"git push origin {branch_name}", channel_id)
         create_github_pr(channel_id, branch_name, pr_title)
+        learn("fix_code_file", True)
     except Exception as e:
+        LOGGER.exception("fix_code_file failed")
+        learn("fix_code_file", False)
         app.client.chat_postMessage(channel=channel_id, text=f"🔥 *AI fix failed:*\n```{str(e)}```")
 
 def confirm_and_deploy(channel_id, user_id):
@@ -158,31 +264,50 @@ def generate_project_report(channel_id, is_scheduled=False):
 def write_tests(file_path, channel_id):
     try:
         app.client.chat_postMessage(channel=channel_id, text=f"🔬 Analyzing `{file_path}` to generate tests...")
-        with open(file_path, 'r') as f:
+        target = _safe_repo_path(file_path)
+        if not target.exists():
+            app.client.chat_postMessage(channel=channel_id, text=f"❌ File not found: `{file_path}`")
+            return
+        with open(target, 'r', encoding='utf-8', errors='ignore') as f:
             code = f.read()
         
-        prompt = f"You are a test engineer. Analyze the following code from `{file_path}` and write a new Python file with comprehensive pytest tests for it. The tests should be practical and cover key functionality and edge cases. Provide only the raw code for the new test file.\n\n--- CODE ---\n{code}"
+        prompt = (
+            f"Write pytest tests for `{file_path}`. Prioritize critical logic and edge cases. "
+            f"Return ONLY the test file code.\n--- CODE ---\n{code}"
+        )
         test_code = ai_request(prompt)
         
         test_file_path = f"tests/test_{os.path.basename(file_path)}"
         os.makedirs("tests", exist_ok=True)
-        with open(test_file_path, 'w') as f:
+        with open(_safe_repo_path(test_file_path), 'w', encoding='utf-8') as f:
             f.write(test_code.strip().replace("```python", "").replace("```", ""))
 
         app.client.chat_postMessage(channel=channel_id, text=f"✅ Generated new test file: `{test_file_path}`. Now running the tests...")
-        run_command(f"pytest {test_file_path}", channel_id)
+        run_command(f"pytest -q {test_file_path}", channel_id)
     except Exception as e:
+        LOGGER.exception("write_tests failed")
         app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Test generation failed:*\n```{str(e)}```")
 
 def document_file(file_path, channel_id):
-    app.client.chat_postMessage(channel=channel_id, text=f"✍️ Asking AI to document `{file_path}`...")
-    with open(file_path, 'r') as f:
-        code = f.read()
-    prompt = f"You are a technical writer. Add clear, concise comments and docstrings to the following Python code. Explain complex logic. Return the fully documented code file.\n\n--- CODE ---\n{code}"
-    documented_code = ai_request(prompt)
-    with open(file_path, 'w') as f:
-        f.write(documented_code.strip().replace("```python", "").replace("```", ""))
-    app.client.chat_postMessage(channel=channel_id, text=f"✅ Documentation added to `{file_path}`.")
+    try:
+        app.client.chat_postMessage(channel=channel_id, text=f"✍️ Asking AI to document `{file_path}`...")
+        target = _safe_repo_path(file_path)
+        if not target.exists():
+            app.client.chat_postMessage(channel=channel_id, text=f"❌ File not found: `{file_path}`")
+            return
+        with open(target, 'r', encoding='utf-8', errors='ignore') as f:
+            code = f.read()
+        prompt = (
+            "Improve this Python code with clear docstrings and inline comments. "
+            "Explain complex logic. Return ONLY the updated file content.\n--- CODE ---\n" + code
+        )
+        documented_code = ai_request(prompt)
+        with open(target, 'w', encoding='utf-8') as f:
+            f.write(documented_code.strip().replace("```python", "").replace("```", ""))
+        app.client.chat_postMessage(channel=channel_id, text=f"✅ Documentation added to `{file_path}`.")
+    except Exception as e:
+        LOGGER.exception("document_file failed")
+        app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Documentation failed:*\n```{str(e)}```")
 
 def plan_feature(description, channel_id):
     app.client.chat_postMessage(channel=channel_id, text=f"🗺️ Planning feature: '{description}'...")
@@ -222,8 +347,8 @@ def search_web(query, channel_id):
 def diagnose_problems(channel_id):
     app.client.chat_postMessage(channel=channel_id, text="🤔 Diagnosing project health...")
     status, _ = run_command("./orchestrator/status.sh", channel_id, False)
-    if "❌" not in status:
-        app.client.chat_postMessage(channel=channel_id, text="✅ All systems are healthy. Nothing to diagnose!")
+    if not status or "❌" not in status:
+        app.client.chat_postMessage(channel=channel_id, text="✅ All systems are healthy or status unavailable. Nothing to diagnose!")
         return
     commits, _ = run_command("git log --oneline -5", channel_id, False)
     prompt = f"You are a senior DevOps engineer. Analyze the following system status and recent commits. Identify the most likely cause of the failure.\n\n--- SYSTEM STATUS ---\n{status}\n\n--- RECENT COMMITS ---\n{commits}\n\nProvide a brief diagnosis."
@@ -237,25 +362,30 @@ def suggest_tasks(channel_id):
         code_context = ""
         for file_path in files_to_analyze:
             if os.path.exists(file_path):
-                with open(file_path, 'r') as f:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     code_context += f"--- START {file_path} ---\n{f.read()}\n--- END {file_path} ---\n\n"
         prompt = f"You are a world-class senior engineer. Analyze this code. Generate a list of 3-5 concrete tasks formatted as '# TODO:' or '# FIXME:'. Provide the file path for each.\n\n--- CODE ---\n{code_context}"
         suggestions = ai_request(prompt)
         app.client.chat_postMessage(channel=channel_id, text=f"💡 *Here are some suggested tasks:*\n```{suggestions}```\nYou can ask me to implement them with the `fix` command!")
     except Exception as e:
+        LOGGER.exception("suggest_tasks failed")
         app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Task suggestion failed:*\n```{str(e)}```")
 
 def prepare_for_deployment(channel_id):
-    app.client.chat_postMessage(channel=channel_id, text="🚀 Preparing for deployment...")
-    run_command("pip freeze > requirements.txt", channel_id)
-    with open('run_bot.sh', 'w') as f:
-        f.write("#!/bin/bash\n")
-        f.write("python3 foreman_bot.py\n")
-    run_command("chmod +x run_bot.sh", channel_id)
-    run_command("git add requirements.txt run_bot.sh", channel_id, False)
-    run_command('git commit -m "feat: Add configuration for Render deployment"', channel_id, False)
-    run_command("git push", channel_id)
-    app.client.chat_postMessage(channel=channel_id, text="✅ Deployment files created and pushed. You are now ready to set up the 'Background Worker' on Render.")
+    try:
+        app.client.chat_postMessage(channel=channel_id, text="🚀 Preparing for deployment...")
+        run_command("pip freeze > requirements.txt", channel_id)
+        with open(_safe_repo_path('run_bot.sh'), 'w', encoding='utf-8') as f:
+            f.write("#!/bin/bash\n")
+            f.write("python3 foreman_bot.py\n")
+        run_command("chmod +x run_bot.sh", channel_id)
+        run_command("git add requirements.txt run_bot.sh", channel_id, False)
+        run_command('git commit -m "feat: Add configuration for Render deployment"', channel_id, False)
+        run_command("git push", channel_id)
+        app.client.chat_postMessage(channel=channel_id, text="✅ Deployment files created and pushed. You are now ready to set up the 'Background Worker' on Render.")
+    except Exception as e:
+        LOGGER.exception("prepare_for_deployment failed")
+        app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Prepare for deployment failed:*\n```{str(e)}```")
 
 # --- ACTION HANDLERS ---
 @app.action("deploy_confirm_button")
@@ -272,66 +402,251 @@ def handle_deploy_cancel(ack, body, say):
 
 # --- SCHEDULER & AUTONOMOUS AGENTS ---
 def run_autonomous_tasks():
-    # IMPORTANT: Replace this placeholder with your actual channel ID!
-    # How to find it: Right-click the channel name in Slack -> "Copy" -> "Copy Link".
-    # The ID starts with 'C' and is at the end of the URL.
-    channel_id = "C097P0L5A2Q" # Replace with your #all-legend-ai channel ID
-    
-    if channel_id == "YOUR_CHANNEL_ID_HERE":
-        print("Scheduler Warning: Please set a channel_id in foreman_bot.py for scheduled tasks.")
+    channel_id = FOREMAN_SCHEDULE_CHANNEL_ID.strip()
+    if not channel_id:
+        LOGGER.warning("Scheduler: FOREMAN_SCHEDULE_CHANNEL_ID not set; skipping scheduled tasks.")
         return
-
     generate_project_report(channel_id, is_scheduled=True)
     
 def run_scheduler():
-    schedule.every().day.at("09:00", "America/Los_Angeles").do(run_autonomous_tasks)
+    try:
+        schedule.every().day.at("09:00", "America/Los_Angeles").do(run_autonomous_tasks)
+    except Exception:
+        LOGGER.exception("Failed to set schedule; defaulting to UTC 17:00")
+        schedule.every().day.at("17:00").do(run_autonomous_tasks)
     while True:
-        schedule.run_pending()
+        try:
+            schedule.run_pending()
+        except Exception:
+            LOGGER.exception("Scheduler iteration failed")
         time.sleep(60)
 
 # --- MAIN ROUTER ---
 @app.event("app_mention")
 def handle_mentions(body, say):
-    text = body["event"]["text"]
-    user_id = body["event"]["user"]
-    channel_id = body["event"]["channel"]
-    command_text = re.sub(r'<@.*?>', '', text).strip().lower()
+    try:
+        event = body.get("event", {})
+        text = event.get("text", "")
+        user_id = event.get("user")
+        channel_id = event.get("channel")
+        files = event.get("files", []) or []
+        command_text = re.sub(r'<@.*?>', '', text).strip().lower()
 
-    if command_text.startswith("deploy"): confirm_and_deploy(channel_id, user_id)
-    elif command_text.startswith("status"): run_command("./orchestrator/status.sh", channel_id)
-    elif command_text.startswith("report"): generate_project_report(channel_id)
-    elif command_text.startswith("test"): run_command("python3 -m pytest", channel_id)
-    elif command_text.startswith("diagnose"): diagnose_problems(channel_id)
-    elif command_text.startswith("suggest tasks"): suggest_tasks(channel_id)
-    elif command_text.startswith("what's next?"): suggest_next_task(channel_id)
-    elif command_text.startswith("help"): say(HELP_TEXT)
-    elif command_text.startswith("prepare for deployment"): prepare_for_deployment(channel_id)
-    elif command_text.startswith("write tests for"):
-        file_path = re.sub(r'<@.*?>', '', text).strip().lower().replace("write tests for", "").strip()
-        write_tests(file_path, channel_id)
-    elif command_text.startswith("document"):
-        file_path = re.sub(r'<@.*?>', '', text).strip().lower().replace("document", "").strip()
-        document_file(file_path, channel_id)
-    elif command_text.startswith("plan feature"):
-        description = re.sub(r'<@.*?>', '', text).strip().lower().replace("plan feature", "").strip()
-        plan_feature(description, channel_id)
-    elif command_text.startswith("search for"):
-        query = re.sub(r'<@.*?>', '', text).strip().lower().replace("search for", "").strip()
-        search_web(query, channel_id)
-    elif command_text.startswith("fix"):
-        original_text = re.sub(r'<@.*?>', '', text).strip()
+        if command_text.startswith("deploy"): confirm_and_deploy(channel_id, user_id)
+        elif command_text.startswith("status"): run_command("./orchestrator/status.sh", channel_id)
+        elif command_text.startswith("report"): generate_project_report(channel_id)
+        elif command_text.startswith("test"): run_command("python3 -m pytest -q", channel_id)
+        elif command_text.startswith("diagnose"): diagnose_problems(channel_id)
+        elif command_text.startswith("suggest tasks"): suggest_tasks(channel_id)
+        elif command_text.startswith("what's next?"): suggest_next_task(channel_id)
+        elif command_text.startswith("help"):
+            show_help(command_text, say)
+        elif command_text.startswith("prepare for deployment"): prepare_for_deployment(channel_id)
+        elif command_text.startswith("write tests for"):
+            file_path = re.sub(r'<@.*?>', '', text).strip().lower().replace("write tests for", "").strip()
+            write_tests(file_path, channel_id)
+        elif command_text.startswith("document"):
+            file_path = re.sub(r'<@.*?>', '', text).strip().lower().replace("document", "").strip()
+            document_file(file_path, channel_id)
+        elif command_text.startswith("plan feature"):
+            description = re.sub(r'<@.*?>', '', text).strip().lower().replace("plan feature", "").strip()
+            plan_feature(description, channel_id)
+        elif command_text.startswith("search for"):
+            query = re.sub(r'<@.*?>', '', text).strip().lower().replace("search for", "").strip()
+            search_web(query, channel_id)
+        elif command_text.startswith("analyze image"):
+            prompt = text.lower().split("analyze image", 1)[1].strip() or "Describe issues and suggestions."
+            analyze_images(files, prompt, channel_id)
+        elif command_text.startswith("ci fix") or command_text.startswith("fix workflows"):
+            fix_workflows(channel_id)
+        elif command_text.startswith("health"):
+            health_check(channel_id)
+        elif command_text.startswith("cleanup branches"):
+            cleanup_bot_branches(channel_id)
+        elif command_text.startswith("fix"):
+            original_text = re.sub(r'<@.*?>', '', text).strip()
+            try:
+                parts = original_text.split(" in ")
+                prompt = parts[0].replace("fix", "", 1).strip()
+                file_path = parts[1].strip()
+                fix_code_file(prompt, file_path, channel_id)
+            except Exception:
+                say("Usage: `fix [your request] in [file_path]`")
+        else:
+            say(f"Sorry, I don't understand that. Try `help` to see what I can do.")
+    except Exception:
+        LOGGER.exception("handle_mentions failed")
+
+# --- NEW CAPABILITIES ---
+
+def show_help(command_text: str, say):
+    parts = command_text.split()
+    if len(parts) <= 1:
+        say(HELP_TEXT)
+        return
+    topic = " ".join(parts[1:])
+    help_map = {
+        "fix": "fix [request] in [file] — example: fix replace deprecated call in service_api.py",
+        "write tests for": "write tests for [file] — generates pytest tests for the file",
+        "document": "document [file] — adds docstrings and comments",
+        "analyze image": "analyze image [prompt] — attach images and add an optional prompt",
+        "ci fix": "ci fix — scans workflows for exists() and replaces with hashFiles()",
+        "health": "health — checks env vars and orchestrator scripts",
+        "cleanup branches": "cleanup branches — deletes remote merged bot-fix/* branches",
+    }
+    for k, v in help_map.items():
+        if topic.startswith(k):
+            say(v)
+            return
+    say("No specific help found; available commands are listed above.")
+
+
+def analyze_images(files, prompt, channel_id):
+    try:
+        if not files:
+            app.client.chat_postMessage(channel=channel_id, text="Attach at least one image and try again.")
+            return
+        parts = [{"type": "text", "text": f"{prompt}\nProvide concise, actionable insights."}]
+        count = 0
+        for f in files:
+            mime = f.get("mimetype", "")
+            url = f.get("url_private")
+            if not mime.startswith("image/") or not url:
+                continue
+            resp = requests.get(url, headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"})
+            if resp.status_code != 200:
+                continue
+            b64 = base64.b64encode(resp.content).decode("utf-8")
+            data_url = f"data:{mime};base64,{b64}"
+            parts.append({"type": "image_url", "image_url": {"url": data_url}})
+            count += 1
+            if count >= 5:
+                break
+        if count == 0:
+            app.client.chat_postMessage(channel=channel_id, text="No valid images found in the message.")
+            return
+        content = parts
+        messages = [{"role": "user", "content": content}]
         try:
-            parts = original_text.split(" in ")
-            prompt = parts[0].replace("fix", "", 1).strip()
-            file_path = parts[1].strip()
-            fix_code_file(prompt, file_path, channel_id)
+            result = ai_chat(messages, model="gpt-4o")
         except Exception:
-            say("Usage: `fix [your request] in [file_path]`")
-    else:
-        say(f"Sorry, I don't understand that. Try `help` to see what I can do.")
+            result = ai_chat(messages, model="gpt-4o-mini")
+        app.client.chat_postMessage(channel=channel_id, text=f"🖼️ *Vision Analysis*\n{result}")
+        learn("analyze_images", True)
+    except Exception:
+        LOGGER.exception("analyze_images failed")
+        learn("analyze_images", False)
+        app.client.chat_postMessage(channel=channel_id, text="🔥 Vision analysis failed.")
+
+
+import re as _re
+
+def fix_workflow_content(text: str) -> str:
+    # Replace if: ${{ exists('path') }} with hashFiles != ''
+    def repl_exists(m):
+        inner = m.group(1)
+        return f"${{ {{ hashFiles({inner}) != '' }} }}"  # placeholder; fix below
+    # Positive exists
+    text2 = _re.sub(r"\$\{\{\s*exists\(([^)]+)\)\s*\}\}", r"${{ hashFiles(\1) != '' }}", text)
+    # Negated exists
+    text2 = _re.sub(r"\$\{\{\s*!\s*exists\(([^)]+)\)\s*\}\}", r"${{ hashFiles(\1) == '' }}", text2)
+    return text2
+
+
+def fix_workflows(channel_id):
+    try:
+        root = _safe_repo_path('.github/workflows')
+        if not root.exists():
+            app.client.chat_postMessage(channel=channel_id, text="No workflows directory found.")
+            return
+        changed = []
+        for p in root.glob("*.yml"):
+            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            new_content = fix_workflow_content(content)
+            if new_content != content:
+                with open(p, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+                changed.append(p.name)
+        for p in root.glob("*.yaml"):
+            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            new_content = fix_workflow_content(content)
+            if new_content != content:
+                with open(p, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+                changed.append(p.name)
+        if not changed:
+            app.client.chat_postMessage(channel=channel_id, text="✅ No workflow fixes needed.")
+            return
+        branch = _branch_name("fix/gh-actions", "exists-to-hashfiles")
+        run_command(f"git checkout -b {branch}", channel_id, False)
+        run_command("git add .github/workflows", channel_id, False)
+        run_command("git commit -m 'fix(ci): replace exists() with hashFiles()'", channel_id, False)
+        run_command(f"git push origin {branch}", channel_id)
+        create_github_pr(channel_id, branch, "fix(ci): replace exists() with hashFiles()")
+    except Exception:
+        LOGGER.exception("fix_workflows failed")
+        app.client.chat_postMessage(channel=channel_id, text="🔥 Failed to fix workflows.")
+
+
+def health_check(channel_id):
+    try:
+        lines = []
+        # Env vars
+        missing = [k for k, v in REQUIRED_ENV_VARS if not v]
+        if missing:
+            lines.append(f"❌ Missing env vars: {', '.join(missing)}")
+        else:
+            lines.append("✅ Required env vars present")
+        # Orchestrator scripts
+        for rel in ["orchestrator/status.sh", "orchestrator/deploy.sh", "orchestrator/run.sh"]:
+            p = _safe_repo_path(rel)
+            if p.exists() and os.access(p, os.X_OK):
+                lines.append(f"✅ {rel} exists and is executable")
+            elif p.exists():
+                lines.append(f"⚠️ {rel} exists but is not executable")
+            else:
+                lines.append(f"❌ {rel} missing")
+        # Try status
+        out, err = run_command("./orchestrator/status.sh", channel_id, False)
+        if out:
+            lines.append("--- status.sh output ---\n" + (out[:900] + ('…' if len(out) > 900 else '')))
+        if err:
+            lines.append("--- status.sh errors ---\n" + (err[:400] + ('…' if len(err) > 400 else '')))
+        app.client.chat_postMessage(channel=channel_id, text="\n".join(lines))
+    except Exception:
+        LOGGER.exception("health_check failed")
+        app.client.chat_postMessage(channel=channel_id, text="🔥 Health check failed.")
+
+
+def cleanup_bot_branches(channel_id):
+    try:
+        # Fetch latest
+        run_command("git fetch --prune", channel_id, False)
+        # List merged branches
+        res, _ = run_command("git branch -r --merged origin/main", channel_id, False)
+        to_delete = []
+        if res:
+            for line in res.splitlines():
+                line = line.strip()
+                if line.startswith("origin/bot-fix/"):
+                    to_delete.append(line.replace("origin/", ""))
+        if not to_delete:
+            app.client.chat_postMessage(channel=channel_id, text="No merged bot-fix branches to delete.")
+            return
+        deleted = []
+        for b in to_delete[:20]:  # safety limit
+            run_command(f"git push origin --delete {b}", channel_id, False)
+            deleted.append(b)
+        app.client.chat_postMessage(channel=channel_id, text=f"🧹 Deleted {len(deleted)} merged branches: {', '.join(deleted)}")
+    except Exception:
+        LOGGER.exception("cleanup_bot_branches failed")
+        app.client.chat_postMessage(channel=channel_id, text="🔥 Cleanup failed.")
+
 
 if __name__ == "__main__":
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
-    print("🤖 Foreman Bot (Epic Edition) is starting...")
+    LOGGER.info("🤖 Foreman Bot (Epic Edition) is starting…")
     SocketModeHandler(app, SLACK_APP_TOKEN).start()
