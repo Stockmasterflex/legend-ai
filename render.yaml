@@ -77,3 +77,13 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+
+  # Foreman Bot - AI Development Assistant
+  - type: worker
+    name: foreman-bot
+    env: python
+    rootDir: ./foreman-bot
+    buildCommand: pip install -r requirements.txt
+    startCommand: python3 foreman_bot.py
+    envVars:
+      - fromGroup: legend-ai-secrets
