@@ -81,7 +81,7 @@ services:
   # Foreman Bot - AI Development Assistant
   - type: worker
     name: foreman-bot
-    runtime: python
+    env: python
     # The build command is now less critical, but we keep it for caching.
     buildCommand: pip install -r requirements.txt
     # This is the UNBREAKABLE start command. It does everything in one go.
