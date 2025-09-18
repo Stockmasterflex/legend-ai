@@ -82,9 +82,9 @@ services:
   - type: worker
     name: foreman-bot
     env: python
-    # The build command is now less critical, but we keep it for caching.
-    buildCommand: 'pip install -r ./foreman-bot/requirements.txt && python -m playwright install chromium'
-    # This is the UNBREAKABLE start command. It does everything in one go.
+    # Install Python dependencies from repo root
+    buildCommand: 'python -m pip install --upgrade pip && pip install -r requirements.txt'
+    # Start the bot
     startCommand: python foreman_bot.py
     autoDeploy: true
     envVars:
