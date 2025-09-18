@@ -82,8 +82,10 @@ services:
   - type: worker
     name: foreman-bot
     env: python
+    # We still have a build command for caching, but the start command is what matters.
     buildCommand: 'pip install -r ./foreman-bot/requirements.txt'
-    startCommand: 'python3 ./foreman-bot/foreman_bot.py'
+    # This command chains everything together, guaranteeing the environment is correct.
+    startCommand: 'cd foreman-bot && pip install -r requirements.txt && python3 foreman_bot.py'
     autoDeploy: true
     envVars:
       - fromGroup: legend-ai-secrets
