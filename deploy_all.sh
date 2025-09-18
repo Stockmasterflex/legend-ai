@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${RENDER_TOKEN:?missing}"
-: "${VERCEL_TOKEN:?missing}"
-: "${VERCEL_DEPLOY_HOOK_URL:?missing}"
-: "${API_SERVICE_ID:?missing}"
+# Optional envs. If missing, we will skip those steps gracefully.
+RENDER_TOKEN="${RENDER_TOKEN:-}"
+VERCEL_TOKEN="${VERCEL_TOKEN:-}"
+VERCEL_DEPLOY_HOOK_URL="${VERCEL_DEPLOY_HOOK_URL:-}"
+API_SERVICE_ID="${API_SERVICE_ID:-}"
+SHOTS_SERVICE_ID="${SHOTS_SERVICE_ID:-}"
 
 LEGEND_API="https://legend-api.onrender.com"
 LEGEND_FRONTEND="https://legend-ai.vercel.app"
 
-hdr_auth=(-H "Authorization: Bearer ${RENDER_TOKEN}" -H "Content-Type: application/json" -H "Accept: application/json")
+hdr_auth=()
+if [[ -n "$RENDER_TOKEN" ]]; then
+  hdr_auth=(-H "Authorization: Bearer ${RENDER_TOKEN}" -H "Content-Type: application/json" -H "Accept: application/json")
+fi
 
 find_service_id () {
   local name="$1"
@@ -43,38 +48,75 @@ ok () { echo "✅ $*"; }
 warn () { echo "⚠️  $*"; }
 
 step "0) Resolve legend-shots service id"
-SHOTS_SERVICE_ID="${SHOTS_SERVICE_ID:-}"
-if [[ -z "${SHOTS_SERVICE_ID:-}" ]]; then
-  echo "🔎 Finding legend-shots service on Render…"
-  SHOTS_SERVICE_ID="$(find_service_id shots || true)"
+if [[ -n "$RENDER_TOKEN" ]]; then
   if [[ -z "${SHOTS_SERVICE_ID:-}" ]]; then
-    SHOTS_SERVICE_ID="$(find_service_id legend-room-screenshot-engine || true)"
+    echo "🔎 Finding legend-shots service on Render…"
+    SHOTS_SERVICE_ID="$(find_service_id shots || true)"
+    if [[ -z "${SHOTS_SERVICE_ID:-}" ]]; then
+      SHOTS_SERVICE_ID="$(find_service_id legend-room-screenshot-engine || true)"
+    fi
   fi
+  if [[ -z "${SHOTS_SERVICE_ID:-}" ]]; then
+    warn "Could not auto-find the legend-shots service. Skipping shots redeploy."
+  else
+    ok "legend-shots service id: ${SHOTS_SERVICE_ID}"
+  fi
+else
+  warn "No RENDER_TOKEN provided—skipping Render service discovery."
 fi
-if [[ -z "${SHOTS_SERVICE_ID:-}" ]]; then
-  echo "❌ Could not auto-find the legend-shots service. Name it with 'shots' or 'screenshot' in Render, or export SHOTS_SERVICE_ID=… and re-run."
-  exit 1
-fi
-ok "legend-shots service id: ${SHOTS_SERVICE_ID}"
 
 step "1) Render: redeploy legend-shots"
-redeploy_render "$SHOTS_SERVICE_ID" "legend-shots"
+if [[ -n "$RENDER_TOKEN" && -n "${SHOTS_SERVICE_ID:-}" ]]; then
+  redeploy_render "$SHOTS_SERVICE_ID" "legend-shots"
+else
+  warn "Skipping legend-shots redeploy (missing RENDER_TOKEN or SHOTS_SERVICE_ID)."
+fi
 
 step "2) Render: redeploy legend-api"
-redeploy_render "$API_SERVICE_ID" "legend-api"
+if [[ -n "$RENDER_TOKEN" ]]; then
+  if [[ -z "${API_SERVICE_ID:-}" ]]; then
+    echo "🔎 Finding legend-api service on Render…"
+    API_SERVICE_ID="$(find_service_id legend-api || true)"
+  fi
+  if [[ -n "${API_SERVICE_ID:-}" ]]; then
+    redeploy_render "$API_SERVICE_ID" "legend-api"
+  else
+    warn "Skipping legend-api redeploy (missing API_SERVICE_ID)."
+  fi
+else
+  warn "No RENDER_TOKEN provided—skipping Render redeploys."
+fi
 
 step "3) Vercel: trigger Deploy Hook & poll to READY"
-curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL" >/dev/null
-ready=0
-for i in {1..30}; do
-  sleep 10
-  state="$(curl -fsS -H "Authorization: Bearer ${VERCEL_TOKEN}" "https://api.vercel.com/v6/deployments?app=legend-ai&limit=1" | jq -r '.deployments[0].state // .state // "unknown"')"
-  echo "  [$i/30] Vercel state: $state"
-  [[ "$state" == "READY" ]] && { ready=1; break; }
-  [[ "$state" == "ERROR" ]] && { echo "❌ Vercel ERROR"; exit 1; }
-done
-[[ $ready -eq 1 ]] || { echo "❌ Vercel timeout"; exit 1; }
-ok "Vercel READY"
+if [[ -n "$VERCEL_DEPLOY_HOOK_URL" ]]; then
+  curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL" >/dev/null && ok "Vercel deploy hook sent" || warn "Vercel hook failed"
+else
+  warn "No VERCEL_DEPLOY_HOOK_URL provided—skipping Vercel trigger."
+fi
+
+if [[ -n "$VERCEL_TOKEN" ]]; then
+  ready=0
+  for i in {1..30}; do
+    sleep 10
+    state="$(curl -fsS -H "Authorization: Bearer ${VERCEL_TOKEN}" "https://api.vercel.com/v6/deployments?app=legend-ai&limit=1" | jq -r '.deployments[0].state // .state // "unknown"')"
+    echo "  [$i/30] Vercel state: $state"
+    [[ "$state" == "READY" ]] && { ready=1; break; }
+    [[ "$state" == "ERROR" ]] && { echo "❌ Vercel ERROR"; exit 1; }
+  done
+  [[ $ready -eq 1 ]] || { echo "❌ Vercel timeout"; exit 1; }
+  ok "Vercel READY"
+else
+  echo "Polling frontend for 200 …"
+  ready=0
+  for i in {1..30}; do
+    sleep 10
+    code="$(curl -s -o /dev/null -w "%{http_code}" "$LEGEND_FRONTEND")"
+    echo "  [$i/30] Frontend HTTP $code"
+    [[ "$code" == "200" ]] && { ready=1; break; }
+  done
+  [[ $ready -eq 1 ]] || { echo "❌ Frontend timeout"; exit 1; }
+  ok "Frontend HTTP 200"
+fi
 
 step "4) Health checks"
 printf "API /healthz … "
