@@ -11,6 +11,7 @@ from urllib.parse import quote
 import requests
 from bs4 import BeautifulSoup
 import json
+from pathlib import Path
 
 # --- CONFIGURATION ---
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
@@ -21,6 +22,12 @@ GITHUB_REPO = os.environ.get("GITHUB_REPO")
 
 app = slack_bolt.App(token=SLACK_BOT_TOKEN)
 openai.api_key = OPENAI_API_KEY
+
+# Resolve repository root regardless of whether this file lives at repo root or in foreman-bot/
+_THIS_FILE = Path(__file__).resolve()
+_REPO_ROOT = _THIS_FILE.parent
+if _REPO_ROOT.name == "foreman-bot":
+    _REPO_ROOT = _REPO_ROOT.parent
 
 # --- HELP TEXT ---
 HELP_TEXT = """
@@ -54,16 +61,34 @@ HELP_TEXT = """
 # --- HELPER FUNCTIONS ---
 def run_command(command, channel_id, post_to_slack=True):
     try:
-        if post_to_slack: app.client.chat_postMessage(channel=channel_id, text=f"🤖 Running: `{command}`")
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=300)
+        # Normalize any leading ../ to ./ since we always run from repo root
+        cmd = command.strip()
+        if cmd.startswith("../"):
+            cmd = "./" + cmd[3:]
         if post_to_slack:
-            output = f"✅ *Succeeded*\n"
-            if result.stdout: output += f"```{result.stdout}```"
-            if result.stderr: output += f"🚨 *Errors/Warnings:*\n```{result.stderr}```"
+            app.client.chat_postMessage(channel=channel_id, text=f"🤖 Running: `{cmd}`")
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            cwd=str(_REPO_ROOT),
+        )
+        if post_to_slack:
+            success = (result.returncode == 0)
+            status_emoji = "✅" if success else "❌"
+            heading = "Succeeded" if success else "Failed"
+            output = f"{status_emoji} *{heading}*\n"
+            if result.stdout:
+                output += f"```{result.stdout}```"
+            if result.stderr:
+                output += f"🚨 *Errors/Warnings:*\n```{result.stderr}```"
             app.client.chat_postMessage(channel=channel_id, text=output)
         return result.stdout, result.stderr
     except Exception as e:
-        if post_to_slack: app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Command Failed:*\n```{str(e)}```")
+        if post_to_slack:
+            app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Command Failed:*\n```{str(e)}```")
         return None, str(e)
 
 def create_github_pr(channel_id, branch_name, title, body=""):
