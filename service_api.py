@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -229,7 +230,24 @@ SCAN_CACHE_TTL = int(os.getenv("SCAN_CACHE_TTL", "240"))
 MIN_PRICE_DEFAULT = float(os.getenv("SCAN_MIN_PRICE", "5"))
 MIN_VOLUME_DEFAULT = float(os.getenv("SCAN_MIN_VOLUME", "500000"))
 MAX_ATR_RATIO_DEFAULT = float(os.getenv("SCAN_MAX_ATR_RATIO", "0.08"))
+# Hard server-side minimums (enforced regardless of client request)
+MIN_PRICE_HARD = float(os.getenv("SCAN_MIN_PRICE_HARD", "20"))
+MIN_VOLUME_HARD = float(os.getenv("SCAN_MIN_VOLUME_HARD", "750000"))
+# Max distance from 52-week high (e.g., 0.25 means within 25%)
+MAX_DIST_52W_HIGH = float(os.getenv("SCAN_MAX_DIST_52W_HIGH", "0.25"))
+# Alerting
+ALERT_QUALITY_THRESHOLD = float(os.getenv("ALERT_PATTERN_QUALITY_THRESHOLD", "0.20"))
+ALERT_MIN_SAMPLES = int(os.getenv("ALERT_MIN_SAMPLES", "25"))
+ALERT_SLACK_WEBHOOK = os.getenv("SLACK_ALERT_WEBHOOK", "").strip()
+
 SCAN_SAMPLE_ENABLE = os.getenv("SCAN_SAMPLE_ENABLE", "0").strip() in {"1", "true", "TRUE", "yes", "on"}
+_BOOL_TRUE = {"1", "true", "TRUE", "yes", "on"}
+SCAN_REDIS_RESPONSE_CACHE_ENABLED = os.getenv("SCAN_REDIS_CACHE", "0").strip() in _BOOL_TRUE
+SCAN_RESPONSE_CACHE_TTL = int(os.getenv("SCAN_RESPONSE_CACHE_TTL", str(SCAN_CACHE_TTL)))
+SCAN_RATE_LIMIT = max(0, int(os.getenv("SCAN_RATE_LIMIT", "60") or 0))
+SCAN_RATE_WINDOW = max(1, int(os.getenv("SCAN_RATE_WINDOW", "60") or 1))
+CHART_RATE_LIMIT = max(0, int(os.getenv("CHART_RATE_LIMIT", "120") or 0))
+CHART_RATE_WINDOW = max(1, int(os.getenv("CHART_RATE_WINDOW", "60") or 1))
 SCAN_PREFETCH_CHARTS = os.getenv("SCAN_PREFETCH_CHARTS", "0").strip() in {"1", "true", "TRUE", "yes", "on"}
 SCAN_PREFETCH_TTL = int(os.getenv("SCAN_PREFETCH_TTL", str(900)))
 
@@ -295,6 +313,8 @@ if os.getenv("REDIS_URL") and redis is not None:  # pragma: no branch - simple i
 
 _local_scan_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
 _cache_lock = threading.Lock()
+_rate_limiter_counters: Dict[str, Tuple[int, float]] = {}
+_rate_limiter_lock = threading.Lock()
 _prefetch_lock = threading.Lock()
 _prefetch_state: Dict[Tuple[str, str], float] = {}
 
@@ -368,6 +388,50 @@ def _cache_set(key: str, value: Dict[str, Any]) -> None:
         _local_scan_cache[key] = (expires_at, json.loads(json.dumps(value)))
 
 
+def _rate_limit_check(key: str, limit: int, window: int) -> Tuple[bool, int]:
+    if limit <= 0 or window <= 0:
+        return False, 0
+    now = time.time()
+    with _rate_limiter_lock:
+        count, reset_at = _rate_limiter_counters.get(key, (0, now + window))
+        if now >= reset_at:
+            count = 0
+            reset_at = now + window
+        if count >= limit:
+            retry_after = max(1, int(reset_at - now))
+            return True, retry_after
+        _rate_limiter_counters[key] = (count + 1, reset_at)
+        retry_after = max(1, int(reset_at - now))
+        return False, retry_after
+
+
+def _response_cache_key(prefix: str, payload: Dict[str, Any]) -> str:
+    raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    digest = hashlib.md5(raw.encode("utf-8")).hexdigest()
+    return f"{prefix}:{digest}"
+
+
+def _response_cache_get(key: str) -> Optional[Dict[str, Any]]:
+    if not (SCAN_REDIS_RESPONSE_CACHE_ENABLED and _redis_client and SCAN_RESPONSE_CACHE_TTL > 0):
+        return None
+    try:
+        cached = _redis_client.get(key)
+        if cached:
+            return json.loads(cached)
+    except Exception as exc:
+        logger.debug("response cache get failed", extra={"key": key, "error": str(exc)})
+    return None
+
+
+def _response_cache_set(key: str, value: Dict[str, Any]) -> None:
+    if not (SCAN_REDIS_RESPONSE_CACHE_ENABLED and _redis_client and SCAN_RESPONSE_CACHE_TTL > 0):
+        return
+    try:
+        _redis_client.setex(key, SCAN_RESPONSE_CACHE_TTL, json.dumps(value))
+    except Exception as exc:
+        logger.debug("response cache set failed", extra={"key": key, "error": str(exc)})
+
+
 def _resolve_timeframe_config(timeframe: str) -> Dict[str, Any]:
     tf = timeframe.lower()
     if tf not in _timeframe_defaults:
@@ -431,16 +495,31 @@ def _scan_symbol(
             return None
     try:
         prices = df["Close"].astype(float)
+        highs = df.get("High").astype(float) if "High" in df.columns else prices
+        last_close = float(prices.iloc[-1])
         avg_price = float(prices.tail(30).mean()) if len(prices) >= 30 else float(prices.mean())
     except Exception:
-        avg_price = 0.0
+        avg_price, last_close, highs = 0.0, 0.0, None
+    # Enforce server-side minimums
+    min_price = max(min_price, MIN_PRICE_HARD)
     if avg_price < min_price:
         return None
+    # 52-week high proximity filter (best-effort if enough history)
+    try:
+        window = min(len(df), 252)
+        if highs is not None and window >= 60:  # need a reasonable window
+            high_52w = float(highs.tail(window).max())
+            if high_52w > 0:
+                if last_close < (1.0 - MAX_DIST_52W_HIGH) * high_52w:
+                    return None
+    except Exception:
+        pass
     try:
         volumes = df.get("Volume")
         avg_volume = float(volumes.tail(30).mean()) if volumes is not None and len(volumes) >= 30 else float(volumes.mean()) if volumes is not None else 0.0
     except Exception:
         avg_volume = 0.0
+    min_volume = max(min_volume, MIN_VOLUME_HARD)
     if avg_volume < min_volume:
         return None
     try:
@@ -473,9 +552,33 @@ def _scan_symbol(
         if max_atr_ratio and atr_ratio > max_atr_ratio:
             return None
     key_levels = outcome.get("key_levels") if isinstance(outcome.get("key_levels"), dict) else None
+    # Derive a confidence score (0-100) blending detector score, proximity to 52W high, and volume sufficiency
+    confidence = None
+    try:
+        near_high_score = 0.0
+        vol_score = 0.0
+        if highs is not None and last_close:
+            window = min(len(df), 252)
+            if window >= 60:
+                high_52w = float(highs.tail(window).max())
+                if high_52w > 0:
+                    # Map [ (1-MAX_DIST)..1 ] to [0..1]
+                    ratio = last_close / high_52w
+                    base = 1.0 - MAX_DIST_52W_HIGH
+                    near = max(0.0, min(1.0, (ratio - base) / max(MAX_DIST_52W_HIGH, 1e-6)))
+                    near_high_score = near
+        if min_volume > 0:
+            vol_score = max(0.0, min(1.0, avg_volume / max(min_volume, 1.0)))
+        # Weighted blend: 70% detector score, +20 from near-high, +10 from volume sufficiency
+        base_score = max(0.0, min(100.0, score))
+        confidence = max(0.0, min(100.0, 0.7 * base_score + 20.0 * near_high_score + 10.0 * vol_score))
+    except Exception:
+        confidence = max(0.0, min(100.0, float(score)))
+
     row = {
         "symbol": symbol,
         "score": round(score, 2),
+        "confidence": round(float(confidence), 1),
         "entry": entry_val,
         "stop": stop_val,
         "targets": targets_val,
@@ -725,6 +828,10 @@ def api_indicators(symbol: str = Query(...), period: str = Query("6mo")) -> Dict
 
 @app.get("/api/v1/signals")
 def api_signals(symbol: str = Query(...)) -> Dict[str, Any]:
+    # Paper trading validation gate
+    if os.getenv("PAPER_TRADING_REQUIRED", "false").strip().lower() in {"1", "true", "yes", "on"}:
+        if os.getenv("PAPER_TRADING_VALIDATED", "false").strip().lower() not in {"1", "true", "yes", "on"}:
+            raise HTTPException(status_code=503, detail="Paper trading validation required before live signals. Set PAPER_TRADING_VALIDATED=true to bypass.")
     try:
         from indicators.ta import compute_all_indicators
         from signals.core import score_from_indicators
@@ -733,7 +840,15 @@ def api_signals(symbol: str = Query(...)) -> Dict[str, Any]:
             raise RuntimeError("no_data")
         ind = compute_all_indicators(df)
         sig = score_from_indicators(ind, df)
+        # Normalize score to 0-100 range for consistency
+        try:
+            sval = float(sig.get("score", 0))
+            sig["confidence"] = max(0.0, min(100.0, float(sval)))
+        except Exception:
+            pass
         return {"symbol": symbol.upper(), "signal": sig, "is_sample": False}
+    except HTTPException:
+        raise
     except Exception:
         return {
             "symbol": symbol.upper(),
@@ -1216,6 +1331,7 @@ def analytics_overview(
 
 @app.get("/api/v1/scan")
 async def scan_v1(
+    request: Request,
     pattern: str = Query(..., description="vcp|cup_handle|hns|flag|wedge|double"),
     universe: str = Query("sp500", description="sp500|nasdaq100"),
     limit: int = Query(100, ge=1, le=200),
@@ -1225,6 +1341,11 @@ async def scan_v1(
     max_atr_ratio: Optional[float] = Query(None, ge=0.0, le=1.0),
     sample: bool = Query(False, description="Return a sample payload instead of scanning"),
 ) -> Dict[str, Any]:
+    client_host = request.client.host if request.client else "unknown"
+    limited, retry_after = _rate_limit_check(f"scan:{client_host}", SCAN_RATE_LIMIT, SCAN_RATE_WINDOW)
+    if limited:
+        raise HTTPException(status_code=429, detail="Scan rate limit exceeded", headers={"Retry-After": str(retry_after)})
+
     canon_pattern = _canonical_pattern(pattern)
     canon_universe = _canonical_universe(universe)
     if sample:
@@ -1233,15 +1354,59 @@ async def scan_v1(
         else:
             # Feature disabled; return empty payload with hint
             return {"pattern": canon_pattern, "universe": canon_universe, "count": 0, "results": [], "is_sample": False}
+    # Enforce hard minimums server-side regardless of client request
+    min_price_value = max(min_price if min_price is not None else MIN_PRICE_DEFAULT, MIN_PRICE_HARD)
+    min_volume_value = max(min_volume if min_volume is not None else MIN_VOLUME_DEFAULT, MIN_VOLUME_HARD)
+    max_atr_value = max_atr_ratio if max_atr_ratio is not None else MAX_ATR_RATIO_DEFAULT
+
+    cache_key = None
+    if SCAN_REDIS_RESPONSE_CACHE_ENABLED and not sample:
+        cache_key = _response_cache_key(
+            "scan-response",
+            {
+                "pattern": canon_pattern,
+                "universe": canon_universe,
+                "limit": limit,
+                "timeframe": timeframe,
+                "min_price": min_price_value,
+                "min_volume": min_volume_value,
+                "max_atr": max_atr_value,
+            },
+        )
+        cached = _response_cache_get(cache_key)
+        if cached is not None:
+            return cached
+
     payload = await _run_pattern_scan(
         canon_pattern,
         canon_universe,
         limit,
         timeframe=timeframe,
-        min_price=min_price if min_price is not None else MIN_PRICE_DEFAULT,
-        min_volume=min_volume if min_volume is not None else MIN_VOLUME_DEFAULT,
-        max_atr_ratio=max_atr_ratio if max_atr_ratio is not None else MAX_ATR_RATIO_DEFAULT,
+        min_price=min_price_value,
+        min_volume=min_volume_value,
+        max_atr_ratio=max_atr_value,
     )
+
+    # Alert if quality drops below threshold (fraction of results with score>=80)
+    try:
+        rows = payload.get("results", [])
+        n = len(rows)
+        if ALERT_SLACK_WEBHOOK and n >= ALERT_MIN_SAMPLES:
+            good = sum(1 for r in rows if float(r.get("score", 0.0)) >= 80.0)
+            frac = good / max(n, 1)
+            if frac < ALERT_QUALITY_THRESHOLD:
+                import requests as _rq
+                msg = {
+                    "text": f"Pattern quality alert: {canon_pattern.upper()} {frac:.1%} >=80 (n={n}) in {canon_universe}/{timeframe}"}
+                try:
+                    _rq.post(ALERT_SLACK_WEBHOOK, json=msg, timeout=5)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    if cache_key:
+        _response_cache_set(cache_key, payload)
     return payload
 
 
@@ -1292,6 +1457,11 @@ async def chart(
     target: Optional[str] = None,
     pattern: Optional[str] = None,
 ) -> Dict[str, Any]:
+    client_host = request.client.host if request.client else "unknown"
+    limited, retry_after = _rate_limit_check(f"chart:{client_host}", CHART_RATE_LIMIT, CHART_RATE_WINDOW)
+    if limited:
+        raise HTTPException(status_code=429, detail="Chart rate limit exceeded", headers={"Retry-After": str(retry_after)})
+
     params = {"symbol": symbol}
     for key, value in (("pivot", pivot), ("entry", entry), ("stop", stop), ("target", target), ("pattern", pattern)):
         if value is not None and str(value).strip():

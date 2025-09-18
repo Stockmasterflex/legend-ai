@@ -153,6 +153,7 @@ def detect_vcp(df: pd.DataFrame, symbol: str = "", timeframe: str = "1d") -> Opt
     if data is None or len(data) < 150:
         return None
     atr = _compute_atr(data)
+    avg_volume_50d = float(data["Volume"].tail(50).mean()) if "Volume" in data.columns else 0.0
     signal = _VCP_DETECTOR.detect_vcp(data, symbol or "VCP")
     if not getattr(signal, "detected", False) or not signal.pivot_price:
         return None
@@ -162,12 +163,30 @@ def detect_vcp(df: pd.DataFrame, symbol: str = "", timeframe: str = "1d") -> Opt
         lows.extend([float(c.low_price) for c in signal.contractions if c.low_price])
     if not lows:
         lows.extend(data["Low"].tail(15).astype(float).tolist())
-    stop = min(lows) if lows else None
+    handle_low = float(signal.contractions[-1].low_price) if signal.contractions else None
+    stop_candidates = [val for val in ([handle_low] + lows) if val is not None]
+    stop = min(stop_candidates) if stop_candidates else None
     if stop is None or entry <= stop:
         stop = float(data["Low"].tail(15).min())
+    max_risk_stop = entry * 0.92
+    stop = max(stop, max_risk_stop)
+    stop = min(stop, entry * 0.99)
     if entry <= 0 or stop <= 0 or entry <= stop:
         return None
-    targets = _risk_targets(entry, stop)
+    stop = round(stop, 2)
+    entry = round(entry, 2)
+
+    cup_high = max(float(c.high_price) for c in signal.contractions) if signal.contractions else float(data["High"].tail(60).max())
+    cup_low = min(float(c.low_price) for c in signal.contractions) if signal.contractions else float(data["Low"].tail(60).min())
+    cup_depth_pct = (cup_high - cup_low) / max(cup_high, 1e-6)
+    cup_depth_value = max(entry - cup_low, 0.0)
+
+    risk = max(entry - stop, 0.01)
+    target_cup = round(entry + cup_depth_value * 0.618, 2)
+    resistance_candidates = [float(h) for h in data["High"].tail(180).astype(float) if h > entry]
+    resistance_target = round(min(resistance_candidates) if resistance_candidates else entry * 1.08, 2)
+    conservative_target = round(entry + risk * 1.5, 2)
+    targets = sorted({t for t in [target_cup, resistance_target, conservative_target] if t > entry})
     overlays = _base_overlay(entry, stop, targets)
     for contraction in signal.contractions:
         overlays["lines"].append(
@@ -188,6 +207,13 @@ def detect_vcp(df: pd.DataFrame, symbol: str = "", timeframe: str = "1d") -> Opt
             "y": _round(entry, 4),
         }
     )
+    overlays["labels"].append(
+        {
+            "text": "Stop",
+            "x": _to_iso(data["Date"].iloc[-1]),
+            "y": _round(stop, 4),
+        }
+    )
     tight = signal.final_contraction_tightness or 0.12
     base = 68.0
     base += min(18.0, max(0.0, (len(signal.contractions) - 2) * 5.0))
@@ -206,6 +232,10 @@ def detect_vcp(df: pd.DataFrame, symbol: str = "", timeframe: str = "1d") -> Opt
     if signal.volume_dry_up:
         evidence.append("volume dry-up confirmed")
     evidence.append(f"MA slope last 50d: {slope:.2%}")
+    evidence.append(f"Cup depth: {cup_depth_pct:.2%}")
+    handle_volume = float(getattr(signal.contractions[-1], 'avg_volume', 0.0) or 0.0) if signal.contractions else 0.0
+    if avg_volume_50d:
+        evidence.append(f"Handle volume vs 50d: {handle_volume / max(avg_volume_50d, 1e-6):.2%}")
     extra = {
         "pivot": _round(entry, 4),
         "notes": signal.notes,
@@ -218,6 +248,13 @@ def detect_vcp(df: pd.DataFrame, symbol: str = "", timeframe: str = "1d") -> Opt
             for c in signal.contractions
         ],
         "atr14": _round(atr, 4) if atr else None,
+        "cup_depth_pct": round(cup_depth_pct, 4),
+        "targets_breakdown": {
+            "cup_depth": target_cup,
+            "resistance": resistance_target,
+            "rr_1_5": conservative_target,
+        },
+        "stop_display": f"${stop:,.2f}",
     }
     return _result("vcp", score, entry, stop, targets, overlays, extra, evidence)
 
