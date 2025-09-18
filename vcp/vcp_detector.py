@@ -38,13 +38,15 @@ class VCPDetector:
                  min_volume: int = 500_000,
                  min_contractions: int = 2,
                  max_contractions: int = 6,
-                 max_base_depth: float = 0.35,          # loosened from 0.40→0.35 gives more realistic passes
-                 final_contraction_max: float = 0.12,    # loosened from 0.10
+                 max_base_depth: float = 0.35,
+                 final_contraction_max: float = 0.16,
                  pivot_window: int = 7,
-                 breakout_volume_multiplier: float = 1.8,
-                 vol_dryup_ratio: float = 0.70,          # was 0.60 (easier to satisfy dry-up)
-                 tightening_factor: float = 0.95,        # was strict 0.90 (easier tightening check)
-                 min_bars_required: int = 150            # was 200 (lets us run on shorter histories)
+                 breakout_volume_multiplier: float = 1.6,
+                 vol_dryup_ratio: float = 0.85,
+                 tightening_factor: float = 0.98,
+                 min_bars_required: int = 140,
+                 vol_dryup_soft_limit: float = 0.98,
+                 ma_stack_tolerance: float = 0.02,
                  ):
         self.min_price = float(min_price)
         self.min_volume = int(min_volume)
@@ -57,6 +59,8 @@ class VCPDetector:
         self.vol_dryup_ratio = float(vol_dryup_ratio)
         self.tightening_factor = float(tightening_factor)
         self.min_bars_required = int(min_bars_required)
+        self.vol_dryup_soft_limit = float(vol_dryup_soft_limit)
+        self.ma_stack_tolerance = float(ma_stack_tolerance)
 
     def detect_vcp(self, df: pd.DataFrame, symbol: str = "UNKNOWN") -> VCPSignal:
         signal = VCPSignal(symbol=symbol, detected=False)
@@ -97,14 +101,42 @@ class VCPDetector:
         df["MA50"] = df["Close"].rolling(50).mean()
         df["MA150"] = df["Close"].rolling(150).mean()
         df["MA200"] = df["Close"].rolling(200).mean()
-        # Trend template: stacked MAs and positive slope on MA50
-        ma_stack = current_price > df["MA50"].iloc[-1] > df["MA150"].iloc[-1] > df["MA200"].iloc[-1]
-        ma50_slope = float(df["MA50"].iloc[-1] - df["MA50"].iloc[-20]) if pd.notnull(df["MA50"].iloc[-20]) else 0.0
-        if not (ma_stack and ma50_slope > 0):
-            signal.notes.append(f"Failed trend template (stack={ma_stack}, ma50_slope={ma50_slope:.4f})")
-            log.debug("VCP %s rejected: trend stack=%s ma50_slope=%.4f", symbol, ma_stack, ma50_slope)
+
+        def _latest(series, fallback=None):
+            value = series.iloc[-1]
+            if pd.isna(value):
+                return fallback
+            return float(value)
+
+        ma50 = _latest(df["MA50"])
+        ma150 = _latest(df["MA150"])
+        ma200 = _latest(df["MA200"])
+        ma50_prev = float(df["MA50"].iloc[-20]) if len(df["MA50"]) > 20 and pd.notna(df["MA50"].iloc[-20]) else ma50
+        ma50_slope = 0.0
+        if ma50 is not None and ma50_prev not in (None, 0):
+            ma50_slope = (ma50 - ma50_prev) / max(abs(ma50_prev), 1e-6)
+
+        tolerance = 1.0 - self.ma_stack_tolerance
+        stack_checks = []
+        if ma50 is not None:
+            stack_checks.append(current_price >= ma50 * tolerance)
+        if ma50 is not None and ma150 is not None:
+            stack_checks.append(ma50 >= ma150 * tolerance)
+        if ma150 is not None and ma200 is not None:
+            stack_checks.append(ma150 >= ma200 * tolerance)
+        elif ma50 is not None and ma200 is not None:
+            stack_checks.append(ma50 >= ma200 * tolerance)
+
+        ma_stack = all(stack_checks) if stack_checks else False
+        trend_progress = (df["Close"].iloc[-1] - df["Close"].iloc[-50]) / max(df["Close"].iloc[-50], 1e-6)
+        trend_ok = (ma_stack and ma50_slope >= -0.02) or ma50_slope > 0 or trend_progress > 0.05
+        if not trend_ok:
+            signal.notes.append(
+                f"Failed trend template (stack={ma_stack}, ma50_slope={ma50_slope:.4f}, progress={trend_progress:.2%})"
+            )
+            log.debug("VCP %s rejected: trend stack=%s ma50_slope=%.4f progress=%.4f", symbol, ma_stack, ma50_slope, trend_progress)
             return signal
-        signal.trend_strength = 1.0
+        signal.trend_strength = float(min(1.0, max(0.0, trend_progress * 3 + max(ma50_slope, 0) * 6)))
 
         highs, lows = self._find_swings(df, window=5)
         contractions: List[Contraction] = []
@@ -141,19 +173,37 @@ class VCPDetector:
 
         signal.contractions = contractions
         signal.final_contraction_tightness = contractions[-1].percent_drop
-        if signal.final_contraction_tightness is None or signal.final_contraction_tightness > self.final_contraction_max:
-            signal.notes.append(f"Final contraction too wide ({signal.final_contraction_tightness:.2f} &gt; {self.final_contraction_max:.2f})")
-            log.debug("VCP %s rejected: final width=%.4f &gt; %.4f", symbol, signal.final_contraction_tightness or -1, self.final_contraction_max)
+        max_allow = self.final_contraction_max * 1.35
+        if signal.final_contraction_tightness is None or signal.final_contraction_tightness > max_allow:
+            signal.notes.append(
+                f"Final contraction too wide ({signal.final_contraction_tightness:.2f} &gt; {max_allow:.2f})"
+            )
+            log.debug(
+                "VCP %s rejected: final width=%.4f > %.4f",
+                symbol,
+                signal.final_contraction_tightness or -1,
+                max_allow,
+            )
             return signal
+        relaxed_final = signal.final_contraction_tightness > self.final_contraction_max
 
         # Volume dry-up: last 10d < vol_dryup_ratio * 50d
         vol10 = float(df["Volume"].iloc[-10:].mean())
         vol50 = avg_volume_50d
-        vol_dry_up = vol10 < self.vol_dryup_ratio * max(vol50, 1e-9)
+        ratio = vol10 / max(vol50, 1e-9)
+        vol_dry_up = ratio <= self.vol_dryup_ratio
         signal.volume_dry_up = bool(vol_dry_up)
-        if not vol_dry_up:
-            signal.notes.append(f"No volume dry-up (vol10={vol10:.0f}, vol50={vol50:.0f}, ratio={self.vol_dryup_ratio:.2f})")
-            log.debug("VCP %s rejected: vol dry-up false vol10=%.0f vol50=%.0f ratio=%.2f", symbol, vol10, vol50, self.vol_dryup_ratio)
+        if not vol_dry_up and ratio > self.vol_dryup_soft_limit:
+            signal.notes.append(
+                f"No volume dry-up (vol10={vol10:.0f}, vol50={vol50:.0f}, ratio={ratio:.2f})"
+            )
+            log.debug(
+                "VCP %s rejected: vol dry-up false vol10=%.0f vol50=%.0f ratio=%.2f",
+                symbol,
+                vol10,
+                vol50,
+                ratio,
+            )
             return signal
 
         pivot = float(df["High"].iloc[-self.pivot_window:].max())
@@ -163,10 +213,13 @@ class VCPDetector:
             signal.breakout_detected = True
 
         # Confidence: composite of tightness, number of contractions, trend, volume dry-up
-        tight_bonus = max(0.0, 0.12 - float(signal.final_contraction_tightness)) * 200
+        tightness = float(signal.final_contraction_tightness or 0.0)
+        tight_bonus = max(0.0, self.final_contraction_max - tightness) * 220
+        if relaxed_final:
+            tight_bonus *= 0.5
         count_bonus = min(len(contractions), 5) * 4
-        trend_bonus = min(max(ma50_slope, 0.0) * 50, 10)
-        vol_bonus = 10 if vol_dry_up else 0
+        trend_bonus = min(max(ma50_slope, 0.0) * 90, 14)
+        vol_bonus = 12 if vol_dry_up else max(0.0, (self.vol_dryup_soft_limit - ratio) * 20)
         breakout_bonus = 10 if signal.breakout_detected else 0
         base_score = 55 + tight_bonus + count_bonus + trend_bonus + vol_bonus + breakout_bonus
         signal.confidence_score = float(max(0, min(95, base_score)))

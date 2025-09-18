@@ -6,6 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 import threading
 from datetime import datetime, date
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
@@ -18,10 +19,9 @@ from pythonjsonlogger import jsonlogger
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
 
-from backtest.ingestion import load_prices
+from backtest.ingestion import load_prices, prefetch_prices
 from backtest.run_backtest import scan_once
 from backtest.simulate import REPORT_ROOT, summarize_range
-from functools import lru_cache
 
 from service_db import BacktestRun, Base as RunsBase, engine as runs_engine, get_db as get_runs_db
 from service_universe import UniverseName, get_universe
@@ -212,11 +212,17 @@ def create_run_demo(payload: dict):
 
 app.include_router(demo_router, prefix="/api", tags=["demo"])
 
+
+@app.on_event("startup")
+async def _startup_warm_caches() -> None:
+    _warm_cache_background()
+
 SHOTS_BASE_URL = os.getenv("SHOTS_BASE_URL", "https://legend-shots.onrender.com")
 DUMMY_CHART_URL_TMPL = "https://dummyimage.com/1200x628/0b1221/9be7ff.png&text={symbol}+Chart"
 
 DEFAULT_SCAN_PERIOD = os.getenv("SCAN_DEFAULT_PERIOD", "18mo")
-DEFAULT_SCAN_WORKERS = int(os.getenv("SCAN_WORKERS", str(max(4, min(12, (os.cpu_count() or 4))))))
+_cpu_guess = os.cpu_count() or 4
+DEFAULT_SCAN_WORKERS = int(os.getenv("SCAN_WORKERS", str(max(4, min(8, _cpu_guess)))))
 DEFAULT_CHART_CONCURRENCY = int(os.getenv("SCAN_CHART_CONCURRENCY", "4"))
 SYMBOL_SCAN_LIMIT = int(os.getenv("SCAN_SYMBOL_LIMIT", "0"))
 SCAN_CACHE_TTL = int(os.getenv("SCAN_CACHE_TTL", "240"))
@@ -224,12 +230,60 @@ MIN_PRICE_DEFAULT = float(os.getenv("SCAN_MIN_PRICE", "5"))
 MIN_VOLUME_DEFAULT = float(os.getenv("SCAN_MIN_VOLUME", "500000"))
 MAX_ATR_RATIO_DEFAULT = float(os.getenv("SCAN_MAX_ATR_RATIO", "0.08"))
 SCAN_SAMPLE_ENABLE = os.getenv("SCAN_SAMPLE_ENABLE", "0").strip() in {"1", "true", "TRUE", "yes", "on"}
+SCAN_PREFETCH_CHARTS = os.getenv("SCAN_PREFETCH_CHARTS", "0").strip() in {"1", "true", "TRUE", "yes", "on"}
+SCAN_PREFETCH_TTL = int(os.getenv("SCAN_PREFETCH_TTL", str(900)))
 
 _timeframe_defaults = {
-    "1d": {"period": os.getenv("SCAN_PERIOD_1D", "18mo"), "interval": "1d", "min_bars": 180},
-    "1wk": {"period": os.getenv("SCAN_PERIOD_1W", "5y"), "interval": "1wk", "min_bars": 160},
-    "60m": {"period": os.getenv("SCAN_PERIOD_60M", "60d"), "interval": "60m", "min_bars": 240},
+    "1d": {"period": os.getenv("SCAN_PERIOD_1D", "18mo"), "interval": "1d", "fetch_interval": "1d", "min_bars": 180},
+    "1wk": {
+        "period": os.getenv("SCAN_PERIOD_1W", "3y"),
+        "interval": "1wk",
+        "fetch_interval": os.getenv("SCAN_FETCH_INTERVAL_1W", "1d"),
+        "resample": "1W",
+        "min_bars": 120,
+    },
+    "60m": {
+        "period": os.getenv("SCAN_PERIOD_60M", "30d"),
+        "interval": "60m",
+        "fetch_interval": "60m",
+        "min_bars": 160,
+    },
 }
+
+
+def _warm_cache_background() -> None:
+    def _run() -> None:
+        combos = [
+            ("sp500", "1d"),
+            ("nasdaq100", "1d"),
+            ("sp500", "1wk"),
+            ("nasdaq100", "1wk"),
+            ("sp500", "60m"),
+        ]
+        for universe, timeframe in combos:
+            try:
+                cfg = _resolve_timeframe_config(timeframe)
+                fetch_interval = cfg.get("fetch_interval", cfg.get("interval", "1d"))
+                min_rows = int(cfg.get("min_bars", 120))
+                resample_factor = 5 if cfg.get("resample") and fetch_interval == "1d" else 1
+                fetch_min_rows = max(min_rows * resample_factor, min_rows)
+                symbols = _bounded_symbols(get_universe(universe))
+                if timeframe == "1wk":
+                    cap = int(os.getenv("SCAN_SYMBOL_LIMIT_1W", "100"))
+                    symbols = symbols[:cap]
+                elif timeframe == "60m":
+                    cap = int(os.getenv("SCAN_SYMBOL_LIMIT_60M", "12"))
+                    symbols = symbols[:cap]
+                prefetch_prices(
+                    symbols,
+                    period=cfg.get("period", DEFAULT_SCAN_PERIOD),
+                    interval=fetch_interval,
+                    min_rows=fetch_min_rows,
+                )
+            except Exception as exc:
+                logger.debug("warm cache failed", extra={"universe": universe, "timeframe": timeframe, "error": str(exc)})
+
+    threading.Thread(target=_run, daemon=True).start()
 
 _redis_client = None
 if os.getenv("REDIS_URL") and redis is not None:  # pragma: no branch - simple init
@@ -241,6 +295,8 @@ if os.getenv("REDIS_URL") and redis is not None:  # pragma: no branch - simple i
 
 _local_scan_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
 _cache_lock = threading.Lock()
+_prefetch_lock = threading.Lock()
+_prefetch_state: Dict[Tuple[str, str], float] = {}
 
 _PATTERN_ALIASES: Dict[str, PatternName] = {
     "vcp": "vcp",
@@ -319,6 +375,21 @@ def _resolve_timeframe_config(timeframe: str) -> Dict[str, Any]:
     return _timeframe_defaults[tf]
 
 
+def _resample_ohlc(df: pd.DataFrame, rule: str) -> pd.DataFrame:
+    if not len(df) or "Date" not in df.columns:
+        return df
+    try:
+        temp = df.copy()
+        temp["Date"] = pd.to_datetime(temp["Date"], errors="coerce")
+        temp = temp.dropna(subset=["Date"]).set_index("Date")
+        ohlc_dict = {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
+        resampled = temp.resample(rule).apply(ohlc_dict).dropna()
+        resampled = resampled.reset_index()
+        return resampled
+    except Exception:
+        return df
+
+
 def _scan_symbol(
     pattern: PatternName,
     symbol: str,
@@ -337,13 +408,27 @@ def _scan_symbol(
                 return None
         return json.loads(json.dumps(cached))
     cfg = _resolve_timeframe_config(timeframe)
+    fetch_interval = cfg.get("fetch_interval", cfg.get("interval", "1d"))
+    min_rows = int(cfg.get("min_bars", 120))
+    resample_factor = 5 if cfg.get("resample") and fetch_interval == "1d" else 1
+    fetch_min_rows = max(min_rows * resample_factor, min_rows)
     try:
-        df = load_prices(symbol, period=cfg.get("period", DEFAULT_SCAN_PERIOD), interval=cfg.get("interval", "1d"), refresh=False)
+        df = load_prices(
+            symbol,
+            period=cfg.get("period", DEFAULT_SCAN_PERIOD),
+            interval=fetch_interval,
+            refresh=False,
+            min_rows=fetch_min_rows,
+        )
     except Exception as exc:
         logger.debug("scan load failed", extra={"symbol": symbol, "pattern": pattern, "error": str(exc)})
         return None
-    if df is None or len(df) < int(cfg.get("min_bars", 120)):
+    if df is None or len(df) < fetch_min_rows:
         return None
+    if cfg.get("resample"):
+        df = _resample_ohlc(df, cfg["resample"])
+        if df is None or len(df) < min_rows:
+            return None
     try:
         prices = df["Close"].astype(float)
         avg_price = float(prices.tail(30).mean()) if len(prices) >= 30 else float(prices.mean())
@@ -523,10 +608,43 @@ async def _run_pattern_scan(
     max_atr_ratio: float,
 ) -> Dict[str, Any]:
     symbols = _bounded_symbols(get_universe(universe))
+    if timeframe == "1d":
+        cap = int(os.getenv("SCAN_SYMBOL_LIMIT_1D", "350"))
+        if cap > 0:
+            symbols = symbols[:cap]
+    if timeframe == "1wk":
+        cap = int(os.getenv("SCAN_SYMBOL_LIMIT_1W", "80"))
+        symbols = symbols[:cap]
+    elif timeframe == "60m":
+        cap = int(os.getenv("SCAN_SYMBOL_LIMIT_60M", "6"))
+        symbols = symbols[:cap]
     workers = max(2, min(DEFAULT_SCAN_WORKERS, len(symbols)))
     results: List[Dict[str, Any]] = []
     if not symbols:
         return {"pattern": pattern, "universe": universe, "count": 0, "results": []}
+    cfg = _resolve_timeframe_config(timeframe)
+    fetch_interval = cfg.get("fetch_interval", cfg.get("interval", "1d"))
+    min_rows = int(cfg.get("min_bars", 120))
+    resample_factor = 5 if cfg.get("resample") and fetch_interval == "1d" else 1
+    fetch_min_rows = max(min_rows * resample_factor, min_rows)
+    prefetch_key = (universe, f"{timeframe}:{fetch_interval}")
+    should_prefetch = True
+    with _prefetch_lock:
+        last = _prefetch_state.get(prefetch_key)
+        if last and (time.time() - last) < SCAN_PREFETCH_TTL:
+            should_prefetch = False
+        else:
+            _prefetch_state[prefetch_key] = time.time()
+    if should_prefetch:
+        try:
+            prefetch_prices(
+                symbols,
+                period=cfg.get("period", DEFAULT_SCAN_PERIOD),
+                interval=fetch_interval,
+                min_rows=fetch_min_rows,
+            )
+        except Exception:
+            logger.debug("prefetch failed", extra={"pattern": pattern, "timeframe": timeframe})
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [
             executor.submit(
@@ -552,7 +670,11 @@ async def _run_pattern_scan(
     results.sort(key=lambda r: r.get("score", 0.0), reverse=True)
     count = len(results)
     trimmed = results[:limit]
-    await _attach_chart_urls(pattern, trimmed)
+    if SCAN_PREFETCH_CHARTS and trimmed:
+        await _attach_chart_urls(pattern, trimmed)
+    else:
+        for row in trimmed:
+            row.setdefault("chart_url", None)
     for row in trimmed:
         row["targets"] = [round(float(t), 4) for t in row.get("targets", [])]
         row["score"] = round(float(row.get("score", 0.0)), 2)
@@ -862,16 +984,57 @@ def candidates_by_date(
 
 # ---- Analytics endpoints ----
 
+_sector_cache_lock = threading.Lock()
+_sector_cache_loaded = False
+_sector_cache: Dict[str, str] = {}
+_sector_cache_path = Path(__file__).resolve().parent / "data" / "universe" / "sectors.json"
+
+
+def _ensure_sector_cache() -> None:
+    global _sector_cache_loaded
+    if _sector_cache_loaded:
+        return
+    with _sector_cache_lock:
+        if _sector_cache_loaded:
+            return
+        if _sector_cache_path.exists():
+            try:
+                data = json.loads(_sector_cache_path.read_text())
+                if isinstance(data, dict):
+                    _sector_cache.update({k.upper(): str(v) for k, v in data.items() if isinstance(k, str) and isinstance(v, str)})
+            except Exception:
+                pass
+        _sector_cache_loaded = True
+
+
+def _save_sector_cache() -> None:
+    try:
+        _sector_cache_path.parent.mkdir(parents=True, exist_ok=True)
+        _sector_cache_path.write_text(json.dumps(_sector_cache, indent=2, sort_keys=True))
+    except Exception:
+        pass
+
+
 @lru_cache(maxsize=2048)
 def get_sector_safe(symbol: Optional[str]) -> Optional[str]:
     if not symbol:
         return None
+    sym = symbol.upper()
+    _ensure_sector_cache()
+    cached = _sector_cache.get(sym)
+    if cached:
+        return cached
     try:
         import yfinance as yf
-        info = yf.Ticker(symbol).info
-        return info.get("sector")
+        info = yf.Ticker(sym).info
+        sector = info.get("sector") if isinstance(info, dict) else None
     except Exception:
-        return None
+        sector = None
+    if sector:
+        with _sector_cache_lock:
+            _sector_cache[sym] = str(sector)
+            _save_sector_cache()
+    return sector
 
 
 def _artifacts_root_for_run(run_id: int, db: Session) -> Path:
