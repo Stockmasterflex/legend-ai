@@ -463,6 +463,8 @@ def handle_mentions(body, say):
             health_check(channel_id)
         elif command_text.startswith("cleanup branches"):
             cleanup_bot_branches(channel_id)
+        elif command_text.startswith("deploy all"):
+            deploy_all_command(channel_id)
         elif command_text.startswith("fix"):
             original_text = re.sub(r'<@.*?>', '', text).strip()
             try:
@@ -643,6 +645,45 @@ def cleanup_bot_branches(channel_id):
     except Exception:
         LOGGER.exception("cleanup_bot_branches failed")
         app.client.chat_postMessage(channel=channel_id, text="🔥 Cleanup failed.")
+
+
+def deploy_all_command(channel_id):
+    try:
+        app.client.chat_postMessage(channel=channel_id, text="🚀 Deploying API + shots (Render) and triggering Vercel…")
+        render_token = os.environ.get("RENDER_TOKEN", "").strip()
+        api_sid = os.environ.get("API_SERVICE_ID", "").strip()
+        shots_sid = os.environ.get("SHOTS_SERVICE_ID", "").strip()
+        vercel_hook = os.environ.get("VERCEL_DEPLOY_HOOK_URL", "").strip()
+        vercel_token = os.environ.get("VERCEL_TOKEN", "").strip()
+
+        headers = {"Authorization": f"Bearer {render_token}", "Accept": "application/json", "Content-Type": "application/json"} if render_token else None
+        if headers and shots_sid:
+            try:
+                requests.post(f"https://api.render.com/v1/services/{shots_sid}/deploys", headers=headers, json={}).raise_for_status()
+                app.client.chat_postMessage(channel=channel_id, text="✅ Render: shots deploy triggered")
+            except Exception as e:
+                app.client.chat_postMessage(channel=channel_id, text=f"❌ Render shots: {e}")
+        if headers and api_sid:
+            try:
+                requests.post(f"https://api.render.com/v1/services/{api_sid}/deploys", headers=headers, json={}).raise_for_status()
+                app.client.chat_postMessage(channel=channel_id, text="✅ Render: API deploy triggered")
+            except Exception as e:
+                app.client.chat_postMessage(channel=channel_id, text=f"❌ Render API: {e}")
+        if vercel_hook:
+            try:
+                requests.post(vercel_hook, timeout=10)
+                app.client.chat_postMessage(channel=channel_id, text="✅ Vercel hook triggered")
+            except Exception as e:
+                app.client.chat_postMessage(channel=channel_id, text=f"❌ Vercel hook failed: {e}")
+        app.client.chat_postMessage(channel=channel_id, text="⏳ Checking API health…")
+        try:
+            resp = requests.get("https://legend-api.onrender.com/healthz", timeout=15)
+            app.client.chat_postMessage(channel=channel_id, text=f"API /healthz: {resp.status_code} {resp.text[:200]}")
+        except Exception as e:
+            app.client.chat_postMessage(channel=channel_id, text=f"API check failed: {e}")
+    except Exception:
+        LOGGER.exception("deploy_all_command failed")
+        app.client.chat_postMessage(channel=channel_id, text="🔥 Deploy all failed.")
 
 
 if __name__ == "__main__":
