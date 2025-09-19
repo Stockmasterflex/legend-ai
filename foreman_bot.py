@@ -16,6 +16,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import base64
 from datetime import datetime
+from foreman_advanced import AdvancedBotIntelligence, handle_natural_language_message
 from typing import Dict, List
 
 # --- CONFIGURATION ---
@@ -109,6 +110,9 @@ def learn(event: str, ok: bool):
         save_learning(LEARNING)
     except Exception:
         LOGGER.exception("learn() failed to update learning store")
+
+# Initialize advanced NLP helper
+advanced_bot = AdvancedBotIntelligence()
 
 
 def log_journal(tool, title, body):
@@ -565,7 +569,16 @@ def handle_mentions(body, say):
             except Exception:
                 say("Usage: `fix [your request] in [file_path]`")
         else:
-            say(f"Sorry, I don't understand that. Try `help` to see what I can do.")
+            # Fall back to NLP-based processing rather than a hard failure
+            try:
+                response = handle_natural_language_message(text, advanced_bot)
+                say(response)
+                try:
+                    log_journal("nlp", "NLP response", response)
+                except Exception:
+                    pass
+            except Exception:
+                say("Sorry, I don't understand that. Try `help` to see what I can do.")
     except Exception:
         LOGGER.exception("handle_mentions failed")
 
