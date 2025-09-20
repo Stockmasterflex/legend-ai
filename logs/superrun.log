@@ -86391,3 +86391,957 @@ backtest/reports/summary/summary_2024-01-01_2024-03-31.json
 ]
 2025-09-20 11:48:44 Deploy skipped (DO_DEPLOY!=1)
 2025-09-20 11:48:44 Sleeping 5m before next iteration
+2025-09-20 11:53:44 === Iteration 533 ===
+2025-09-20 11:53:44 venv exists
+2025-09-20 11:53:44 Installing Python requirements
+2025-09-20 11:53:44 shots: node_modules present
+2025-09-20 11:53:44 frontend: node_modules present
+2025-09-20 11:53:44 Running unit tests (pytest)
+source .venv/bin/activate && pip install pytest && pytest -q
+Requirement already satisfied: pytest in ./.venv/lib/python3.13/site-packages (8.4.2)
+Requirement already satisfied: iniconfig>=1 in ./.venv/lib/python3.13/site-packages (from pytest) (2.1.0)
+Requirement already satisfied: packaging>=20 in ./.venv/lib/python3.13/site-packages (from pytest) (25.0)
+Requirement already satisfied: pluggy<2,>=1.5 in ./.venv/lib/python3.13/site-packages (from pytest) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in ./.venv/lib/python3.13/site-packages (from pytest) (2.19.2)
+
+==================================== ERRORS ====================================
+_______________________ ERROR collecting test_health.py ________________________
+import file mismatch:
+imported module 'test_health' has this __file__ attribute:
+  /Users/kyleholthaus/Projects/LegendAI/legend-room-backend/tests/test_health.py
+which is not the same as the test file we want to collect:
+  /Users/kyleholthaus/Projects/LegendAI/test_health.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_________________ ERROR collecting tests/test_foreman_utils.py _________________
+tests/test_foreman_utils.py:3: in <module>
+    from foreman_bot import _slugify, _branch_name
+foreman_bot.py:30: in <module>
+    app = slack_bolt.App(token=SLACK_BOT_TOKEN)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.13/site-packages/slack_bolt/app/app.py:379: in __init__
+    self._init_middleware_list(
+.venv/lib/python3.13/site-packages/slack_bolt/app/app.py:442: in _init_middleware_list
+    raise BoltError(error_token_required())
+E   slack_bolt.error.BoltError: Either an env variable `SLACK_BOT_TOKEN` or `token` argument in the constructor is required.
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/pythonjsonlogger/jsonlogger.py:11
+  /Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.13/site-packages/pythonjsonlogger/jsonlogger.py:11: DeprecationWarning: pythonjsonlogger.jsonlogger has been moved to pythonjsonlogger.json
+    warnings.warn(
+
+service_api.py:224
+  /Users/kyleholthaus/Projects/LegendAI/service_api.py:224: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv/lib/python3.13/site-packages/fastapi/applications.py:4495
+  /Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.13/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR test_health.py
+ERROR tests/test_foreman_utils.py - slack_bolt.error.BoltError: Either an env...
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+3 warnings, 2 errors in 1.85s
+2025-09-20 11:53:48 Starting dev services (tmux: api, shots, fe)
+ℹ️  api already running
+ℹ️  shots already running
+ℹ️  fe already running
+2025-09-20 11:53:48 Waiting for http://127.0.0.1:8000/healthz (timeout 60s)
+2025-09-20 11:53:48 OK: http://127.0.0.1:8000/healthz
+tmux sessions:
+api: 1 windows (created Wed Sep 17 00:16:39 2025)
+fe: 1 windows (created Wed Sep 17 00:16:39 2025)
+legend-docs: 1 windows (created Wed Sep 17 14:26:51 2025)
+legend-orch: 1 windows (created Wed Sep 17 17:11:53 2025)
+shots: 1 windows (created Wed Sep 17 00:16:39 2025)
+
+Ports:
+python3.1 25033 kyleholthaus    3u  IPv4 0xc65d299e6adc136a      0t0  TCP *:8000 (LISTEN)
+node      25037 kyleholthaus   14u  IPv6 0xfb59ceae73d88c29      0t0  TCP *:3010 (LISTEN)
+python3.1 50588 kyleholthaus    3u  IPv4 0xc65d299e6adc136a      0t0  TCP *:8000 (LISTEN)
+node      78186 kyleholthaus   16u  IPv6 0xc9bb6cbdc163f2f9      0t0  TCP *:3001 (LISTEN)
+python3.1 86663 kyleholthaus    8u  IPv4 0xf36556964144c05e      0t0  TCP 127.0.0.1:8000 (LISTEN)
+
+Health checks:
+{"ok":true,"version":"0.1.0"}
+✅ signals ok
+✅ shots ok
+✅ screenshot ok
+
+Last 10 lines of logs:
+---- logs/api.log ----
+{"asctime": "2025-09-17 20:50:33,135", "levelname": "INFO", "message": "request", "request_id": "0524dcf8-f2da-460b-a4e7-b13463939142", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 1}
+INFO:     127.0.0.1:64322 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:50:33,175", "levelname": "INFO", "message": "request", "request_id": "b43de1c9-671f-465a-a032-30c1a4dbfe64", "path": "/api/v1/signals", "method": "GET", "status_code": 200, "duration_ms": 20}
+INFO:     127.0.0.1:64323 - "GET /api/v1/signals?symbol=NVDA HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:50:48,993", "levelname": "INFO", "message": "request", "request_id": "7685bd47-8838-4335-92b2-bf536dee9cd9", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 9912}
+INFO:     127.0.0.1:64354 - "GET /api/v1/chart?symbol=NVDA HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:52:02,867", "levelname": "INFO", "message": "request", "request_id": "c7ffa19d-e823-4d99-9521-d9b45858d419", "path": "/api/v1/scan", "method": "GET", "status_code": 200, "duration_ms": 73814}
+INFO:     127.0.0.1:64357 - "GET /api/v1/scan?pattern=wedge&universe=sp500&timeframe=1wk&limit=3 HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:52:33,362", "levelname": "INFO", "message": "request", "request_id": "0faa4644-cb62-47cb-9c96-2e1887253ba3", "path": "/api/v1/chart", "method": "POST", "status_code": 200, "duration_ms": 30437}
+INFO:     127.0.0.1:64921 - "POST /api/v1/chart?symbol=AAPL HTTP/1.1" 200 OK
+---- logs/shots.log ----
+  duration_ms: 5225,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758167421546.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5762,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758167438773.png'
+}
+---- logs/fe.log ----
+
+ ✓ Starting...
+ ✓ Ready in 1113ms
+ ⚠ Found a change in next.config.mjs. Restarting the server to apply the changes...
+  ▲ Next.js 14.2.5
+  - Local:        http://localhost:3001
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1691ms
+2025-09-20 11:54:00 Running smoke checks from docs/DEV_RUN.md
+{"ok":true,"version":"0.1.0"}
+true
+{
+  "hit_rate": 0.62,
+  "precision_at_10": 0.7,
+  "precision_at_25": 0.66,
+  "coverage": 125,
+  "median_runup": 0.047
+}
+"Buy"
+
+"NVDA"
+false
+
+53.0
+"Neutral"
+false
+
+"neutral"
+true
+
+{
+  "chart_url": "https://legend-shots.onrender.com/reports/NVDA-1758394467755.png",
+  "meta": {
+    "source": "https://legend-shots.onrender.com",
+    "overlay_applied": false,
+    "fallback": false,
+    "overlay_counts": {
+      "lines": 0,
+      "boxes": 0,
+      "labels": 0,
+      "arrows": 0,
+      "zones": 0
+    },
+    "duration_ms": 26508.74
+  }
+}
+
+2025-09-20 11:54:27 Running legend_check.sh against local services
+API /healthz …
+{"ok":true,"version":"0.1.0"}
+Signals (NVDA) …
+53.0
+"Neutral"
+Shots (NVDA) …
+{
+  "chart_url": "http://127.0.0.1:3010/reports/NVDA-1758394475453.png",
+  "overlay_counts": {
+    "lines": 0,
+    "boxes": 0,
+    "labels": 0,
+    "arrows": 0,
+    "zones": 0
+  },
+  "duration_ms": 7390
+}
+API → chart (NVDA) …
+{
+  "chart_url": "https://legend-shots.onrender.com/reports/NVDA-1758394486053.png",
+  "meta": {
+    "source": "https://legend-shots.onrender.com",
+    "overlay_applied": false,
+    "fallback": false,
+    "overlay_counts": {
+      "lines": 0,
+      "boxes": 0,
+      "labels": 0,
+      "arrows": 0,
+      "zones": 0
+    },
+    "duration_ms": 10209.33
+  }
+}
+Weekly scan (WEDGE, timeframe=1wk) …
+{
+  "count": 106,
+  "sample": {
+    "symbol": "MTB",
+    "score": 85.42,
+    "entry": 187.121,
+    "stop": 176.0616,
+    "targets": [
+      201.4358,
+      210.9791
+    ],
+    "pattern": "wedge",
+    "overlays": {
+      "lines": [
+        {
+          "x1": "2024-01-01",
+          "y1": 284.7549,
+          "x2": "2025-09-15",
+          "y2": 186.19,
+          "color": "#ab47bc",
+          "dash": true
+        },
+        {
+          "x1": "2024-01-01",
+          "y1": 260.8968,
+          "x2": "2025-09-15",
+          "y2": 177.84,
+          "color": "#ab47bc",
+          "dash": true
+        }
+      ],
+      "boxes": [],
+      "labels": [
+        {
+          "text": "Falling wedge",
+          "x": "2025-07-14",
+          "y": 182.015
+        }
+      ],
+      "priceLevels": {
+        "entry": 187.121,
+        "stop": 176.0616,
+        "targets": [
+          201.4358,
+          210.9791
+        ]
+      }
+    },
+    "meta": {
+      "evidence": [
+        "spread compression 0.35",
+        "slope gap 0.0668"
+      ],
+      "direction": "falling",
+      "atr14": 9.7441
+    },
+    "avg_price": 208.3150629679362,
+    "avg_volume": 3596418.8666666667,
+    "key_levels": {
+      "entry": 187.121,
+      "stop": 176.0616,
+      "targets": [
+        201.4358,
+        210.9791
+      ]
+    },
+    "atr14": 9.7441,
+    "chart_url": "https://dummyimage.com/1200x628/0b1221/9be7ff.png&text=MTB+Chart"
+  }
+}
+Chart overlay POST (AAPL) …
+{
+  "chart_url": "https://dummyimage.com/1200x628/0b1221/9be7ff.png&text=AAPL+Chart",
+  "meta": {
+    "source": "https://legend-shots.onrender.com",
+    "overlay_applied": true,
+    "fallback": true,
+    "error": "shot-failed",
+    "overlay_counts": {
+      "lines": 1,
+      "boxes": 0,
+      "labels": 0,
+      "arrows": 0,
+      "zones": 0
+    },
+    "duration_ms": 30282.85
+  }
+}
+2025-09-20 11:56:33 Running sample backtest
+source .venv/bin/activate && python -m backtest.run_backtest --start 2024-01-01 --end 2024-03-31 --universe simple --provider yfinance
+[warn] failed to persist run: (sqlite3.IntegrityError) UNIQUE constraint failed: backtest_runs.start, backtest_runs.end, backtest_runs.universe, backtest_runs.provider, backtest_runs.detector_version
+[SQL: INSERT INTO backtest_runs (created_at, start, "end", universe, provider, status, duration_ms, error_message, detector_version, code_commit, artifacts_root, precision_at_10, precision_at_25, hit_rate, median_runup, num_candidates, num_triggers, num_success) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('2025-09-20 18:56:37.067083', '2024-01-01', '2024-03-31', 'simple', 'yfinance', 'pending', None, None, 'v1', None, '/Users/kyleholthaus/Projects/LegendAI/backtest/reports', 0.0, 0.0, 0.0, 0.0, 0, 0, 0)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+backtest/reports/summary/summary_2024-01-01_2024-03-31.json
+2025-09-20 11:56:37 Phase 4 optional: AI trading demo
+✅ pandas ok
+✅ numpy ok
+✅ yfinance ok
+✅ ta ok
+✅ transformers ok
+✅ torch ok
+[
+  {
+    "symbol": "NVDA",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  },
+  {
+    "symbol": "AAPL",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  },
+  {
+    "symbol": "MSFT",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  },
+  {
+    "symbol": "AMD",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  }
+]
+2025-09-20 11:56:44 Deploy skipped (DO_DEPLOY!=1)
+2025-09-20 11:56:44 Sleeping 5m before next iteration
+2025-09-20 12:01:44 === Iteration 534 ===
+2025-09-20 12:01:44 venv exists
+2025-09-20 12:01:44 Installing Python requirements
+2025-09-20 12:01:44 shots: node_modules present
+2025-09-20 12:01:44 frontend: node_modules present
+2025-09-20 12:01:44 Running unit tests (pytest)
+source .venv/bin/activate && pip install pytest && pytest -q
+Requirement already satisfied: pytest in ./.venv/lib/python3.13/site-packages (8.4.2)
+Requirement already satisfied: iniconfig>=1 in ./.venv/lib/python3.13/site-packages (from pytest) (2.1.0)
+Requirement already satisfied: packaging>=20 in ./.venv/lib/python3.13/site-packages (from pytest) (25.0)
+Requirement already satisfied: pluggy<2,>=1.5 in ./.venv/lib/python3.13/site-packages (from pytest) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in ./.venv/lib/python3.13/site-packages (from pytest) (2.19.2)
+
+==================================== ERRORS ====================================
+_______________________ ERROR collecting test_health.py ________________________
+import file mismatch:
+imported module 'test_health' has this __file__ attribute:
+  /Users/kyleholthaus/Projects/LegendAI/legend-room-backend/tests/test_health.py
+which is not the same as the test file we want to collect:
+  /Users/kyleholthaus/Projects/LegendAI/test_health.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_________________ ERROR collecting tests/test_foreman_utils.py _________________
+tests/test_foreman_utils.py:3: in <module>
+    from foreman_bot import _slugify, _branch_name
+foreman_bot.py:30: in <module>
+    app = slack_bolt.App(token=SLACK_BOT_TOKEN)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.13/site-packages/slack_bolt/app/app.py:379: in __init__
+    self._init_middleware_list(
+.venv/lib/python3.13/site-packages/slack_bolt/app/app.py:442: in _init_middleware_list
+    raise BoltError(error_token_required())
+E   slack_bolt.error.BoltError: Either an env variable `SLACK_BOT_TOKEN` or `token` argument in the constructor is required.
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/pythonjsonlogger/jsonlogger.py:11
+  /Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.13/site-packages/pythonjsonlogger/jsonlogger.py:11: DeprecationWarning: pythonjsonlogger.jsonlogger has been moved to pythonjsonlogger.json
+    warnings.warn(
+
+service_api.py:224
+  /Users/kyleholthaus/Projects/LegendAI/service_api.py:224: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv/lib/python3.13/site-packages/fastapi/applications.py:4495
+  /Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.13/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR test_health.py
+ERROR tests/test_foreman_utils.py - slack_bolt.error.BoltError: Either an env...
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+3 warnings, 2 errors in 1.64s
+2025-09-20 12:01:47 Starting dev services (tmux: api, shots, fe)
+ℹ️  api already running
+ℹ️  shots already running
+ℹ️  fe already running
+2025-09-20 12:01:47 Waiting for http://127.0.0.1:8000/healthz (timeout 60s)
+2025-09-20 12:01:47 OK: http://127.0.0.1:8000/healthz
+tmux sessions:
+api: 1 windows (created Wed Sep 17 00:16:39 2025)
+fe: 1 windows (created Wed Sep 17 00:16:39 2025)
+legend-docs: 1 windows (created Wed Sep 17 14:26:51 2025)
+legend-orch: 1 windows (created Wed Sep 17 17:11:53 2025)
+shots: 1 windows (created Wed Sep 17 00:16:39 2025)
+
+Ports:
+python3.1 25033 kyleholthaus    3u  IPv4 0xc65d299e6adc136a      0t0  TCP *:8000 (LISTEN)
+node      25037 kyleholthaus   14u  IPv6 0xfb59ceae73d88c29      0t0  TCP *:3010 (LISTEN)
+python3.1 50588 kyleholthaus    3u  IPv4 0xc65d299e6adc136a      0t0  TCP *:8000 (LISTEN)
+node      78186 kyleholthaus   16u  IPv6 0xc9bb6cbdc163f2f9      0t0  TCP *:3001 (LISTEN)
+python3.1 86663 kyleholthaus    8u  IPv4 0xf36556964144c05e      0t0  TCP 127.0.0.1:8000 (LISTEN)
+
+Health checks:
+{"ok":true,"version":"0.1.0"}
+✅ signals ok
+✅ shots ok
+✅ screenshot ok
+
+Last 10 lines of logs:
+---- logs/api.log ----
+{"asctime": "2025-09-17 20:50:33,135", "levelname": "INFO", "message": "request", "request_id": "0524dcf8-f2da-460b-a4e7-b13463939142", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 1}
+INFO:     127.0.0.1:64322 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:50:33,175", "levelname": "INFO", "message": "request", "request_id": "b43de1c9-671f-465a-a032-30c1a4dbfe64", "path": "/api/v1/signals", "method": "GET", "status_code": 200, "duration_ms": 20}
+INFO:     127.0.0.1:64323 - "GET /api/v1/signals?symbol=NVDA HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:50:48,993", "levelname": "INFO", "message": "request", "request_id": "7685bd47-8838-4335-92b2-bf536dee9cd9", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 9912}
+INFO:     127.0.0.1:64354 - "GET /api/v1/chart?symbol=NVDA HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:52:02,867", "levelname": "INFO", "message": "request", "request_id": "c7ffa19d-e823-4d99-9521-d9b45858d419", "path": "/api/v1/scan", "method": "GET", "status_code": 200, "duration_ms": 73814}
+INFO:     127.0.0.1:64357 - "GET /api/v1/scan?pattern=wedge&universe=sp500&timeframe=1wk&limit=3 HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:52:33,362", "levelname": "INFO", "message": "request", "request_id": "0faa4644-cb62-47cb-9c96-2e1887253ba3", "path": "/api/v1/chart", "method": "POST", "status_code": 200, "duration_ms": 30437}
+INFO:     127.0.0.1:64921 - "POST /api/v1/chart?symbol=AAPL HTTP/1.1" 200 OK
+---- logs/shots.log ----
+  duration_ms: 5225,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758167421546.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5762,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758167438773.png'
+}
+---- logs/fe.log ----
+
+ ✓ Starting...
+ ✓ Ready in 1113ms
+ ⚠ Found a change in next.config.mjs. Restarting the server to apply the changes...
+  ▲ Next.js 14.2.5
+  - Local:        http://localhost:3001
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1691ms
+2025-09-20 12:01:59 Running smoke checks from docs/DEV_RUN.md
+{"ok":true,"version":"0.1.0"}
+true
+{
+  "hit_rate": 0.62,
+  "precision_at_10": 0.7,
+  "precision_at_25": 0.66,
+  "coverage": 125,
+  "median_runup": 0.047
+}
+"Buy"
+
+"NVDA"
+false
+
+53.0
+"Neutral"
+false
+
+"neutral"
+true
+
+{
+  "chart_url": "https://legend-shots.onrender.com/reports/NVDA-1758394931252.png",
+  "meta": {
+    "source": "https://legend-shots.onrender.com",
+    "overlay_applied": false,
+    "fallback": false,
+    "overlay_counts": {
+      "lines": 0,
+      "boxes": 0,
+      "labels": 0,
+      "arrows": 0,
+      "zones": 0
+    },
+    "duration_ms": 10904.68
+  }
+}
+
+2025-09-20 12:02:11 Running legend_check.sh against local services
+API /healthz …
+{"ok":true,"version":"0.1.0"}
+Signals (NVDA) …
+53.0
+"Neutral"
+Shots (NVDA) …
+{
+  "chart_url": "http://127.0.0.1:3010/reports/NVDA-1758394937569.png",
+  "overlay_counts": {
+    "lines": 0,
+    "boxes": 0,
+    "labels": 0,
+    "arrows": 0,
+    "zones": 0
+  },
+  "duration_ms": 6174
+}
+API → chart (NVDA) …
+{
+  "chart_url": "https://legend-shots.onrender.com/reports/NVDA-1758394947549.png",
+  "meta": {
+    "source": "https://legend-shots.onrender.com",
+    "overlay_applied": false,
+    "fallback": false,
+    "overlay_counts": {
+      "lines": 0,
+      "boxes": 0,
+      "labels": 0,
+      "arrows": 0,
+      "zones": 0
+    },
+    "duration_ms": 9886.57
+  }
+}
+Weekly scan (WEDGE, timeframe=1wk) …
+{
+  "count": 82,
+  "sample": {
+    "symbol": "PODD",
+    "score": 80.57,
+    "entry": 144.2476,
+    "stop": 138.5109,
+    "targets": [
+      148.5605,
+      151.4357
+    ],
+    "pattern": "wedge",
+    "overlays": {
+      "lines": [
+        {
+          "x1": "2024-01-01",
+          "y1": 164.837,
+          "x2": "2025-09-15",
+          "y2": 143.53,
+          "color": "#ab47bc",
+          "dash": true
+        },
+        {
+          "x1": "2024-01-01",
+          "y1": 157.6489,
+          "x2": "2025-09-15",
+          "y2": 139.91,
+          "color": "#ab47bc",
+          "dash": true
+        }
+      ],
+      "boxes": [],
+      "labels": [
+        {
+          "text": "Falling wedge",
+          "x": "2025-07-14",
+          "y": 141.72
+        }
+      ],
+      "priceLevels": {
+        "entry": 144.2476,
+        "stop": 138.5109,
+        "targets": [
+          148.5605,
+          151.4357
+        ]
+      }
+    },
+    "meta": {
+      "evidence": [
+        "spread compression 0.50",
+        "slope gap 0.0137"
+      ],
+      "direction": "falling",
+      "atr14": 6.2749
+    },
+    "avg_price": 138.50806986490886,
+    "avg_volume": 43099725.266666666,
+    "key_levels": {
+      "entry": 144.2476,
+      "stop": 138.5109,
+      "targets": [
+        148.5605,
+        151.4357
+      ]
+    },
+    "atr14": 6.2749,
+    "chart_url": "https://dummyimage.com/1200x628/0b1221/9be7ff.png&text=PODD+Chart"
+  }
+}
+Chart overlay POST (AAPL) …
+{
+  "chart_url": "https://dummyimage.com/1200x628/0b1221/9be7ff.png&text=AAPL+Chart",
+  "meta": {
+    "source": "https://legend-shots.onrender.com",
+    "overlay_applied": true,
+    "fallback": true,
+    "error": "shot-failed",
+    "overlay_counts": {
+      "lines": 1,
+      "boxes": 0,
+      "labels": 0,
+      "arrows": 0,
+      "zones": 0
+    },
+    "duration_ms": 30233.47
+  }
+}
+2025-09-20 12:04:12 Running sample backtest
+source .venv/bin/activate && python -m backtest.run_backtest --start 2024-01-01 --end 2024-03-31 --universe simple --provider yfinance
+[warn] failed to persist run: (sqlite3.IntegrityError) UNIQUE constraint failed: backtest_runs.start, backtest_runs.end, backtest_runs.universe, backtest_runs.provider, backtest_runs.detector_version
+[SQL: INSERT INTO backtest_runs (created_at, start, "end", universe, provider, status, duration_ms, error_message, detector_version, code_commit, artifacts_root, precision_at_10, precision_at_25, hit_rate, median_runup, num_candidates, num_triggers, num_success) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('2025-09-20 19:04:15.944654', '2024-01-01', '2024-03-31', 'simple', 'yfinance', 'pending', None, None, 'v1', None, '/Users/kyleholthaus/Projects/LegendAI/backtest/reports', 0.0, 0.0, 0.0, 0.0, 0, 0, 0)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+backtest/reports/summary/summary_2024-01-01_2024-03-31.json
+2025-09-20 12:04:16 Phase 4 optional: AI trading demo
+✅ pandas ok
+✅ numpy ok
+✅ yfinance ok
+✅ ta ok
+✅ transformers ok
+✅ torch ok
+[
+  {
+    "symbol": "NVDA",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  },
+  {
+    "symbol": "AAPL",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  },
+  {
+    "symbol": "MSFT",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  },
+  {
+    "symbol": "AMD",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  }
+]
+2025-09-20 12:04:23 Deploy skipped (DO_DEPLOY!=1)
+2025-09-20 12:04:23 Sleeping 5m before next iteration
+2025-09-20 12:09:23 === Iteration 535 ===
+2025-09-20 12:09:23 venv exists
+2025-09-20 12:09:23 Installing Python requirements
+2025-09-20 12:09:24 shots: node_modules present
+2025-09-20 12:09:24 frontend: node_modules present
+2025-09-20 12:09:24 Running unit tests (pytest)
+source .venv/bin/activate && pip install pytest && pytest -q
+Requirement already satisfied: pytest in ./.venv/lib/python3.13/site-packages (8.4.2)
+Requirement already satisfied: iniconfig>=1 in ./.venv/lib/python3.13/site-packages (from pytest) (2.1.0)
+Requirement already satisfied: packaging>=20 in ./.venv/lib/python3.13/site-packages (from pytest) (25.0)
+Requirement already satisfied: pluggy<2,>=1.5 in ./.venv/lib/python3.13/site-packages (from pytest) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in ./.venv/lib/python3.13/site-packages (from pytest) (2.19.2)
+
+==================================== ERRORS ====================================
+_______________________ ERROR collecting test_health.py ________________________
+import file mismatch:
+imported module 'test_health' has this __file__ attribute:
+  /Users/kyleholthaus/Projects/LegendAI/legend-room-backend/tests/test_health.py
+which is not the same as the test file we want to collect:
+  /Users/kyleholthaus/Projects/LegendAI/test_health.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_________________ ERROR collecting tests/test_foreman_utils.py _________________
+tests/test_foreman_utils.py:3: in <module>
+    from foreman_bot import _slugify, _branch_name
+foreman_bot.py:30: in <module>
+    app = slack_bolt.App(token=SLACK_BOT_TOKEN)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.13/site-packages/slack_bolt/app/app.py:379: in __init__
+    self._init_middleware_list(
+.venv/lib/python3.13/site-packages/slack_bolt/app/app.py:442: in _init_middleware_list
+    raise BoltError(error_token_required())
+E   slack_bolt.error.BoltError: Either an env variable `SLACK_BOT_TOKEN` or `token` argument in the constructor is required.
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/pythonjsonlogger/jsonlogger.py:11
+  /Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.13/site-packages/pythonjsonlogger/jsonlogger.py:11: DeprecationWarning: pythonjsonlogger.jsonlogger has been moved to pythonjsonlogger.json
+    warnings.warn(
+
+service_api.py:224
+  /Users/kyleholthaus/Projects/LegendAI/service_api.py:224: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv/lib/python3.13/site-packages/fastapi/applications.py:4495
+  /Users/kyleholthaus/Projects/LegendAI/.venv/lib/python3.13/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR test_health.py
+ERROR tests/test_foreman_utils.py - slack_bolt.error.BoltError: Either an env...
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+3 warnings, 2 errors in 1.69s
+2025-09-20 12:09:27 Starting dev services (tmux: api, shots, fe)
+ℹ️  api already running
+ℹ️  shots already running
+ℹ️  fe already running
+2025-09-20 12:09:27 Waiting for http://127.0.0.1:8000/healthz (timeout 60s)
+2025-09-20 12:09:27 OK: http://127.0.0.1:8000/healthz
+tmux sessions:
+api: 1 windows (created Wed Sep 17 00:16:39 2025)
+fe: 1 windows (created Wed Sep 17 00:16:39 2025)
+legend-docs: 1 windows (created Wed Sep 17 14:26:51 2025)
+legend-orch: 1 windows (created Wed Sep 17 17:11:53 2025)
+shots: 1 windows (created Wed Sep 17 00:16:39 2025)
+
+Ports:
+python3.1 25033 kyleholthaus    3u  IPv4 0xc65d299e6adc136a      0t0  TCP *:8000 (LISTEN)
+node      25037 kyleholthaus   14u  IPv6 0xfb59ceae73d88c29      0t0  TCP *:3010 (LISTEN)
+python3.1 50588 kyleholthaus    3u  IPv4 0xc65d299e6adc136a      0t0  TCP *:8000 (LISTEN)
+node      78186 kyleholthaus   16u  IPv6 0xc9bb6cbdc163f2f9      0t0  TCP *:3001 (LISTEN)
+python3.1 86663 kyleholthaus    8u  IPv4 0xf36556964144c05e      0t0  TCP 127.0.0.1:8000 (LISTEN)
+
+Health checks:
+{"ok":true,"version":"0.1.0"}
+✅ signals ok
+✅ shots ok
+✅ screenshot ok
+
+Last 10 lines of logs:
+---- logs/api.log ----
+{"asctime": "2025-09-17 20:50:33,135", "levelname": "INFO", "message": "request", "request_id": "0524dcf8-f2da-460b-a4e7-b13463939142", "path": "/healthz", "method": "GET", "status_code": 200, "duration_ms": 1}
+INFO:     127.0.0.1:64322 - "GET /healthz HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:50:33,175", "levelname": "INFO", "message": "request", "request_id": "b43de1c9-671f-465a-a032-30c1a4dbfe64", "path": "/api/v1/signals", "method": "GET", "status_code": 200, "duration_ms": 20}
+INFO:     127.0.0.1:64323 - "GET /api/v1/signals?symbol=NVDA HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:50:48,993", "levelname": "INFO", "message": "request", "request_id": "7685bd47-8838-4335-92b2-bf536dee9cd9", "path": "/api/v1/chart", "method": "GET", "status_code": 200, "duration_ms": 9912}
+INFO:     127.0.0.1:64354 - "GET /api/v1/chart?symbol=NVDA HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:52:02,867", "levelname": "INFO", "message": "request", "request_id": "c7ffa19d-e823-4d99-9521-d9b45858d419", "path": "/api/v1/scan", "method": "GET", "status_code": 200, "duration_ms": 73814}
+INFO:     127.0.0.1:64357 - "GET /api/v1/scan?pattern=wedge&universe=sp500&timeframe=1wk&limit=3 HTTP/1.1" 200 OK
+{"asctime": "2025-09-17 20:52:33,362", "levelname": "INFO", "message": "request", "request_id": "0faa4644-cb62-47cb-9c96-2e1887253ba3", "path": "/api/v1/chart", "method": "POST", "status_code": 200, "duration_ms": 30437}
+INFO:     127.0.0.1:64921 - "POST /api/v1/chart?symbol=AAPL HTTP/1.1" 200 OK
+---- logs/shots.log ----
+  duration_ms: 5225,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758167421546.png'
+}
+shot_render_success {
+  symbol: 'NVDA',
+  duration_ms: 5762,
+  overlay_counts: { lines: 0, boxes: 0, labels: 0, arrows: 0, zones: 0 },
+  file: 'NVDA-1758167438773.png'
+}
+---- logs/fe.log ----
+
+ ✓ Starting...
+ ✓ Ready in 1113ms
+ ⚠ Found a change in next.config.mjs. Restarting the server to apply the changes...
+  ▲ Next.js 14.2.5
+  - Local:        http://localhost:3001
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1691ms
+2025-09-20 12:09:38 Running smoke checks from docs/DEV_RUN.md
+{"ok":true,"version":"0.1.0"}
+true
+{
+  "hit_rate": 0.62,
+  "precision_at_10": 0.7,
+  "precision_at_25": 0.66,
+  "coverage": 125,
+  "median_runup": 0.047
+}
+"Buy"
+
+"NVDA"
+false
+
+53.0
+"Neutral"
+false
+
+"neutral"
+true
+
+{
+  "chart_url": "https://legend-shots.onrender.com/reports/NVDA-1758395389448.png",
+  "meta": {
+    "source": "https://legend-shots.onrender.com",
+    "overlay_applied": false,
+    "fallback": false,
+    "overlay_counts": {
+      "lines": 0,
+      "boxes": 0,
+      "labels": 0,
+      "arrows": 0,
+      "zones": 0
+    },
+    "duration_ms": 10955.65
+  }
+}
+
+2025-09-20 12:09:49 Running legend_check.sh against local services
+API /healthz …
+{"ok":true,"version":"0.1.0"}
+Signals (NVDA) …
+53.0
+"Neutral"
+Shots (NVDA) …
+{
+  "chart_url": "http://127.0.0.1:3010/reports/NVDA-1758395395538.png",
+  "overlay_counts": {
+    "lines": 0,
+    "boxes": 0,
+    "labels": 0,
+    "arrows": 0,
+    "zones": 0
+  },
+  "duration_ms": 6045
+}
+API → chart (NVDA) …
+{
+  "chart_url": "https://legend-shots.onrender.com/reports/NVDA-1758395405348.png",
+  "meta": {
+    "source": "https://legend-shots.onrender.com",
+    "overlay_applied": false,
+    "fallback": false,
+    "overlay_counts": {
+      "lines": 0,
+      "boxes": 0,
+      "labels": 0,
+      "arrows": 0,
+      "zones": 0
+    },
+    "duration_ms": 9889.96
+  }
+}
+Weekly scan (WEDGE, timeframe=1wk) …
+{
+  "count": 110,
+  "sample": {
+    "symbol": "PGR",
+    "score": 85.42,
+    "entry": 187.121,
+    "stop": 176.0616,
+    "targets": [
+      201.4358,
+      210.9791
+    ],
+    "pattern": "wedge",
+    "overlays": {
+      "lines": [
+        {
+          "x1": "2024-01-01",
+          "y1": 284.7549,
+          "x2": "2025-09-15",
+          "y2": 186.19,
+          "color": "#ab47bc",
+          "dash": true
+        },
+        {
+          "x1": "2024-01-01",
+          "y1": 260.8968,
+          "x2": "2025-09-15",
+          "y2": 177.84,
+          "color": "#ab47bc",
+          "dash": true
+        }
+      ],
+      "boxes": [],
+      "labels": [
+        {
+          "text": "Falling wedge",
+          "x": "2025-07-14",
+          "y": 182.015
+        }
+      ],
+      "priceLevels": {
+        "entry": 187.121,
+        "stop": 176.0616,
+        "targets": [
+          201.4358,
+          210.9791
+        ]
+      }
+    },
+    "meta": {
+      "evidence": [
+        "spread compression 0.35",
+        "slope gap 0.0668"
+      ],
+      "direction": "falling",
+      "atr14": 9.7441
+    },
+    "avg_price": 208.3150629679362,
+    "avg_volume": 3596418.8666666667,
+    "key_levels": {
+      "entry": 187.121,
+      "stop": 176.0616,
+      "targets": [
+        201.4358,
+        210.9791
+      ]
+    },
+    "atr14": 9.7441,
+    "chart_url": "https://dummyimage.com/1200x628/0b1221/9be7ff.png&text=PGR+Chart"
+  }
+}
+Chart overlay POST (AAPL) …
+{
+  "chart_url": "https://dummyimage.com/1200x628/0b1221/9be7ff.png&text=AAPL+Chart",
+  "meta": {
+    "source": "https://legend-shots.onrender.com",
+    "overlay_applied": true,
+    "fallback": true,
+    "error": "shot-failed",
+    "overlay_counts": {
+      "lines": 1,
+      "boxes": 0,
+      "labels": 0,
+      "arrows": 0,
+      "zones": 0
+    },
+    "duration_ms": 30238.43
+  }
+}
+2025-09-20 12:11:49 Running sample backtest
+source .venv/bin/activate && python -m backtest.run_backtest --start 2024-01-01 --end 2024-03-31 --universe simple --provider yfinance
+[warn] failed to persist run: (sqlite3.IntegrityError) UNIQUE constraint failed: backtest_runs.start, backtest_runs.end, backtest_runs.universe, backtest_runs.provider, backtest_runs.detector_version
+[SQL: INSERT INTO backtest_runs (created_at, start, "end", universe, provider, status, duration_ms, error_message, detector_version, code_commit, artifacts_root, precision_at_10, precision_at_25, hit_rate, median_runup, num_candidates, num_triggers, num_success) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('2025-09-20 19:11:53.126974', '2024-01-01', '2024-03-31', 'simple', 'yfinance', 'pending', None, None, 'v1', None, '/Users/kyleholthaus/Projects/LegendAI/backtest/reports', 0.0, 0.0, 0.0, 0.0, 0, 0, 0)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+backtest/reports/summary/summary_2024-01-01_2024-03-31.json
+2025-09-20 12:11:53 Phase 4 optional: AI trading demo
+✅ pandas ok
+✅ numpy ok
+✅ yfinance ok
+✅ ta ok
+✅ transformers ok
+✅ torch ok
+[
+  {
+    "symbol": "NVDA",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  },
+  {
+    "symbol": "AAPL",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  },
+  {
+    "symbol": "MSFT",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  },
+  {
+    "symbol": "AMD",
+    "error": "Data must be 1-dimensional, got ndarray of shape (250, 1) instead"
+  }
+]
+2025-09-20 12:11:59 Deploy skipped (DO_DEPLOY!=1)
+2025-09-20 12:11:59 Sleeping 5m before next iteration

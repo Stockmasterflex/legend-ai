@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Lint with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Format with black (check)
+      run: |
+        black --check --diff .
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./kyle-portfolio
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.17.0'
+        cache: 'npm'
+        cache-dependency-path: './kyle-portfolio/package-lock.json'
+    - name: Install dependencies
+      run: npm ci --legacy-peer-deps
+    - name: Type check
+      run: npm run type-check
+    - name: Lint
+      run: npm run lint
+    - name: Build
+      env:
+        NEXT_PUBLIC_SANITY_PROJECT_ID: mkwn9gfw
+        NEXT_PUBLIC_SANITY_DATASET: production
+        SKIP_ENV_VALIDATION: true
+      run: npm run build
+
+  test-api:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests pytest
+    - name: Test API endpoints (non-blocking)
+      run: |
+        python - << 'PY'
+        import requests, sys
+        try:
+            r = requests.get('https://legend-api.onrender.com/healthz', timeout=10)
+            print('API Health:', r.status_code)
+            r = requests.get('https://legend-api.onrender.com/api/v1/signals?symbol=AAPL', timeout=15)
+            print('Signals:', r.status_code)
+            print('API tests completed')
+        except Exception as e:
+            print('API tests failed (non-blocking):', e)
+            sys.exit(0)
+        PY
