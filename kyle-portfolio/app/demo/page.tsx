@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Loader2, TrendingUp, AlertCircle, Filter, BarChart3, 
-  Target, Shield, Activity, Zap 
+  Target, Shield, Activity, Zap, Brain 
 } from 'lucide-react'
 
 interface ScanResult {
@@ -341,7 +341,7 @@ export default function DemoPage() {
                               </div>
                             </td>
                             <td className="p-2">
-                              <Badge className={getSignalColor(result.signal)} size="sm">
+<Badge className={getSignalColor(result.signal)}>
                                 {result.signal}
                               </Badge>
                             </td>
