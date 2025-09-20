@@ -124,15 +124,15 @@ export default function ProjectsPage() {
                     <h4 className="font-semibold text-white mb-3">Performance Stats:</h4>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
-                        <div className="text-xl font-bold text-green-500">{projects[0].stats.accuracy}</div>
+<div className="text-xl font-bold text-green-500">{projects[0]?.stats?.accuracy || ''}</div>
                         <div className="text-xs text-gray-400">Accuracy</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xl font-bold text-green-500">{projects[0].stats.stocks}</div>
+<div className="text-xl font-bold text-green-500">{projects[0]?.stats?.stocks || ''}</div>
                         <div className="text-xs text-gray-400">Stocks Tracked</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xl font-bold text-green-500">{projects[0].stats.uptime}</div>
+<div className="text-xl font-bold text-green-500">{projects[0]?.stats?.uptime || ''}</div>
                         <div className="text-xs text-gray-400">Uptime</div>
                       </div>
                     </div>
