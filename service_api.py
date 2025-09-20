@@ -15,6 +15,7 @@ from uuid import uuid4
 import httpx
 import pandas as pd
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
+from pydantic import BaseModel, Field
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from pythonjsonlogger import jsonlogger
 from sqlalchemy.orm import Session
@@ -29,6 +30,7 @@ from service_universe import UniverseName, get_universe
 from settings import is_mock_enabled, load_vcp_settings
 from signals.patterns import PatternName, PatternResult, detect as detect_pattern
 from vcp.vcp_detector import VCPDetector
+from legend_room_backend.paper_trade import record as record_paper_trade
 
 try:
     import redis
@@ -235,6 +237,7 @@ MIN_PRICE_HARD = float(os.getenv("SCAN_MIN_PRICE_HARD", "20"))
 MIN_VOLUME_HARD = float(os.getenv("SCAN_MIN_VOLUME_HARD", "750000"))
 # Max distance from 52-week high (e.g., 0.25 means within 25%)
 MAX_DIST_52W_HIGH = float(os.getenv("SCAN_MAX_DIST_52W_HIGH", "0.25"))
+SCAN_52W_BAND = float(os.getenv("SCAN_52W_BAND", str(MAX_DIST_52W_HIGH)))
 # Alerting
 ALERT_QUALITY_THRESHOLD = float(os.getenv("ALERT_PATTERN_QUALITY_THRESHOLD", "0.20"))
 ALERT_MIN_SAMPLES = int(os.getenv("ALERT_MIN_SAMPLES", "25"))
@@ -250,6 +253,16 @@ CHART_RATE_LIMIT = max(0, int(os.getenv("CHART_RATE_LIMIT", "120") or 0))
 CHART_RATE_WINDOW = max(1, int(os.getenv("CHART_RATE_WINDOW", "60") or 1))
 SCAN_PREFETCH_CHARTS = os.getenv("SCAN_PREFETCH_CHARTS", "0").strip() in {"1", "true", "TRUE", "yes", "on"}
 SCAN_PREFETCH_TTL = int(os.getenv("SCAN_PREFETCH_TTL", str(900)))
+
+
+class PaperTradeRequest(BaseModel):
+    symbol: str = Field(..., min_length=1, max_length=16)
+    entry: float = Field(..., gt=0)
+    stop: float = Field(..., gt=0)
+    confidence: float = Field(..., ge=0, le=100)
+    notes: Optional[str] = Field(None, max_length=1000)
+    meta: Optional[Dict[str, Any]] = None
+
 
 _timeframe_defaults = {
     "1d": {"period": os.getenv("SCAN_PERIOD_1D", "18mo"), "interval": "1d", "fetch_interval": "1d", "min_bars": 180},
@@ -510,7 +523,7 @@ def _scan_symbol(
         if highs is not None and window >= 60:  # need a reasonable window
             high_52w = float(highs.tail(window).max())
             if high_52w > 0:
-                if last_close < (1.0 - MAX_DIST_52W_HIGH) * high_52w:
+                if last_close < (1.0 - SCAN_52W_BAND) * high_52w:
                     return None
     except Exception:
         pass
@@ -552,27 +565,12 @@ def _scan_symbol(
         if max_atr_ratio and atr_ratio > max_atr_ratio:
             return None
     key_levels = outcome.get("key_levels") if isinstance(outcome.get("key_levels"), dict) else None
-    # Derive a confidence score (0-100) blending detector score, proximity to 52W high, and volume sufficiency
     confidence = None
     try:
-        near_high_score = 0.0
-        vol_score = 0.0
-        if highs is not None and last_close:
-            window = min(len(df), 252)
-            if window >= 60:
-                high_52w = float(highs.tail(window).max())
-                if high_52w > 0:
-                    # Map [ (1-MAX_DIST)..1 ] to [0..1]
-                    ratio = last_close / high_52w
-                    base = 1.0 - MAX_DIST_52W_HIGH
-                    near = max(0.0, min(1.0, (ratio - base) / max(MAX_DIST_52W_HIGH, 1e-6)))
-                    near_high_score = near
-        if min_volume > 0:
-            vol_score = max(0.0, min(1.0, avg_volume / max(min_volume, 1.0)))
-        # Weighted blend: 70% detector score, +20 from near-high, +10 from volume sufficiency
-        base_score = max(0.0, min(100.0, score))
-        confidence = max(0.0, min(100.0, 0.7 * base_score + 20.0 * near_high_score + 10.0 * vol_score))
+        confidence = float(outcome.get("confidence"))
     except Exception:
+        confidence = None
+    if confidence is None:
         confidence = max(0.0, min(100.0, float(score)))
 
     row = {
@@ -1445,6 +1443,18 @@ async def scan_pattern(
         for row in payload["results"]
     ]
     return {"pattern": canon_pattern.upper(), "universe": canon_universe, "rows": rows}
+
+
+@app.post("/api/v1/paper_trade")
+def paper_trade_endpoint(payload: PaperTradeRequest) -> Dict[str, Any]:
+    try:
+        entry = record_paper_trade(payload.dict(exclude_none=True))
+        return {"ok": True, "trade": entry}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.exception("paper trade record failed", extra={"error": str(exc)})
+        raise HTTPException(status_code=500, detail="Failed to record paper trade")
 
 
 @app.api_route("/api/v1/chart", methods=["GET", "POST"])

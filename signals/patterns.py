@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import os
 from datetime import datetime
 from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Tuple
 
@@ -34,6 +35,7 @@ PatternName = Literal["vcp", "cup_handle", "hns", "flag", "wedge", "double"]
 PatternResult = Dict[str, Any]
 
 _VCP_DETECTOR = VCPDetector()
+SCAN_52W_BAND = float(os.getenv("SCAN_52W_BAND", "0.15"))
 
 
 def _prepare_df(df: pd.DataFrame) -> Optional[pd.DataFrame]:
@@ -138,6 +140,11 @@ def _result(
         out["evidence"] = evidence
     if extra:
         out.update(extra)
+    if "confidence" in out and out["confidence"] is not None:
+        try:
+            out["confidence"] = float(out["confidence"])
+        except Exception:
+            out["confidence"] = 0.0
     return out
 
 
@@ -146,6 +153,27 @@ def _risk_targets(entry: float, stop: float, multipliers: Tuple[float, ...] = (2
     if risk <= 0:
         return []
     return [entry + risk * m for m in multipliers]
+
+
+def profit_targets_bulkowski(entry: float, cup_depth: float, resistance: Optional[float]) -> Dict[str, float]:
+    """Compute common targets based on Bulkowski’s heuristics.
+    - cup_depth target uses 61.8% of measured cup depth added to entry.
+    - resistance target is passed through if provided.
+    Returns a dict including at least the 'cup_depth' key.
+    """
+    try:
+        entry = float(entry)
+        depth_val = float(cup_depth)
+    except Exception:
+        return {"cup_depth": entry}
+    cup_target = entry + (depth_val * entry) * 0.618
+    out = {"cup_depth": cup_target}
+    if resistance is not None:
+        try:
+            out["resistance"] = float(resistance)
+        except Exception:
+            pass
+    return out
 
 
 def detect_vcp(df: pd.DataFrame, symbol: str = "", timeframe: str = "1d") -> Optional[PatternResult]:
@@ -175,6 +203,10 @@ def detect_vcp(df: pd.DataFrame, symbol: str = "", timeframe: str = "1d") -> Opt
         return None
     stop = round(stop, 2)
     entry = round(entry, 2)
+
+    lookback_window = 252 if len(data) >= 252 else len(data)
+    high_52w = float(data["High"].tail(lookback_window).max()) if lookback_window else entry
+    fifty_two_ratio = entry / max(high_52w, 1e-6)
 
     cup_high = max(float(c.high_price) for c in signal.contractions) if signal.contractions else float(data["High"].tail(60).max())
     cup_low = min(float(c.low_price) for c in signal.contractions) if signal.contractions else float(data["Low"].tail(60).min())
@@ -233,6 +265,16 @@ def detect_vcp(df: pd.DataFrame, symbol: str = "", timeframe: str = "1d") -> Opt
         evidence.append("volume dry-up confirmed")
     evidence.append(f"MA slope last 50d: {slope:.2%}")
     evidence.append(f"Cup depth: {cup_depth_pct:.2%}")
+    handle_volume = float(signal.contractions[-1].avg_volume or 0.0) if signal.contractions else 0.0
+    if avg_volume_50d:
+        evidence.append(f"Handle volume vs 50d: {handle_volume / max(avg_volume_50d, 1e-6):.2%}")
+    band_component = 1.0 if fifty_two_ratio >= (1 - SCAN_52W_BAND) else 0.5 if fifty_two_ratio >= (1 - SCAN_52W_BAND * 1.5) else 0.0
+    cup_component = 1.0 if 0.30 <= cup_depth_pct <= 0.50 else 0.5 if 0.25 <= cup_depth_pct <= 0.55 else 0.0
+    handle_component = 1.0 if 0.10 <= (signal.final_contraction_tightness or 0) <= 0.15 else 0.5 if 0.08 <= (signal.final_contraction_tightness or 0) <= 0.18 else 0.0
+    volume_component = 1.0 if signal.volume_dry_up else 0.5 if handle_volume and avg_volume_50d and handle_volume <= avg_volume_50d * 0.85 else 0.0
+    confidence_fraction = (band_component + cup_component + handle_component + volume_component) / 4
+    confidence = round(confidence_fraction * 100, 2)
+    evidence.append(f"Cup depth: {cup_depth_pct:.2%}")
     handle_volume = float(getattr(signal.contractions[-1], 'avg_volume', 0.0) or 0.0) if signal.contractions else 0.0
     if avg_volume_50d:
         evidence.append(f"Handle volume vs 50d: {handle_volume / max(avg_volume_50d, 1e-6):.2%}")
@@ -255,6 +297,9 @@ def detect_vcp(df: pd.DataFrame, symbol: str = "", timeframe: str = "1d") -> Opt
             "rr_1_5": conservative_target,
         },
         "stop_display": f"${stop:,.2f}",
+        "confidence": confidence,
+        "fifty_two_week_ratio": round(fifty_two_ratio, 4),
+        "handle_volume_ratio": round(handle_volume / max(avg_volume_50d, 1e-6), 4) if avg_volume_50d else None,
     }
     return _result("vcp", score, entry, stop, targets, overlays, extra, evidence)
 

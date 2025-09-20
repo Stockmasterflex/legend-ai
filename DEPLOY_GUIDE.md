@@ -31,6 +31,12 @@ pkill -f uvicorn
 - `LEGEND_MOCK_MODE`: `0` (production)
 - `NEWSAPI_KEY`: (optional)
 - `SHOTS_BASE_URL`: (optional)
+- `SCAN_REDIS_CACHE`: `1` (enable Redis response cache; requires `REDIS_URL`)
+- `SCAN_RESPONSE_CACHE_TTL`: `240`
+- `SCAN_RATE_LIMIT`: `60`
+- `SCAN_RATE_WINDOW`: `60`
+- `CHART_RATE_LIMIT`: `120`
+- `CHART_RATE_WINDOW`: `60`
 
 **Build Command:**
 ```bash
