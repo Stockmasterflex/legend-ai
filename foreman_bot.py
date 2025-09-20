@@ -454,11 +454,18 @@ def suggest_tasks(channel_id):
         for file_path in files_to_analyze:
             if os.path.exists(file_path):
                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-        code_context += f"--- START {file_path} ---\n{f.read()}\n--- END {file_path} ---\n\n"
-    prompt = f"You are a world-class senior engineer. Analyze this code. Generate a list of 3-5 concrete tasks formatted as '# TODO:' or '# FIXME:'. Provide the file path for each.\n\n--- CODE ---\n{code_context}"
-    suggestions = ai_request(prompt)
-    app.client.chat_postMessage(channel=channel_id, text=f"💡 *Here are some suggested tasks:*\n```{suggestions}```\nYou can ask me to implement them with the `fix` command!")
-    log_journal("foreman", "Task Suggestions", suggestions)
+                    code_context += f"--- START {file_path} ---\n{f.read()}\n--- END {file_path} ---\n\n"
+        prompt = (
+            "You are a world-class senior engineer. Analyze this code. Generate a list of 3-5 "
+            "concrete tasks formatted as '# TODO:' or '# FIXME:'. Provide the file path for each.\n\n"
+            f"--- CODE ---\n{code_context}"
+        )
+        suggestions = ai_request(prompt)
+        app.client.chat_postMessage(
+            channel=channel_id,
+            text=f"💡 *Here are some suggested tasks:*\n```{suggestions}```\nYou can ask me to implement them with the `fix` command!"
+        )
+        log_journal("foreman", "Task Suggestions", suggestions)
     except Exception as e:
         LOGGER.exception("suggest_tasks failed")
         app.client.chat_postMessage(channel=channel_id, text=f"🔥 *Task suggestion failed:*\n```{str(e)}```")
