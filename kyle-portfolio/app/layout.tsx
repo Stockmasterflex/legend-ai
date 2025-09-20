@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Kyle Holthaus - Technical Analyst & AI Builder',
+  title: 'Kyle Thomas - Technical Analyst & AI Builder',
   description: 'Technical analyst and AI builder specializing in momentum trading and automated market intelligence',
 }
 
@@ -16,7 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body className={cn(inter.className, 'bg-slate-900 text-white antialiased')}>
         <Navbar />
-        {children}
+        <main className="pt-20">
+          {children}
+        </main>
       </body>
     </html>
   )
