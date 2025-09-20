@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth/server'
 import SignOutButton from '@/components/auth/SignOutButton'
 
 export default async function ProjectsPage() {
