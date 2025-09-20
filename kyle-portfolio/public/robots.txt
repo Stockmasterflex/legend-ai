@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /studio
+
+Sitemap: https://legend-ai.vercel.app/sitemap.xml
