@@ -67,6 +67,7 @@ export default defineType({
           ],
         }),
         defineField({
+          name: 'codeSnippet',
           type: 'code',
           title: 'Code Snippet',
           options: {
