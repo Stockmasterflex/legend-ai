@@ -129,5 +129,14 @@ app.get('/healthz', async (_req, res) => {
   }
 });
 
+// Simple /health alias for external monitors expecting this path
+app.get('/health', (_req, res) => {
+  try {
+    return res.json({ status: 'healthy', service: 'legend-shots', timestamp: new Date().toISOString() });
+  } catch (err) {
+    return res.status(500).json({ status: 'error', message: err instanceof Error ? err.message : String(err) });
+  }
+});
+
 const port = process.env.PORT || 3010;
 app.listen(port, () => console.log(`legend-shots listening on :${port}`));
