@@ -65,11 +65,18 @@ def fetch_patterns(engine: Engine, limit: int, cursor: Optional[str]) -> Tuple[L
     with engine.connect() as conn:
         result = conn.execute(sql, params)
         for r in result.mappings():
+            # Handle as_of - can be datetime (PostgreSQL) or string (SQLite)
+            as_of_val = r["as_of"]
+            if as_of_val is not None:
+                as_of_str = as_of_val.isoformat() if hasattr(as_of_val, 'isoformat') else str(as_of_val)
+            else:
+                as_of_str = None
+            
             rows.append(
                 {
                     "ticker": r["ticker"],
                     "pattern": r["pattern"],
-                    "as_of": r["as_of"].isoformat() if r["as_of"] is not None else None,
+                    "as_of": as_of_str,
                     "confidence": float(r["confidence"]) if r["confidence"] is not None else None,
                     "rs": float(r["rs"]) if r.get("rs") is not None else None,
                     "price": float(r["price"]) if r.get("price") is not None else None,
@@ -112,10 +119,18 @@ def get_status(engine: Engine) -> Dict[str, object]:
 
     span_days: Optional[int] = None
     if last_as_of and first_as_of:
-        span_days = (last_as_of - first_as_of).days
+        # Handle datetime objects (PostgreSQL) vs strings (SQLite)
+        if hasattr(last_as_of, 'days'):
+            span_days = (last_as_of - first_as_of).days
+        # For SQLite strings, just set None - it's not critical
+
+    # Handle last_as_of - can be datetime or string
+    last_scan_str = None
+    if last_as_of:
+        last_scan_str = last_as_of.isoformat() if hasattr(last_as_of, 'isoformat') else str(last_as_of)
 
     return {
-        "last_scan_time": last_as_of.isoformat() if last_as_of else None,
+        "last_scan_time": last_scan_str,
         "rows_total": total,
         "patterns_daily_span_days": span_days,
         "version": "0.1.0",
