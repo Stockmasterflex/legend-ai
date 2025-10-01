@@ -72,6 +72,21 @@ def fetch_patterns(engine: Engine, limit: int, cursor: Optional[str]) -> Tuple[L
             else:
                 as_of_str = None
             
+            # Handle meta - can be dict (PostgreSQL jsonb) or string (SQLite text)
+            meta_val = r.get("meta")
+            if meta_val is not None:
+                if isinstance(meta_val, str):
+                    # SQLite returns JSON as string - parse it
+                    try:
+                        meta_dict = json.loads(meta_val) if meta_val else {}
+                    except (json.JSONDecodeError, TypeError):
+                        meta_dict = {}
+                else:
+                    # PostgreSQL returns dict directly
+                    meta_dict = meta_val
+            else:
+                meta_dict = {}
+            
             rows.append(
                 {
                     "ticker": r["ticker"],
@@ -80,7 +95,7 @@ def fetch_patterns(engine: Engine, limit: int, cursor: Optional[str]) -> Tuple[L
                     "confidence": float(r["confidence"]) if r["confidence"] is not None else None,
                     "rs": float(r["rs"]) if r.get("rs") is not None else None,
                     "price": float(r["price"]) if r.get("price") is not None else None,
-                    "meta": r.get("meta"),
+                    "meta": meta_dict,
                 }
             )
 
