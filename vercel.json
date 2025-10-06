@@ -3,7 +3,8 @@
   "builds": [
     { "src": "index.html", "use": "@vercel/static" },
     { "src": "style.css", "use": "@vercel/static" },
-    { "src": "app-bundled.js", "use": "@vercel/static" }
+    { "src": "app.js", "use": "@vercel/static" },
+    { "src": "public/api.js", "use": "@vercel/static" }
   ],
   "routes": [
     { "handle": "filesystem" },

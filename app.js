@@ -81,16 +81,16 @@ class LegendAI {
     setDefaultFilters() {
         const rsSlider = document.getElementById('rs-slider');
         if (rsSlider) {
-            rsSlider.value = 0;
+            rsSlider.value = 80;
             const rsValue = document.getElementById('rs-value');
-            if (rsValue) rsValue.textContent = '0';
+            if (rsValue) rsValue.textContent = '80';
         }
 
         const confidenceSlider = document.getElementById('confidence-slider');
         if (confidenceSlider) {
-            confidenceSlider.value = 0;
+            confidenceSlider.value = 70;
             const confValue = document.getElementById('confidence-value');
-            if (confValue) confValue.textContent = '0%';
+            if (confValue) confValue.textContent = '70%';
         }
 
         const sectorFilter = document.getElementById('sector-filter');
@@ -98,6 +98,15 @@ class LegendAI {
 
         const marketCapFilter = document.getElementById('market-cap-filter');
         if (marketCapFilter) marketCapFilter.value = 'all';
+
+        const minPrice = document.getElementById('min-price');
+        if (minPrice) minPrice.value = '';
+
+        const maxPrice = document.getElementById('max-price');
+        if (maxPrice) maxPrice.value = '';
+
+        const volumeFilter = document.getElementById('volume-filter');
+        if (volumeFilter) volumeFilter.value = 'all';
 
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         const vcpTab = document.querySelector('[data-pattern="vcp"]');
@@ -127,6 +136,12 @@ class LegendAI {
             const { data } = await api(path);
 
             if (data && Array.isArray(data.items)) {
+                const items = data.items.map(item => {
+                    const meta = item.meta || {};
+                    const rawSymbol = item.symbol || item.ticker || meta.symbol || '';
+                    const symbol = rawSymbol ? String(rawSymbol).toUpperCase() : 'UNKNOWN';
+                    return { ...item, symbol };
+                });
                 const nextCursor = data.next_cursor ?? data.nextCursor ?? data.next ?? null;
                 const hasMore =
                     typeof data.has_more === 'boolean'
@@ -136,7 +151,7 @@ class LegendAI {
                             : Boolean(nextCursor);
 
                 return {
-                    items: data.items,
+                    items,
                     nextCursor,
                     hasMore,
                     source: 'v1'
@@ -144,8 +159,14 @@ class LegendAI {
             }
 
             if (Array.isArray(data)) {
+                const items = data.map(item => {
+                    const meta = item.meta || {};
+                    const rawSymbol = item.symbol || item.ticker || meta.symbol || '';
+                    const symbol = rawSymbol ? String(rawSymbol).toUpperCase() : 'UNKNOWN';
+                    return { ...item, symbol };
+                });
                 return {
-                    items: data,
+                    items,
                     nextCursor: null,
                     hasMore: false,
                     source: 'legacy'
@@ -157,8 +178,14 @@ class LegendAI {
 
         try {
             const { data: legacy } = await api('/api/patterns/all');
+            const items = Array.isArray(legacy) ? legacy.map(item => {
+                const meta = item.meta || {};
+                const rawSymbol = item.symbol || item.ticker || meta.symbol || '';
+                const symbol = rawSymbol ? String(rawSymbol).toUpperCase() : 'UNKNOWN';
+                return { ...item, symbol };
+            }) : [];
             return {
-                items: Array.isArray(legacy) ? legacy : [],
+                items,
                 nextCursor: null,
                 hasMore: false,
                 source: 'legacy'
@@ -239,19 +266,51 @@ class LegendAI {
     }
 
     async buildDataModel(patterns, portfolio) {
-        const normalizedPatterns = Array.isArray(patterns) ? patterns.map(pattern => ({
-            symbol: pattern.symbol,
-            name: pattern.name,
-            sector: pattern.sector,
-            type: 'VCP',
-            confidence: pattern.confidence,
-            pivot_price: pattern.pivot_price,
-            stop_loss: pattern.stop_loss,
-            current_price: pattern.current_price,
-            days_in_pattern: pattern.days_in_pattern,
-            stage: pattern.stage || 'N/A',
-            rs_rating: pattern.rs_rating
-        })) : [];
+        const normalizedPatterns = Array.isArray(patterns) ? patterns.map(pattern => {
+            const meta = pattern.meta || {};
+            const rawSymbol = pattern.symbol || pattern.ticker || meta.symbol || '';
+            const symbol = rawSymbol ? String(rawSymbol).toUpperCase() : 'UNKNOWN';
+            const name = pattern.name || meta.name || `${symbol} Corp`;
+            const sector = pattern.sector || meta.sector || 'Technology';
+            const patternType = pattern.pattern_type || pattern.type || pattern.pattern || meta.pattern_type || 'VCP';
+
+            let confidence = typeof pattern.confidence === 'number' ? pattern.confidence : (typeof meta.confidence_score === 'number' ? meta.confidence_score : 0);
+            confidence = confidence > 1 ? confidence / 100 : confidence;
+            confidence = Math.max(0, Math.min(confidence, 1));
+
+            const rawPrice = pattern.current_price ?? pattern.price ?? meta.current_price ?? meta.pivot_price ?? 0;
+            const currentPrice = Number(rawPrice) || 0;
+            const pivotPrice = Number(pattern.pivot_price ?? meta.pivot_price ?? currentPrice) || currentPrice;
+            const fallbackPrice = currentPrice || pivotPrice;
+            const stopLoss = Number(pattern.stop_loss ?? meta.stop_loss ?? (fallbackPrice * 0.92));
+            const rsRatingRaw = pattern.rs_rating ?? pattern.rs ?? meta.rs ?? meta.relative_strength ?? 0;
+            const rsRating = Math.round(Number(rsRatingRaw) || 0);
+            const rawMarketCap = pattern.market_cap_category ?? pattern.market_cap ?? meta.market_cap_category ?? meta.market_cap ?? 'Unknown';
+            const marketCap = typeof rawMarketCap === 'string' ? rawMarketCap : String(rawMarketCap);
+            const rawVolumeMultiple = meta.volume_multiple ?? meta.volume_vs_average ?? null;
+            const numericVolumeMultiple = rawVolumeMultiple !== null ? Number(rawVolumeMultiple) : null;
+            const volumeMultiple = Number.isFinite(numericVolumeMultiple) ? Number(numericVolumeMultiple) : null;
+            const averageVolume = meta.average_volume ?? meta.avg_volume ?? null;
+            const daysInPattern = Number(pattern.days_in_pattern ?? meta.days_in_pattern ?? 0) || 0;
+            const stage = pattern.stage || meta.stage || 'N/A';
+
+            return {
+                symbol,
+                name,
+                sector,
+                type: patternType,
+                confidence,
+                pivot_price: pivotPrice || currentPrice,
+                stop_loss: stopLoss || (fallbackPrice * 0.92),
+                current_price: currentPrice || pivotPrice,
+                days_in_pattern: daysInPattern,
+                stage,
+                rs_rating: rsRating,
+                market_cap: marketCap,
+                volume_multiple: volumeMultiple,
+                average_volume: averageVolume,
+            };
+        }) : [];
 
         const relativeStrength = normalizedPatterns.map(pattern => ({
             symbol: pattern.symbol,
@@ -451,11 +510,41 @@ class LegendAI {
             });
         }
 
+        const sectorFilter = document.getElementById('sector-filter');
+        if (sectorFilter) {
+            sectorFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
+        const marketCapFilter = document.getElementById('market-cap-filter');
+        if (marketCapFilter) {
+            marketCapFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
         const applyFiltersBtn = document.getElementById('apply-filters');
         if (applyFiltersBtn) {
             applyFiltersBtn.addEventListener('click', () => {
                 this.applyFilters();
             });
+        }
+
+        ['min-price', 'max-price'].forEach(id => {
+            const input = document.getElementById(id);
+            if (!input) return;
+            input.addEventListener('change', () => this.applyFilters());
+            input.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    this.applyFilters();
+                }
+            });
+        });
+
+        const volumeFilter = document.getElementById('volume-filter');
+        if (volumeFilter) {
+            volumeFilter.addEventListener('change', () => this.applyFilters());
         }
 
         const loadMoreButton = document.getElementById('load-more-patterns');
@@ -619,7 +708,7 @@ class LegendAI {
 
         this.filteredPatterns.forEach(pattern => {
             const rsData = relativeStrengthData.find(rs => rs.symbol === pattern.symbol);
-            const rsRating = rsData ? rsData.rs_rating : 0;
+            const rsRating = rsData ? rsData.rs_rating : (pattern.rs_rating ?? 0);
 
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -744,11 +833,19 @@ class LegendAI {
         const confidenceSlider = document.getElementById('confidence-slider');
         const sectorFilter = document.getElementById('sector-filter');
         const marketCapFilter = document.getElementById('market-cap-filter');
+        const minPriceInput = document.getElementById('min-price');
+        const maxPriceInput = document.getElementById('max-price');
+        const volumeFilter = document.getElementById('volume-filter');
 
         const rsThreshold = rsSlider ? parseInt(rsSlider.value) : 0;
         const confidenceThreshold = confidenceSlider ? parseInt(confidenceSlider.value) / 100 : 0;
         const sectorFilterValue = sectorFilter ? sectorFilter.value : 'all';
         const marketCapFilterValue = marketCapFilter ? marketCapFilter.value : 'all';
+        const minPrice = minPriceInput && minPriceInput.value !== '' ? parseFloat(minPriceInput.value) : Number.NaN;
+        const maxPrice = maxPriceInput && maxPriceInput.value !== '' ? parseFloat(maxPriceInput.value) : Number.NaN;
+        const volumeThreshold = volumeFilter && volumeFilter.value !== 'all'
+            ? parseFloat(volumeFilter.value)
+            : Number.NaN;
 
         const relativeStrengthData = Array.isArray(this.data.relative_strength) ? this.data.relative_strength : [];
 
@@ -774,6 +871,28 @@ class LegendAI {
 
             // Sector filter
             if (sectorFilterValue !== 'all' && pattern.sector !== sectorFilterValue) return false;
+
+            // Market cap filter (match substring to allow for detailed labels)
+            if (marketCapFilterValue !== 'all') {
+                const patternCap = (pattern.market_cap || 'unknown').toString().toLowerCase();
+                if (!patternCap.includes(marketCapFilterValue)) {
+                    return false;
+                }
+            }
+
+            // Price range filters
+            if (!Number.isNaN(minPrice) && pattern.current_price < minPrice) return false;
+            if (!Number.isNaN(maxPrice) && pattern.current_price > maxPrice) return false;
+
+            // Volume filters using relative multiple
+            if (!Number.isNaN(volumeThreshold)) {
+                const multiple = typeof pattern.volume_multiple === 'number' && Number.isFinite(pattern.volume_multiple)
+                    ? pattern.volume_multiple
+                    : null;
+                if (multiple !== null && multiple < volumeThreshold) {
+                    return false;
+                }
+            }
 
             return true;
         });
@@ -1133,6 +1252,14 @@ class LegendAI {
 }
 
 // Initialize the application
-const app = new LegendAI();
-window.app = app;
-/* Updated: 2025-09-30 21:59:07 - Force Vercel rebuild */
+function bootstrapLegendApp() {
+    const instance = new LegendAI();
+    window.app = instance;
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrapLegendApp, { once: true });
+} else {
+    bootstrapLegendApp();
+}
+/* Updated: 2025-10-06 10:12:00 - Module bootstrap */

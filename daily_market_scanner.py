@@ -187,7 +187,7 @@ def upsert_stock(session, symbol: str, last_close: float):
 
 
 def run_scan():
-    if not FINNHUB_API_KEY:
+    if PROVIDER == 'finnhub' and not FINNHUB_API_KEY:
         raise RuntimeError("FINNHUB_API_KEY not set in environment")
 
     session = SessionLocal()
@@ -371,5 +371,4 @@ def run_scan_for_symbols(symbols: List[str]):
 
 if __name__ == "__main__":
     run_scan()
-
 

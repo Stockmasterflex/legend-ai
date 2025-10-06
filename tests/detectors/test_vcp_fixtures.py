@@ -31,7 +31,8 @@ def fetch_prices(symbol: str) -> pd.DataFrame | None:
 @pytest.mark.slow
 def test_true_vcp_windows():
     fixtures = load_fixture_set(Path("tests/fixtures/true_vcp.json"))
-    det = VCPDetector()
+    # Mirror production scan: ignore trend template but require mid-priced stocks to reduce noise
+    det = VCPDetector(check_trend_template=False, min_price=30)
     hits = 0
     for f in fixtures:
         df = fetch_prices(f["symbol"])  # ignore date windows for simplicity
@@ -46,7 +47,8 @@ def test_true_vcp_windows():
 @pytest.mark.slow
 def test_false_vcp_windows():
     fixtures = load_fixture_set(Path("tests/fixtures/false_vcp.json"))
-    det = VCPDetector()
+    # Use same detector settings so false fixtures must pass tightened price filter
+    det = VCPDetector(check_trend_template=False, min_price=30)
     hits = 0
     for f in fixtures:
         df = fetch_prices(f["symbol"])  # ignore date windows for simplicity
@@ -56,5 +58,3 @@ def test_false_vcp_windows():
         if sig.detected:
             hits += 1
     assert hits == 0
-
-
