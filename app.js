@@ -81,16 +81,16 @@ class LegendAI {
     setDefaultFilters() {
         const rsSlider = document.getElementById('rs-slider');
         if (rsSlider) {
-            rsSlider.value = 80;
+            rsSlider.value = 50;
             const rsValue = document.getElementById('rs-value');
-            if (rsValue) rsValue.textContent = '80';
+            if (rsValue) rsValue.textContent = '50';
         }
 
         const confidenceSlider = document.getElementById('confidence-slider');
         if (confidenceSlider) {
-            confidenceSlider.value = 70;
+            confidenceSlider.value = 20;
             const confValue = document.getElementById('confidence-value');
-            if (confValue) confValue.textContent = '70%';
+            if (confValue) confValue.textContent = '20%';
         }
 
         const sectorFilter = document.getElementById('sector-filter');
@@ -547,6 +547,27 @@ class LegendAI {
             volumeFilter.addEventListener('change', () => this.applyFilters());
         }
 
+        const scanButton = document.getElementById('scan-now');
+        if (scanButton) {
+            scanButton.addEventListener('click', async () => {
+                const originalText = scanButton.textContent;
+                scanButton.disabled = true;
+                scanButton.textContent = 'Scanning…';
+                scanButton.classList.add('is-loading');
+
+                try {
+                    await this.refreshData();
+                } catch (error) {
+                    console.error('Manual scan failed', error);
+                    alert(`Scan failed: ${error?.message || 'unknown error'}`);
+                } finally {
+                    scanButton.disabled = false;
+                    scanButton.textContent = originalText;
+                    scanButton.classList.remove('is-loading');
+                }
+            });
+        }
+
         const loadMoreButton = document.getElementById('load-more-patterns');
         if (loadMoreButton) {
             loadMoreButton.addEventListener('click', () => {
@@ -607,6 +628,20 @@ class LegendAI {
         this.populatePortfolioTable();
         this.populateWatchlist();
         this.updateLoadMoreVisibility();
+    }
+
+    async refreshData() {
+        console.log('🔄 Manual scan triggered');
+        const { patterns, marketEnvironment, portfolio } = await this.loadBackendData();
+
+        this.marketEnvironment = marketEnvironment || this.getFallbackMarketEnvironment();
+        this.data = await this.buildDataModel(patterns, portfolio);
+        this.populateInitialData();
+
+        console.log('✅ Scan complete:', {
+            patterns: this.data?.patterns?.length || 0,
+            portfolio: this.data?.portfolio?.length || 0
+        });
     }
 
     getVcpPatterns() {
