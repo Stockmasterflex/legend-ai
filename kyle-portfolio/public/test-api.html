@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legend AI - API Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        .status.success { background: #10b981; color: white; }
+        .status.error { background: #ef4444; color: white; }
+        .status.pending { background: #f59e0b; color: white; }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .endpoint {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .endpoint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .endpoint-url {
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-weight: 600;
+        }
+        pre {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .pattern-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .pattern-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .pattern-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .pattern-table tr:hover {
+            background: #f9fafb;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .metric {
+            display: inline-block;
+            margin: 10px 20px 10px 0;
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Legend AI - API Test Dashboard</h1>
+        <p class="subtitle">Real-time integration testing for Legend AI backend</p>
+        
+        <div style="margin: 20px 0;">
+            <button class="btn" onclick="runAllTests()">▶️ Run All Tests</button>
+            <button class="btn" onclick="location.reload()">🔄 Refresh</button>
+        </div>
+        
+        <div id="summary"></div>
+        
+        <div class="test-section">
+            <h2>🏥 Health Checks</h2>
+            <div id="health-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Pattern API</h2>
+            <div id="pattern-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎯 Live Pattern Data</h2>
+            <div id="patterns-display"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'https://legend-api.onrender.com';
+        
+        async function testEndpoint(name, url) {
+            const startTime = performance.now();
+            try {
+                const response = await fetch(url);
+                const endTime = performance.now();
+                const latency = Math.round(endTime - startTime);
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch {
+                    data = await response.text();
+                }
+                
+                return {
+                    name,
+                    url,
+                    status: response.status,
+                    ok: response.ok,
+                    latency,
+                    data
+                };
+            } catch (error) {
+                return {
+                    name,
+                    url,
+                    status: 0,
+                    ok: false,
+                    latency: 0,
+                    error: error.message
+                };
+            }
+        }
+        
+        function renderResult(result) {
+            const statusClass = result.ok ? 'success' : 'error';
+            const statusText = result.ok ? '✓ PASS' : '✗ FAIL';
+            
+            return `
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="endpoint-url">${result.name}</span>
+                        <span class="status ${statusClass}">${statusText} (${result.latency}ms)</span>
+                    </div>
+                    <div style="color: #666; font-size: 0.9em; margin-bottom: 10px;">
+                        ${result.url}
+                    </div>
+                    ${result.error ? `<div style="color: #ef4444;">Error: ${result.error}</div>` : ''}
+                    ${result.data ? `<pre>${JSON.stringify(result.data, null, 2).slice(0, 500)}${JSON.stringify(result.data).length > 500 ? '...' : ''}</pre>` : ''}
+                </div>
+            `;
+        }
+        
+        async function runAllTests() {
+            document.getElementById('summary').innerHTML = '<div class="status pending">Running tests...</div>';
+            
+            // Health tests
+            const healthTests = [
+                await testEndpoint('GET /healthz', `${API_BASE}/healthz`),
+                await testEndpoint('GET /readyz', `${API_BASE}/readyz`)
+            ];
+            
+            document.getElementById('health-tests').innerHTML = healthTests.map(renderResult).join('');
+            
+            // Pattern tests
+            const patternTests = [
+                await testEndpoint('GET /v1/patterns/all', `${API_BASE}/v1/patterns/all?limit=5`),
+                await testEndpoint('GET /v1/meta/status', `${API_BASE}/v1/meta/status`),
+                await testEndpoint('GET /api/patterns/all (legacy)', `${API_BASE}/api/patterns/all`)
+            ];
+            
+            document.getElementById('pattern-tests').innerHTML = patternTests.map(renderResult).join('');
+            
+            // Display patterns in table
+            const patternsResult = patternTests[0];
+            if (patternsResult.ok && patternsResult.data.items) {
+                const patterns = patternsResult.data.items;
+                const table = `
+                    <p><strong>${patterns.length} patterns found</strong></p>
+                    <table class="pattern-table">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Pattern</th>
+                                <th>Confidence</th>
+                                <th>RS Rating</th>
+                                <th>Price</th>
+                                <th>Pivot</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${patterns.map(p => `
+                                <tr>
+                                    <td><strong>${p.ticker}</strong></td>
+                                    <td>${p.pattern}</td>
+                                    <td>${p.confidence.toFixed(1)}%</td>
+                                    <td>${p.rs ? p.rs.toFixed(1) : 'N/A'}</td>
+                                    <td>$${p.price.toFixed(2)}</td>
+                                    <td>$${p.meta?.pivot ? p.meta.pivot.toFixed(2) : 'N/A'}</td>
+                                    <td>${new Date(p.as_of).toLocaleDateString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                document.getElementById('patterns-display').innerHTML = table;
+            }
+            
+            // Summary
+            const allTests = [...healthTests, ...patternTests];
+            const passed = allTests.filter(t => t.ok).length;
+            const failed = allTests.length - passed;
+            const passRate = ((passed / allTests.length) * 100).toFixed(1);
+            
+            document.getElementById('summary').innerHTML = `
+                <div class="metric">
+                    <div class="metric-value">${passed}/${allTests.length}</div>
+                    <div class="metric-label">Tests Passed</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">${passRate}%</div>
+                    <div class="metric-label">Pass Rate</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">${Math.round(allTests.reduce((sum, t) => sum + t.latency, 0) / allTests.length)}ms</div>
+                    <div class="metric-label">Avg Latency</div>
+                </div>
+            `;
+        }
+        
+        // Auto-run on page load
+        window.onload = runAllTests;
+    </script>
+</body>
+</html>
+

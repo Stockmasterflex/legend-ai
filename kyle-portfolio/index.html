@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legend AI - Master the Patterns of Market Legends</title>
+<meta name="legend-ai-api-base" content="https://legend-api.onrender.com">
+    <script>window.LEGEND_API_URL = 'https://legend-api.onrender.com';</script>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="app.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <h1>Legend AI</h1>
+                <p class="tagline">Master the Patterns of Market Legends</p>
+            </div>
+        </div>
+        <nav class="pattern-tabs">
+            <button class="tab-btn" data-pattern="all">All Patterns</button>
+            <button class="tab-btn active" data-pattern="vcp">VCP</button>
+        </nav>
+        <div class="header-right">
+            <div class="market-status">
+                <span class="status-indicator confirmed"></span>
+                <span class="status-text">Confirmed Uptrend</span>
+                <span class="days-in-trend">Day 23</span>
+            </div>
+            <div class="data-stream">
+                <span class="stream-indicator"></span>
+                <span>Live Data</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+            <div class="filters-section">
+                <h3>Advanced Filters</h3>
+                
+                <div class="filter-group">
+                    <label>Market Cap</label>
+                    <select id="market-cap-filter" class="form-control">
+                        <option value="all">All</option>
+                        <option value="small">Small Cap</option>
+                        <option value="mid">Mid Cap</option>
+                        <option value="large">Large Cap</option>
+                        <option value="mega">Mega Cap</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Sector</label>
+                    <select id="sector-filter" class="form-control">
+                        <option value="all">All Sectors</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Financial">Financial</option>
+                        <option value="Consumer Discretionary">Consumer Discretionary</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>RS Rating Minimum: <span id="rs-value">50</span></label>
+                    <input type="range" id="rs-slider" class="slider" min="0" max="100" value="50">
+                </div>
+
+                <div class="filter-group">
+                    <label>Confidence Threshold: <span id="confidence-value">20%</span></label>
+                    <input type="range" id="confidence-slider" class="slider" min="0" max="100" value="20">
+                </div>
+
+                <div class="filter-group">
+                    <label>Price Range</label>
+                    <div class="price-inputs">
+                        <input type="number" id="min-price" placeholder="Min" class="form-control small">
+                        <span>to</span>
+                        <input type="number" id="max-price" placeholder="Max" class="form-control small">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>Volume (Above Average)</label>
+                    <select id="volume-filter" class="form-control">
+                        <option value="all">All Volume</option>
+                        <option value="1.5x">1.5x Average</option>
+                        <option value="2x">2x Average</option>
+                        <option value="3x">3x Average</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn btn--secondary btn--full-width" id="scan-now">Run Scan</button>
+                    <button class="btn btn--primary btn--full-width" id="apply-filters">Apply Filters</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Market Intelligence Panel -->
+            <div class="top-panels">
+                <div class="market-intelligence">
+                    <h3>Market Pulse</h3>
+                    <div class="pulse-grid">
+                        <div class="pulse-item">
+                            <span class="pulse-label">Trend Status</span>
+                            <span class="pulse-value confirmed">Confirmed Uptrend</span>
+                        </div>
+                        <div class="pulse-item">
+                            <span class="pulse-label">Distribution Days</span>
+                            <span class="pulse-value">2</span>
+                        </div>
+                        <div class="pulse-item">
+                            <span class="pulse-label">Market Health</span>
+                            <div class="health-score">
+                                <span class="health-value">78</span>
+                                <div class="health-bar">
+                                    <div class="health-progress" style="width: 78%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pulse-item">
+                            <span class="pulse-label">New Highs/Lows</span>
+                            <span class="pulse-value">245 / 23</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sector-rotation">
+                    <h3>Sector Performance</h3>
+                    <div class="sector-grid" id="sector-grid">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pattern Scanner Table -->
+            <div class="scanner-section">
+                <div class="scanner-header">
+                    <h2>Pattern Scanner Results</h2>
+                    <div class="results-count">
+                        <span id="results-count">5 patterns found</span>
+                    </div>
+                    <button class="btn btn--secondary btn--small hidden" id="load-more-patterns">Load more</button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="scanner-table" id="scanner-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="symbol">Symbol</th>
+                                <th data-sort="name">Company</th>
+                                <th data-sort="type">Pattern Type</th>
+                                <th data-sort="confidence">Confidence</th>
+                                <th data-sort="rs">RS Rating</th>
+                                <th data-sort="price">Current Price</th>
+                                <th data-sort="pivot">Pivot Price</th>
+                                <th data-sort="days">Days in Pattern</th>
+                                <th data-sort="sector">Sector</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scanner-tbody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Portfolio & Performance Sections -->
+            <div class="bottom-sections">
+                <div class="portfolio-section">
+                    <h3>Active Positions</h3>
+                    <table class="portfolio-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Pattern</th>
+                                <th>Entry</th>
+                                <th>Current</th>
+                                <th>P&L</th>
+                                <th>% Gain</th>
+                                <th>Days Held</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolio-tbody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="performance-metrics">
+                    <h3>Performance Overview</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Total Return</span>
+                            <span class="metric-value positive">+23.7%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Win Rate</span>
+                            <span class="metric-value">68.1%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Profit Factor</span>
+                            <span class="metric-value">2.8</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Sharpe Ratio</span>
+                            <span class="metric-value">1.65</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Max Drawdown</span>
+                            <span class="metric-value negative">-12.3%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Total Trades</span>
+                            <span class="metric-value">47</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar - Watchlist -->
+        <aside class="watchlist-sidebar">
+            <div class="watchlist-section">
+                <h3>High-Probability Setups</h3>
+                <div class="watchlist-items" id="watchlist-items">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Stock Analysis Modal -->
+    <div class="modal hidden" id="stock-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Stock Analysis</h2>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="analysis-grid">
+                    <div class="chart-section">
+                        <div class="chart-container" style="position: relative; height: 400px;">
+                            <canvas id="stock-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="technical-panel">
+                        <div class="panel-section">
+                            <h4>Minervini Trend Template</h4>
+                            <div class="trend-checklist" id="trend-checklist">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="panel-section">
+                            <h4>Pattern Analysis</h4>
+                            <div class="pattern-metrics" id="pattern-metrics">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="panel-section">
+                            <h4>Risk/Reward</h4>
+                            <div class="risk-reward" id="risk-reward">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            var meta = document.querySelector('meta[name="legend-ai-api-base"]');
+            if (meta && meta.content) {
+                window.LEGEND_API_URL = meta.content;
+            }
+        })();
+    </script>
+</body>
+</html>
