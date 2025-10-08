@@ -1123,6 +1123,18 @@ body {
   color: var(--legend-green);
 }
 
+.sector-performance.neutral {
+  color: var(--legend-gold);
+}
+
+.sector-performance.negative {
+  color: var(--legend-red);
+}
+
+.sector-performance.positive {
+  color: var(--legend-green);
+}
+
 .sector-performance.negative {
   color: var(--legend-red);
 }
@@ -1342,79 +1354,118 @@ body {
   color: var(--legend-red);
 }
 
-/* Watchlist Sidebar */
-.watchlist-sidebar {
+.positive {
+  color: var(--legend-green);
+}
+
+.negative {
+  color: var(--legend-red);
+}
+
+/* Market Sidebar */
+.market-sidebar {
   background: var(--legend-bg-secondary);
   border: 1px solid var(--legend-border);
   border-radius: var(--radius-lg);
   padding: var(--space-20);
   height: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
 }
 
-.watchlist-section h3 {
+.market-section h3 {
   color: var(--legend-gold);
   font-size: var(--font-size-lg);
-  margin-bottom: var(--space-16);
+  margin-bottom: var(--space-12);
   font-weight: var(--font-weight-semibold);
 }
 
-.watchlist-item {
+.market-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-12);
+}
+
+.market-section__timestamp {
+  color: var(--legend-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.index-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: var(--space-12);
+}
+
+.index-card {
   background: var(--legend-bg-tertiary);
   border: 1px solid var(--legend-border);
   border-radius: var(--radius-base);
   padding: var(--space-16);
-  margin-bottom: var(--space-12);
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-standard);
+  position: relative;
+  overflow: hidden;
 }
 
-.watchlist-item:hover {
-  border-color: var(--legend-gold);
-  background: var(--legend-hover);
-}
-
-.watchlist-header {
+.index-card__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--space-8);
 }
 
-.watchlist-symbol {
+.index-card__symbol {
   color: var(--legend-text-primary);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-md);
 }
 
-.watchlist-confidence {
+.index-card__change {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
-  padding: var(--space-2) var(--space-6);
-  border-radius: var(--radius-sm);
 }
 
-.watchlist-details {
+.index-card__price {
+  color: var(--legend-text-primary);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+}
+
+.index-card__sparkline {
+  height: 120px;
+  margin-top: var(--space-12);
+}
+
+.industry-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.industry-item {
+  background: var(--legend-bg-tertiary);
+  border: 1px solid var(--legend-border);
+  border-radius: var(--radius-base);
+  padding: var(--space-12);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-8);
 }
 
-.watchlist-pattern {
-  color: var(--legend-gold);
-  font-size: var(--font-size-xs);
+.industry-item__name {
+  color: var(--legend-text-primary);
   font-weight: var(--font-weight-medium);
 }
 
-.watchlist-price {
-  color: var(--legend-text-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
+.industry-item__sector {
+  color: var(--legend-text-secondary);
+  font-size: var(--font-size-xs);
 }
 
-.watchlist-metrics {
+.industry-item__stats {
   display: flex;
-  justify-content: space-between;
+  gap: var(--space-12);
   font-size: var(--font-size-xs);
   color: var(--legend-text-secondary);
 }

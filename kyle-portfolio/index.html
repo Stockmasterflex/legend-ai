@@ -88,6 +88,7 @@
                     <label>Volume (Above Average)</label>
                     <select id="volume-filter" class="form-control">
                         <option value="all">All Volume</option>
+                        <option value="1.2x">1.2x Average</option>
                         <option value="1.5x">1.5x Average</option>
                         <option value="2x">2x Average</option>
                         <option value="3x">3x Average</option>
@@ -156,13 +157,17 @@
                             <tr>
                                 <th data-sort="symbol">Symbol</th>
                                 <th data-sort="name">Company</th>
-                                <th data-sort="type">Pattern Type</th>
+                                <th data-sort="pattern_type">Pattern</th>
                                 <th data-sort="confidence">Confidence</th>
-                                <th data-sort="rs">RS Rating</th>
-                                <th data-sort="price">Current Price</th>
-                                <th data-sort="pivot">Pivot Price</th>
-                                <th data-sort="days">Days in Pattern</th>
+                                <th data-sort="rs_rating">RS</th>
+                                <th data-sort="trend_strength">Trend</th>
+                                <th data-sort="current_price">Price</th>
+                                <th data-sort="pivot_price">Pivot</th>
+                                <th data-sort="days_in_pattern">Days</th>
                                 <th data-sort="sector">Sector</th>
+                                <th data-sort="industry">Industry</th>
+                                <th data-sort="volume_multiple">Vol x</th>
+                                <th data-sort="market_cap">Market Cap</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -227,11 +232,21 @@
             </div>
         </main>
 
-        <!-- Right Sidebar - Watchlist -->
-        <aside class="watchlist-sidebar">
-            <div class="watchlist-section">
-                <h3>High-Probability Setups</h3>
-                <div class="watchlist-items" id="watchlist-items">
+        <!-- Right Sidebar - Market Overview -->
+        <aside class="market-sidebar">
+            <div class="market-section">
+                <div class="market-section__header">
+                    <h3>Market Dashboard</h3>
+                    <span id="market-update-time" class="market-section__timestamp"></span>
+                </div>
+                <div class="index-grid" id="indices-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="market-section">
+                <h3>Leading Industries</h3>
+                <div class="industry-list" id="industry-list">
                     <!-- Populated by JavaScript -->
                 </div>
             </div>

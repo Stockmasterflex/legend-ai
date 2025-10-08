@@ -11,20 +11,30 @@ without duplicating business logic.
 
 import os
 import uuid
+import math
+from datetime import datetime
+from typing import List, Dict, Any, Tuple
+
+import logging
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, APIRouter, Query, Response, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware
-import logging
+import yfinance as yf
+import pandas as pd
+
 from .config import allowed_origins, mock_enabled
 from .flags import get_flags
 from .cache import cache_get, cache_set
 from .db_queries import fetch_patterns, get_status
+from .data_fetcher import fetch_stock_data
 
 from .observability import setup_json_logging, setup_sentry
 from pathlib import Path
+from vcp_ultimate_algorithm import VCPDetector
 
 
 # Import the existing FastAPI application defined at repository root
@@ -98,6 +108,252 @@ except Exception:
 
 v1 = APIRouter(prefix="/v1", tags=["v1"])
 
+_DETECTOR = VCPDetector(
+    min_price=5.0,
+    min_volume=200_000,
+    min_contractions=2,
+    max_contractions=6,
+    check_trend_template=False,
+)
+
+_PRICE_CACHE: Dict[str, pd.DataFrame] = {}
+_SIGNAL_CACHE: Dict[str, Any] = {}
+_PROFILE_CACHE: Dict[str, Dict[str, Any]] = {}
+_BENCHMARK_CACHE: Dict[str, Tuple[float, datetime]] = {}
+
+
+def _fetch_price_history(ticker: str, days: int = 365) -> pd.DataFrame | None:
+    if ticker in _PRICE_CACHE:
+        return _PRICE_CACHE[ticker]
+
+    try:
+        df = fetch_stock_data(ticker, days=days)
+        if df is not None and not df.empty:
+            if "Date" in df.columns:
+                df = df.sort_values("Date").reset_index(drop=True)
+            _PRICE_CACHE[ticker] = df
+            return df
+    except Exception as exc:  # pragma: no cover - defensive guard
+        logging.warning("price history fetch failed for %s: %s", ticker, exc)
+    return None
+
+
+def _compute_vcp_signal(ticker: str) -> Any:
+    if ticker in _SIGNAL_CACHE:
+        return _SIGNAL_CACHE[ticker]
+
+    df = _fetch_price_history(ticker, days=365)
+    if df is None or len(df) < 80:
+        _SIGNAL_CACHE[ticker] = None
+        return None
+
+    try:
+        detector_df = df.set_index("Date")[['Open', 'High', 'Low', 'Close', 'Volume']]
+        signal = _DETECTOR.detect_vcp(detector_df, symbol=ticker)
+        _SIGNAL_CACHE[ticker] = signal
+        return signal
+    except Exception as exc:
+        logging.warning("VCP detector failed for %s: %s", ticker, exc)
+        _SIGNAL_CACHE[ticker] = None
+        return None
+
+
+def _get_benchmark_return(symbol: str = "SPY", days: int = 180) -> float | None:
+    cache_key = f"{symbol}:{days}"
+    cached = _BENCHMARK_CACHE.get(cache_key)
+    if cached and (datetime.utcnow() - cached[1]).total_seconds() < 3600:
+        return cached[0]
+
+    df = _fetch_price_history(symbol, days=days + 5)
+    if df is None or df.empty:
+        return None
+    df_tail = df.tail(days)
+    if len(df_tail) < 2:
+        return None
+    start = float(df_tail['Close'].iloc[0])
+    end = float(df_tail['Close'].iloc[-1])
+    if start <= 0:
+        return None
+    ret = (end - start) / start
+    _BENCHMARK_CACHE[cache_key] = (ret, datetime.utcnow())
+    return ret
+
+
+def _calculate_rs_rating(stock_return: float | None, benchmark_return: float | None) -> int | None:
+    if stock_return is None:
+        return None
+    if benchmark_return is None:
+        score = 50 + stock_return * 120
+    else:
+        score = 50 + (stock_return - benchmark_return) * 120
+    score = max(0, min(100, int(round(score))))
+    return score
+
+
+def _format_market_cap(value: float | None) -> str | None:
+    if not value:
+        return None
+    units = [(1_000_000_000_000, "T"), (1_000_000_000, "B"), (1_000_000, "M"), (1_000, "K")]
+    for threshold, suffix in units:
+        if value >= threshold:
+            return f"{value / threshold:.2f}{suffix}"
+    return f"{value:.0f}"
+
+
+def _get_stock_profile(ticker: str) -> Dict[str, Any]:
+    if ticker in _PROFILE_CACHE:
+        return _PROFILE_CACHE[ticker]
+
+    profile: Dict[str, Any] = {
+        "ticker": ticker,
+        "name": ticker,
+        "sector": None,
+        "industry": None,
+        "market_cap": None,
+        "average_volume": None,
+        "market_cap_human": None,
+        "rs_rating": None,
+        "return_6m": None,
+        "volume_multiple": None,
+    }
+
+    try:
+        ticker_obj = yf.Ticker(ticker)
+        info = ticker_obj.get_info()
+        profile["name"] = info.get("shortName") or info.get("longName") or ticker
+        profile["sector"] = info.get("sector")
+        profile["industry"] = info.get("industry")
+        profile["market_cap"] = info.get("marketCap")
+        profile["average_volume"] = info.get("averageVolume") or info.get("averageDailyVolume10Day")
+        if profile["market_cap"]:
+            profile["market_cap_human"] = _format_market_cap(profile["market_cap"])
+    except Exception as exc:  # pragma: no cover - yfinance sometimes fails
+        logging.debug("yfinance profile lookup failed for %s: %s", ticker, exc)
+
+    df = _fetch_price_history(ticker, days=240)
+    if df is not None and not df.empty:
+        try:
+            profile["current_price"] = float(df['Close'].iloc[-1])
+        except Exception:
+            profile["current_price"] = None
+        window = df.tail(180)
+        if len(window) >= 2:
+            start = float(window['Close'].iloc[0])
+            end = float(window['Close'].iloc[-1])
+            if start > 0:
+                stock_return = (end - start) / start
+                profile["return_6m"] = stock_return
+                benchmark_return = _get_benchmark_return("SPY", days=min(180, len(window)))
+                profile["rs_rating"] = _calculate_rs_rating(stock_return, benchmark_return)
+        if 'Volume' in df.columns and len(df['Volume']) >= 30:
+            avg_vol = float(df['Volume'].tail(30).mean())
+            profile["average_volume"] = avg_vol
+            latest_vol = float(df['Volume'].iloc[-1])
+            if avg_vol > 0:
+                profile["volume_multiple"] = latest_vol / avg_vol
+
+    _PROFILE_CACHE[ticker] = profile
+    return profile
+
+
+def _normalize_confidence(raw: float | None, signal: Any, meta: Dict[str, Any]) -> float | None:
+    if raw is not None:
+        value = float(raw)
+        if value > 1:
+            return value / 100.0
+        return value
+    if signal and getattr(signal, "confidence_score", None) is not None:
+        return float(signal.confidence_score) / 100.0
+    score = meta.get("confidence_score")
+    if score is not None:
+        score = float(score)
+        return score / 100.0 if score > 1 else score
+    return None
+
+
+def _enrich_pattern_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    data = dict(row)
+    ticker = data.get("ticker")
+    meta = data.get("meta") or {}
+
+    if not ticker:
+        return data
+
+    signal = _compute_vcp_signal(ticker)
+    profile = _get_stock_profile(ticker)
+
+    confidence = _normalize_confidence(data.get("confidence"), signal, meta)
+    price = float(data.get("price") or profile.get("current_price") or meta.get("current_price") or 0)
+
+    pivot = meta.get("pivot_price") or (signal.pivot_price if signal and signal.pivot_price else None)
+    if pivot is None and price:
+        pivot = price
+
+    stop_loss = meta.get("stop_loss")
+    if stop_loss is None and signal and getattr(signal, "contractions", None):
+        last_c = signal.contractions[-1]
+        stop_loss = float(getattr(last_c, "low_price", 0) or 0)
+    if not stop_loss and pivot:
+        stop_loss = float(pivot) * 0.92
+
+    days_in_pattern = meta.get("days_in_pattern")
+    if days_in_pattern is None and signal and getattr(signal, "contractions", None):
+        first = signal.contractions[0].start_date if signal.contractions else None
+        last = signal.contractions[-1].end_date if signal.contractions else None
+        if first and last:
+            days_in_pattern = max(0, (last - first).days)
+    if days_in_pattern is None:
+        days_in_pattern = 0
+
+    rs_rating = meta.get("rs_rating") or profile.get("rs_rating")
+    trend_strength = meta.get("trend_strength")
+    if trend_strength is None and signal and getattr(signal, "trend_strength", None) is not None:
+        trend_strength = float(signal.trend_strength)
+
+    volume_multiple = meta.get("volume_multiple") or profile.get("volume_multiple")
+    average_volume = meta.get("average_volume") or profile.get("average_volume")
+
+    meta.update({
+        "sector": meta.get("sector") or profile.get("sector"),
+        "industry": meta.get("industry") or profile.get("industry"),
+        "pivot_price": pivot,
+        "stop_loss": stop_loss,
+        "rs_rating": rs_rating,
+        "days_in_pattern": days_in_pattern,
+        "market_cap": meta.get("market_cap") or profile.get("market_cap"),
+        "market_cap_human": meta.get("market_cap_human") or profile.get("market_cap_human"),
+        "volume_multiple": volume_multiple,
+        "average_volume": average_volume,
+        "trend_strength": trend_strength,
+    })
+
+    data.update(
+        {
+            "confidence": confidence,
+            "meta": meta,
+            "name": meta.get("name") or profile.get("name") or ticker,
+            "sector": meta.get("sector") or profile.get("sector"),
+            "industry": meta.get("industry") or profile.get("industry"),
+            "pivot_price": pivot,
+            "stop_loss": stop_loss,
+            "rs_rating": rs_rating,
+            "days_in_pattern": days_in_pattern,
+            "market_cap": meta.get("market_cap") or profile.get("market_cap"),
+            "market_cap_human": meta.get("market_cap_human") or profile.get("market_cap_human"),
+            "volume_multiple": volume_multiple,
+            "average_volume": average_volume,
+            "trend_strength": trend_strength,
+        }
+    )
+
+    if rs_rating is not None:
+        data["rs"] = rs_rating
+
+    if price and meta.get("current_price") is None:
+        meta["current_price"] = price
+
+    return data
+
 
 class PatternItem(BaseModel):
     ticker: str
@@ -107,6 +363,18 @@ class PatternItem(BaseModel):
     rs: float | None = Field(default=None)
     price: float | None = Field(default=None)
     meta: dict | None = Field(default=None)
+    name: str | None = Field(default=None)
+    sector: str | None = Field(default=None)
+    industry: str | None = Field(default=None)
+    pivot_price: float | None = Field(default=None)
+    stop_loss: float | None = Field(default=None)
+    rs_rating: int | None = Field(default=None)
+    days_in_pattern: int | None = Field(default=None)
+    market_cap: float | None = Field(default=None)
+    market_cap_human: str | None = Field(default=None)
+    volume_multiple: float | None = Field(default=None)
+    average_volume: float | None = Field(default=None)
+    trend_strength: float | None = Field(default=None)
 
 
 class PaginatedPatterns(BaseModel):
@@ -139,7 +407,8 @@ def patterns_all_v1(
     except Exception as exc:  # pragma: no cover
         raise HTTPException(status_code=500, detail={"code": "db_error", "message": str(exc)})
 
-    payload = {"items": items, "next": next_cursor}
+    enriched_items = [_enrich_pattern_row(row) for row in items]
+    payload = {"items": enriched_items, "next": next_cursor}
     if "cache" in flags:
         cache_set(cache_key, payload, ttl=60)
     return payload
@@ -152,6 +421,25 @@ class StatusModel(BaseModel):
     version: str
 
 
+class MarketSparkPoint(BaseModel):
+    time: str
+    close: float
+
+
+class MarketIndexModel(BaseModel):
+    symbol: str
+    name: str
+    last_price: float | None
+    change_percent: float | None
+    previous_close: float | None
+    sparkline: List[MarketSparkPoint]
+
+
+class MarketOverviewModel(BaseModel):
+    indices: List[MarketIndexModel]
+    updated_at: str
+
+
 @v1.get("/meta/status", response_model=StatusModel)
 def meta_status_v1() -> StatusModel:
     try:
@@ -161,6 +449,57 @@ def meta_status_v1() -> StatusModel:
         # graceful when DB unavailable
         status = {"last_scan_time": None, "rows_total": 0, "patterns_daily_span_days": None, "version": "0.1.0"}
     return StatusModel(**status)
+
+
+@app.get("/api/market/indices", response_model=MarketOverviewModel)
+def market_indices_overview():
+    indices_catalog = [
+        ("SPY", "S&P 500"),
+        ("QQQ", "Nasdaq 100"),
+        ("IWM", "Russell 2000"),
+        ("DIA", "Dow Jones Industrial"),
+        ("VIX", "CBOE Volatility"),
+    ]
+
+    indices: List[Dict[str, Any]] = []
+    for symbol, display_name in indices_catalog:
+        df = _fetch_price_history(symbol, days=120)
+        if df is None or df.empty:
+            continue
+
+        recent = df.tail(60)
+        if recent.empty:
+            continue
+
+        try:
+            if not pd.api.types.is_datetime64_any_dtype(recent['Date']):
+                recent['Date'] = pd.to_datetime(recent['Date'])
+            last_close = float(recent['Close'].iloc[-1])
+            previous_close = float(recent['Close'].iloc[-2]) if len(recent) > 1 else None
+            change_percent = ((last_close - previous_close) / previous_close) if previous_close else 0.0
+            sparkline = [
+                MarketSparkPoint(time=row['Date'].strftime('%Y-%m-%d'), close=float(row['Close']))
+                for _, row in recent.iterrows()
+            ]
+        except Exception as exc:  # pragma: no cover
+            logging.warning("sparkline generation failed for %s: %s", symbol, exc)
+            continue
+
+        indices.append(
+            {
+                "symbol": symbol,
+                "name": display_name,
+                "last_price": last_close,
+                "change_percent": change_percent,
+                "previous_close": previous_close,
+                "sparkline": sparkline,
+            }
+        )
+
+    if not indices:
+        raise HTTPException(status_code=503, detail="Market overview unavailable")
+
+    return MarketOverviewModel(indices=indices, updated_at=datetime.utcnow().isoformat())
 
 
 app.include_router(v1)
@@ -201,24 +540,39 @@ def get_all_patterns_legacy(response: Response, limit: int = Query(default=500, 
         ticker = item.get("ticker", "UNKNOWN")
         pattern = item.get("pattern", "VCP")
         confidence = item.get("confidence", 0)
-        price = item.get("price", 0)
-        rs = item.get("rs", 80)
-        
-        # Convert to dashboard expected format
+        price = item.get("price") or item.get("pivot_price") or 0
+        rs = item.get("rs_rating") or item.get("rs") or 50
+        sector = item.get("sector") or item.get("meta", {}).get("sector") or "Unknown"
+        industry = item.get("industry") or item.get("meta", {}).get("industry") or sector
+        pivot_price = item.get("pivot_price") or price or 0
+        stop_loss = item.get("stop_loss") or (pivot_price * 0.92 if pivot_price else None)
+        days_in_pattern = item.get("days_in_pattern") or item.get("meta", {}).get("days_in_pattern") or 0
+        name = item.get("name") or item.get("meta", {}).get("name") or f"{ticker} Corp"
+
+        normalized_confidence = confidence
+        if normalized_confidence and normalized_confidence > 1:
+            normalized_confidence = normalized_confidence / 100
+
         dashboard_item = {
             "symbol": ticker,
-            "name": f"{ticker} Corp",  # TODO: fetch real company names
-            "sector": "Technology",  # TODO: fetch real sector data
+            "name": name,
+            "sector": sector,
+            "industry": industry,
             "pattern_type": pattern,
-            "confidence": confidence / 100 if confidence and confidence > 1 else (confidence or 0),
-            "pivot_price": price or 0,
-            "stop_loss": (price or 0) * 0.92,  # 8% below current
+            "confidence": normalized_confidence or 0,
+            "pivot_price": pivot_price,
+            "stop_loss": stop_loss,
             "current_price": price or 0,
-            "days_in_pattern": 15,  # TODO: calculate from as_of
-            "rs_rating": int(rs or 80),
+            "days_in_pattern": int(days_in_pattern),
+            "rs_rating": int(rs),
+            "trend_strength": item.get("trend_strength"),
+            "volume_multiple": item.get("volume_multiple"),
+            "average_volume": item.get("average_volume"),
+            "market_cap": item.get("market_cap"),
+            "market_cap_human": item.get("market_cap_human"),
             "entry": price or 0,
-            "target": (price or 0) * 1.20,  # 20% target
-            "action": "Analyze"
+            "target": pivot_price * 1.2 if pivot_price else None,
+            "action": "Analyze",
         }
         dashboard_format.append(dashboard_item)
     
@@ -595,4 +949,3 @@ try:
         logging.error("database url missing or invalid", extra={"error": str(db_exc)})
 except Exception:
     pass
-

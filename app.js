@@ -15,6 +15,9 @@ class LegendAI {
         this.rawPatterns = [];
         this.rawPortfolio = [];
         this.isLoadingMore = false;
+        this.marketOverview = null;
+        this.indexCharts = {};
+        this.industryBreakdown = [];
 
         this.init();
     }
@@ -62,7 +65,7 @@ class LegendAI {
         this.patternSet = new Set(patterns.map(pattern => pattern.symbol));
         this.rawPatterns = [...patterns];
 
-        const [marketEnvironment, portfolio] = await Promise.all([
+        const [marketEnvironment, portfolio, marketOverview] = await Promise.all([
             this.fetchJSON('/api/market/environment').catch(error => {
                 console.warn('Market environment unavailable, continuing without it.', error);
                 return null;
@@ -70,12 +73,17 @@ class LegendAI {
             this.fetchJSON('/api/portfolio/positions').catch(error => {
                 console.warn('Portfolio positions unavailable, using empty dataset.', error);
                 return [];
+            }),
+            this.fetchJSON('/api/market/indices').catch(error => {
+                console.warn('Market overview unavailable, skipping.', error);
+                return null;
             })
         ]);
 
         this.rawPortfolio = Array.isArray(portfolio) ? [...portfolio] : [];
+        this.marketOverview = marketOverview && marketOverview.indices ? marketOverview : null;
 
-        return { patterns, marketEnvironment, portfolio };
+        return { patterns, marketEnvironment, portfolio, marketOverview: this.marketOverview };
     }
 
     setDefaultFilters() {
@@ -203,7 +211,8 @@ class LegendAI {
         this.applyFilters();
         this.populateSectorGrid();
         this.populatePortfolioTable();
-        this.populateWatchlist();
+        this.populateIndustryList();
+        this.populateMarketOverview();
     }
 
     async loadMorePatterns() {
@@ -266,81 +275,85 @@ class LegendAI {
     }
 
     async buildDataModel(patterns, portfolio) {
-        const normalizedPatterns = Array.isArray(patterns) ? patterns.map(pattern => {
-            const meta = pattern.meta || {};
-            const rawSymbol = pattern.symbol || pattern.ticker || meta.symbol || '';
-            const symbol = rawSymbol ? String(rawSymbol).toUpperCase() : 'UNKNOWN';
-            const name = pattern.name || meta.name || `${symbol} Corp`;
-            const sector = pattern.sector || meta.sector || 'Technology';
-            const patternType = pattern.pattern_type || pattern.type || pattern.pattern || meta.pattern_type || 'VCP';
+        const normalizedPatterns = Array.isArray(patterns)
+            ? patterns.map(pattern => {
+                  const meta = pattern.meta || {};
+                  const rawSymbol = pattern.symbol || pattern.ticker || meta.symbol || '';
+                  const symbol = rawSymbol ? String(rawSymbol).toUpperCase() : 'UNKNOWN';
+                  const name = pattern.name || meta.name || `${symbol} Corp`;
+                  const sector = pattern.sector || meta.sector || 'Unknown';
+                  const industry = pattern.industry || meta.industry || sector;
+                  const patternType = pattern.pattern_type || pattern.type || pattern.pattern || meta.pattern_type || 'VCP';
 
-            let confidence = typeof pattern.confidence === 'number' ? pattern.confidence : (typeof meta.confidence_score === 'number' ? meta.confidence_score : 0);
-            confidence = confidence > 1 ? confidence / 100 : confidence;
-            confidence = Math.max(0, Math.min(confidence, 1));
+                  let confidence = typeof pattern.confidence === 'number'
+                      ? pattern.confidence
+                      : (typeof meta.confidence_score === 'number' ? meta.confidence_score : 0);
+                  confidence = confidence > 1 ? confidence / 100 : confidence;
+                  confidence = Math.max(0, Math.min(confidence, 1));
 
-            const rawPrice = pattern.current_price ?? pattern.price ?? meta.current_price ?? meta.pivot_price ?? 0;
-            const currentPrice = Number(rawPrice) || 0;
-            const pivotPrice = Number(pattern.pivot_price ?? meta.pivot_price ?? currentPrice) || currentPrice;
-            const fallbackPrice = currentPrice || pivotPrice;
-            const stopLoss = Number(pattern.stop_loss ?? meta.stop_loss ?? (fallbackPrice * 0.92));
-            const rsRatingRaw = pattern.rs_rating ?? pattern.rs ?? meta.rs ?? meta.relative_strength ?? 0;
-            const rsRating = Math.round(Number(rsRatingRaw) || 0);
-            const rawMarketCap = pattern.market_cap_category ?? pattern.market_cap ?? meta.market_cap_category ?? meta.market_cap ?? 'Unknown';
-            const marketCap = typeof rawMarketCap === 'string' ? rawMarketCap : String(rawMarketCap);
-            const rawVolumeMultiple = meta.volume_multiple ?? meta.volume_vs_average ?? null;
-            const numericVolumeMultiple = rawVolumeMultiple !== null ? Number(rawVolumeMultiple) : null;
-            const volumeMultiple = Number.isFinite(numericVolumeMultiple) ? Number(numericVolumeMultiple) : null;
-            const averageVolume = meta.average_volume ?? meta.avg_volume ?? null;
-            const daysInPattern = Number(pattern.days_in_pattern ?? meta.days_in_pattern ?? 0) || 0;
-            const stage = pattern.stage || meta.stage || 'N/A';
+                  const currentPrice = Number(pattern.current_price ?? pattern.price ?? meta.current_price ?? 0) || 0;
+                  const pivotPrice = Number(pattern.pivot_price ?? meta.pivot_price ?? currentPrice) || currentPrice;
+                  const stopLoss = Number(pattern.stop_loss ?? meta.stop_loss ?? (pivotPrice ? pivotPrice * 0.92 : 0)) || 0;
+                  const rsRating = Number.isFinite(pattern.rs_rating)
+                      ? Number(pattern.rs_rating)
+                      : Number.isFinite(pattern.rs)
+                          ? Number(pattern.rs)
+                          : Number(meta.rs_rating ?? meta.rs ?? 0);
+                  const daysInPattern = Number(pattern.days_in_pattern ?? meta.days_in_pattern ?? 0) || 0;
+                  const trendStrength = Number.isFinite(pattern.trend_strength)
+                      ? Number(pattern.trend_strength)
+                      : Number(meta.trend_strength ?? 0);
+                  const volumeMultiple = Number.isFinite(pattern.volume_multiple)
+                      ? Number(pattern.volume_multiple)
+                      : Number.isFinite(meta.volume_multiple)
+                          ? Number(meta.volume_multiple)
+                          : null;
+                  const averageVolume = Number(pattern.average_volume ?? meta.average_volume ?? 0) || null;
+                  const marketCap = Number(pattern.market_cap ?? meta.market_cap ?? 0) || null;
+                  const marketCapHuman = pattern.market_cap_human || meta.market_cap_human || (marketCap ? this.formatMarketCap(marketCap) : '—');
 
-            return {
-                symbol,
-                name,
-                sector,
-                type: patternType,
-                confidence,
-                pivot_price: pivotPrice || currentPrice,
-                stop_loss: stopLoss || (fallbackPrice * 0.92),
-                current_price: currentPrice || pivotPrice,
-                days_in_pattern: daysInPattern,
-                stage,
-                rs_rating: rsRating,
-                market_cap: marketCap,
-                volume_multiple: volumeMultiple,
-                average_volume: averageVolume,
-            };
-        }) : [];
-
-        const relativeStrength = normalizedPatterns.map(pattern => ({
-            symbol: pattern.symbol,
-            rs_rating: pattern.rs_rating ?? 0,
-            ytd_performance: pattern.confidence ? Number(((pattern.confidence - 0.5) * 200).toFixed(1)) : 0,
-            relative_performance: 0,
-            sector_rank: 0
-        }));
+                  return {
+                      symbol,
+                      name,
+                      sector,
+                      industry,
+                      type: patternType,
+                      confidence,
+                      pivot_price: pivotPrice,
+                      stop_loss: stopLoss,
+                      current_price: currentPrice,
+                      days_in_pattern: daysInPattern,
+                      rs_rating: Number.isFinite(rsRating) ? Math.max(0, Math.min(100, Math.round(rsRating))) : null,
+                      trend_strength: Number.isFinite(trendStrength) ? trendStrength : null,
+                      volume_multiple: volumeMultiple,
+                      average_volume: averageVolume,
+                      market_cap: marketCap,
+                      market_cap_human: marketCapHuman,
+                  };
+              })
+            : [];
 
         const sectors = this.aggregateSectorPerformance(normalizedPatterns);
+        this.industryBreakdown = this.aggregateIndustryPerformance(normalizedPatterns);
 
-        const normalizedPortfolio = Array.isArray(portfolio) ? portfolio.map(position => ({
-            symbol: position.symbol,
-            pattern_type: position.pattern_type,
-            entry_price: position.entry_price,
-            current_price: position.current_price,
-            position_size: position.position_size,
-            unrealized_pnl: position.unrealized_pnl,
-            pnl_percent: position.pnl_percent,
-            days_held: position.days_held
-        })) : [];
-
-        const watchlist = await this.buildWatchlist(normalizedPatterns);
+        const normalizedPortfolio = Array.isArray(portfolio)
+            ? portfolio.map(position => ({
+                  symbol: position.symbol,
+                  pattern_type: position.pattern_type,
+                  entry_price: position.entry_price,
+                  current_price: position.current_price,
+                  position_size: position.position_size,
+                  unrealized_pnl: position.unrealized_pnl,
+                  pnl_percent: position.pnl_percent,
+                  days_held: position.days_held,
+              }))
+            : [];
 
         return {
             patterns: normalizedPatterns,
-            relative_strength: relativeStrength,
             sectors,
+            industries: this.industryBreakdown,
             portfolio: normalizedPortfolio,
-            watchlist
         };
     }
 
@@ -352,74 +365,71 @@ class LegendAI {
             if (!sectorMap.has(pattern.sector)) {
                 sectorMap.set(pattern.sector, {
                     sector: pattern.sector,
+                    count: 0,
                     totalConfidence: 0,
                     totalRs: 0,
-                    count: 0
+                    totalTrend: 0,
                 });
             }
 
             const entry = sectorMap.get(pattern.sector);
+            entry.count += 1;
             entry.totalConfidence += pattern.confidence ?? 0;
             entry.totalRs += pattern.rs_rating ?? 0;
-            entry.count += 1;
+            entry.totalTrend += pattern.trend_strength ?? 0;
         });
 
-        const sectors = Array.from(sectorMap.values()).map(entry => {
-            const avgConfidence = entry.count ? entry.totalConfidence / entry.count : 0;
-            const avgRs = entry.count ? entry.totalRs / entry.count : 0;
-            const ytdPerformance = parseFloat(((avgConfidence - 0.5) * 200).toFixed(1));
-            const momentumScore = Math.round(avgRs);
-
-            return {
+        return Array.from(sectorMap.values())
+            .map(entry => ({
                 sector: entry.sector,
-                ytd_performance: ytdPerformance,
-                momentum_score: momentumScore,
-                rs_rating: Math.round(avgRs),
-                rank: 0
-            };
-        }).sort((a, b) => (b.momentum_score ?? 0) - (a.momentum_score ?? 0));
-
-        sectors.forEach((sector, index) => {
-            sector.rank = index + 1;
-        });
-
-        return sectors;
+                count: entry.count,
+                avg_confidence: entry.count ? entry.totalConfidence / entry.count : 0,
+                avg_rs: entry.count ? entry.totalRs / entry.count : 0,
+                avg_trend: entry.count ? entry.totalTrend / entry.count : 0,
+            }))
+            .sort((a, b) => (b.avg_rs ?? 0) - (a.avg_rs ?? 0));
     }
 
-    async buildWatchlist(patterns) {
-        if (!patterns.length) return [];
+    aggregateIndustryPerformance(patterns) {
+        const industryMap = new Map();
 
-        const topPatterns = [...patterns]
-            .filter(pattern => (pattern.type || '').toLowerCase() === 'vcp')
-            .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
-            .slice(0, 3);
-
-        const watchlistPromises = topPatterns.map(async pattern => {
-            let trendTemplateScore = 'N/A';
-
-            try {
-                const analysis = await this.fetchJSON(`/api/stocks/${pattern.symbol}/analysis`);
-                if (analysis && typeof analysis.trend_template_score !== 'undefined') {
-                    trendTemplateScore = analysis.trend_template_score;
-                }
-            } catch (error) {
-                console.warn(`Stock analysis unavailable for ${pattern.symbol}.`, error);
+        patterns.forEach(pattern => {
+            const key = pattern.industry || 'Unknown';
+            if (!industryMap.has(key)) {
+                industryMap.set(key, {
+                    industry: key,
+                    sector: pattern.sector || 'Unknown',
+                    count: 0,
+                    totalRs: 0,
+                    totalConfidence: 0,
+                });
             }
-
-            return {
-                symbol: pattern.symbol,
-                name: pattern.name,
-                pattern_type: 'VCP',
-                confidence: pattern.confidence,
-                current_price: pattern.current_price,
-                pivot_price: pattern.pivot_price,
-                rs_rating: pattern.rs_rating ?? 0,
-                trend_template_score: trendTemplateScore,
-                risk_reward_ratio: this.calculateRiskRewardRatio(pattern)
-            };
+            const entry = industryMap.get(key);
+            entry.count += 1;
+            entry.totalRs += pattern.rs_rating ?? 0;
+            entry.totalConfidence += pattern.confidence ?? 0;
         });
 
-        return Promise.all(watchlistPromises);
+        return Array.from(industryMap.values())
+            .map(entry => ({
+                industry: entry.industry,
+                sector: entry.sector,
+                count: entry.count,
+                avg_rs: entry.count ? Math.round(entry.totalRs / entry.count) : 0,
+                avg_confidence: entry.count ? entry.totalConfidence / entry.count : 0,
+            }))
+            .sort((a, b) => b.avg_rs - a.avg_rs)
+            .slice(0, 12);
+    }
+
+    formatMarketCap(value) {
+        if (!value || Number.isNaN(value)) return '—';
+        const abs = Math.abs(value);
+        if (abs >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
+        if (abs >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+        if (abs >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+        if (abs >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
+        return value.toFixed(0);
     }
 
     calculateRiskRewardRatio(pattern) {
@@ -466,20 +476,20 @@ class LegendAI {
                 {"symbol": "SMCI", "rs_rating": 91, "ytd_performance": 41.5, "relative_performance": 24.1, "sector_rank": 3}
             ],
             "sectors": [
-                {"sector": "Technology", "ytd_performance": 24.8, "momentum_score": 85, "rs_rating": 92, "rank": 1},
-                {"sector": "Healthcare", "ytd_performance": 18.2, "momentum_score": 72, "rs_rating": 78, "rank": 2},
-                {"sector": "Financial", "ytd_performance": 15.6, "momentum_score": 65, "rs_rating": 68, "rank": 3},
-                {"sector": "Consumer Discretionary", "ytd_performance": 12.4, "momentum_score": 58, "rs_rating": 62, "rank": 4}
+                {"sector": "Technology", "count": 12, "avg_confidence": 0.82, "avg_rs": 88, "avg_trend": 0.6},
+                {"sector": "Healthcare", "count": 5, "avg_confidence": 0.74, "avg_rs": 76, "avg_trend": 0.4},
+                {"sector": "Financial", "count": 4, "avg_confidence": 0.69, "avg_rs": 71, "avg_trend": 0.32},
+                {"sector": "Consumer Discretionary", "count": 3, "avg_confidence": 0.65, "avg_rs": 64, "avg_trend": 0.28}
+            ],
+            "industries": [
+                {"industry": "Semiconductors", "sector": "Technology", "count": 6, "avg_rs": 92, "avg_confidence": 0.84},
+                {"industry": "Software", "sector": "Technology", "count": 4, "avg_rs": 85, "avg_confidence": 0.78},
+                {"industry": "Biotech", "sector": "Healthcare", "count": 3, "avg_rs": 74, "avg_confidence": 0.7}
             ],
             "portfolio": [
                 {"symbol": "NVDA", "pattern_type": "VCP", "entry_price": 118.50, "current_price": 128.75, "position_size": 200, "unrealized_pnl": 2050.00, "pnl_percent": 8.6, "days_held": 8},
                 {"symbol": "TSLA", "pattern_type": "VCP", "entry_price": 268.40, "current_price": 292.40, "position_size": 80, "unrealized_pnl": 1920.00, "pnl_percent": 8.9, "days_held": 12},
                 {"symbol": "SMCI", "pattern_type": "VCP", "entry_price": 812.00, "current_price": 874.20, "position_size": 30, "unrealized_pnl": 1866.00, "pnl_percent": 7.7, "days_held": 9}
-            ],
-            "watchlist": [
-                {"symbol": "NVDA", "name": "NVIDIA Corp.", "pattern_type": "VCP", "confidence": 0.89, "current_price": 128.75, "pivot_price": 135.50, "rs_rating": 95, "trend_template_score": 8, "risk_reward_ratio": 2.8},
-                {"symbol": "TSLA", "name": "Tesla Inc.", "pattern_type": "VCP", "confidence": 0.82, "current_price": 292.40, "pivot_price": 305.00, "rs_rating": 88, "trend_template_score": 7, "risk_reward_ratio": 2.6},
-                {"symbol": "SMCI", "name": "Super Micro Computer", "pattern_type": "VCP", "confidence": 0.76, "current_price": 874.20, "pivot_price": 915.00, "rs_rating": 91, "trend_template_score": 8, "risk_reward_ratio": 2.1}
             ]
         };
     }
@@ -625,16 +635,18 @@ class LegendAI {
         this.applyFilters();
         this.updateMarketPulse();
         this.populateSectorGrid();
+        this.populateIndustryList();
         this.populatePortfolioTable();
-        this.populateWatchlist();
+        this.populateMarketOverview();
         this.updateLoadMoreVisibility();
     }
 
     async refreshData() {
         console.log('🔄 Manual scan triggered');
-        const { patterns, marketEnvironment, portfolio } = await this.loadBackendData();
+        const { patterns, marketEnvironment, portfolio, marketOverview } = await this.loadBackendData();
 
         this.marketEnvironment = marketEnvironment || this.getFallbackMarketEnvironment();
+        this.marketOverview = marketOverview || this.marketOverview;
         this.data = await this.buildDataModel(patterns, portfolio);
         this.populateInitialData();
 
@@ -719,15 +731,121 @@ class LegendAI {
             const sectorItem = document.createElement('div');
             sectorItem.className = 'sector-item';
             sectorItem.dataset.sector = sector.sector;
-            
+
+            const avgRs = sector.avg_rs ?? 0;
+            const momentumClass = avgRs >= 70 ? 'positive' : avgRs >= 50 ? 'neutral' : 'negative';
+
             sectorItem.innerHTML = `
                 <div class="sector-name">${sector.sector}</div>
-                <div class="sector-performance ${sector.ytd_performance > 0 ? 'positive' : 'negative'}">
-                    +${sector.ytd_performance}%
+                <div class="sector-stats">
+                    <span>${sector.count} setups</span>
+                    <span class="sector-performance ${momentumClass}">RS ${avgRs}</span>
                 </div>
             `;
-            
+
             sectorGrid.appendChild(sectorItem);
+        });
+    }
+
+    populateIndustryList() {
+        const list = document.getElementById('industry-list');
+        if (!list) return;
+
+        list.innerHTML = '';
+
+        if (!Array.isArray(this.industryBreakdown)) return;
+
+        this.industryBreakdown.forEach(entry => {
+            const item = document.createElement('div');
+            item.className = 'industry-item';
+            item.innerHTML = `
+                <div>
+                    <div class="industry-item__name">${entry.industry}</div>
+                    <div class="industry-item__sector">${entry.sector}</div>
+                </div>
+                <div class="industry-item__stats">
+                    <span>RS ${entry.avg_rs}</span>
+                    <span>${entry.count} setups</span>
+                </div>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    populateMarketOverview() {
+        const grid = document.getElementById('indices-grid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+        const timestampEl = document.getElementById('market-update-time');
+        if (timestampEl) {
+            timestampEl.textContent = this.marketOverview?.updated_at
+                ? `Updated ${new Date(this.marketOverview.updated_at).toLocaleTimeString()}`
+                : '';
+        }
+
+        if (!this.marketOverview || !Array.isArray(this.marketOverview.indices)) return;
+
+        this.marketOverview.indices.forEach(index => {
+            const card = document.createElement('div');
+            card.className = 'index-card';
+
+            const changeClass = index.change_percent >= 0 ? 'positive' : 'negative';
+            const changeLabel = index.change_percent >= 0 ? '+' : '';
+
+            card.innerHTML = `
+                <div class="index-card__header">
+                    <div>
+                        <div class="index-card__symbol">${index.symbol}</div>
+                        <div class="index-card__price">${index.last_price?.toFixed(2) ?? '—'}</div>
+                    </div>
+                    <div class="index-card__change ${changeClass}">
+                        ${changeLabel}${(index.change_percent * 100).toFixed(2)}%
+                    </div>
+                </div>
+                <canvas class="index-card__sparkline" id="spark-${index.symbol}"></canvas>
+            `;
+
+            grid.appendChild(card);
+            this.renderIndexSparkline(`spark-${index.symbol}`, index.sparkline || []);
+        });
+    }
+
+    renderIndexSparkline(canvasId, series) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+
+        if (this.indexCharts[canvasId]) {
+            this.indexCharts[canvasId].destroy();
+        }
+
+        const labels = series.map(point => point.time);
+        const data = series.map(point => point.close);
+
+        this.indexCharts[canvasId] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        data,
+                        borderColor: '#00ffaa',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.2,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
+                }
+            }
         });
     }
 
@@ -739,40 +857,38 @@ class LegendAI {
 
         if (!Array.isArray(this.filteredPatterns)) return;
 
-        const relativeStrengthData = Array.isArray(this.data?.relative_strength) ? this.data.relative_strength : [];
-
         this.filteredPatterns.forEach(pattern => {
-            const rsData = relativeStrengthData.find(rs => rs.symbol === pattern.symbol);
-            const rsRating = rsData ? rsData.rs_rating : (pattern.rs_rating ?? 0);
+            const rsRating = Number.isFinite(pattern.rs_rating) ? pattern.rs_rating : 0;
+            const trendStrength = Number.isFinite(pattern.trend_strength) ? pattern.trend_strength : null;
+            const volumeMultiple = Number.isFinite(pattern.volume_multiple) ? pattern.volume_multiple : null;
+            const marketCap = pattern.market_cap_human || this.formatMarketCap(pattern.market_cap);
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="symbol-cell">
-                    <strong>${pattern.symbol}</strong>
-                </td>
+                <td class="symbol-cell"><strong>${pattern.symbol}</strong></td>
                 <td>${pattern.name}</td>
-                <td>
-                    <span class="pattern-type">VCP</span>
-                </td>
+                <td>${pattern.type}</td>
                 <td>
                     <span class="confidence-badge ${this.getConfidenceClass(pattern.confidence)}">
-                        ${Math.round(pattern.confidence * 100)}%
+                        ${Math.round((pattern.confidence ?? 0) * 100)}%
                     </span>
                 </td>
-                <td>
-                    <span class="rs-rating ${this.getRSClass(rsRating)}">${rsRating}</span>
-                </td>
-                <td>$${pattern.current_price.toFixed(2)}</td>
-                <td>$${pattern.pivot_price.toFixed(2)}</td>
-                <td>${pattern.days_in_pattern}</td>
-                <td>${pattern.sector}</td>
+                <td><span class="rs-rating ${this.getRSClass(rsRating)}">${rsRating}</span></td>
+                <td>${trendStrength !== null ? `${(trendStrength * 100).toFixed(0)}%` : '—'}</td>
+                <td>$${(pattern.current_price ?? 0).toFixed(2)}</td>
+                <td>$${(pattern.pivot_price ?? 0).toFixed(2)}</td>
+                <td>${pattern.days_in_pattern ?? 0}</td>
+                <td>${pattern.sector || '—'}</td>
+                <td>${pattern.industry || '—'}</td>
+                <td>${volumeMultiple !== null ? volumeMultiple.toFixed(2) : '—'}</td>
+                <td>${marketCap || '—'}</td>
                 <td>
                     <button class="btn btn--primary btn--small" onclick="app.openStockModal('${pattern.symbol}')">
                         Analyze
                     </button>
                 </td>
             `;
-            
+
             tbody.appendChild(row);
         });
 
@@ -811,45 +927,6 @@ class LegendAI {
         });
     }
 
-    populateWatchlist() {
-        const watchlistItems = document.getElementById('watchlist-items');
-        if (!watchlistItems) return;
-        
-        watchlistItems.innerHTML = '';
-
-        if (!this.data || !Array.isArray(this.data.watchlist)) return;
-
-        this.data.watchlist.forEach(item => {
-            const watchlistItem = document.createElement('div');
-            watchlistItem.className = 'watchlist-item';
-            watchlistItem.addEventListener('click', () => this.openStockModal(item.symbol));
-
-            const trendScore = item.trend_template_score === 'N/A' || typeof item.trend_template_score === 'undefined'
-                ? 'N/A'
-                : `${item.trend_template_score}/8`;
-            
-            watchlistItem.innerHTML = `
-                <div class="watchlist-header">
-                    <span class="watchlist-symbol">${item.symbol}</span>
-                    <span class="watchlist-confidence confidence-badge ${this.getConfidenceClass(item.confidence)}">
-                        ${Math.round(item.confidence * 100)}%
-                    </span>
-                </div>
-                <div class="watchlist-details">
-                    <span class="watchlist-pattern">${item.pattern_type}</span>
-                    <span class="watchlist-price">$${item.current_price.toFixed(2)}</span>
-                </div>
-                <div class="watchlist-metrics">
-                    <span>RS: <span class="rs-score">${item.rs_rating}</span></span>
-                    <span>R:R ${item.risk_reward_ratio}</span>
-                    <span>Score: ${trendScore}</span>
-                </div>
-            `;
-            
-            watchlistItems.appendChild(watchlistItem);
-        });
-    }
-
     switchPattern(pattern) {
         this.currentPattern = pattern === 'all' ? 'all' : 'vcp';
 
@@ -882,8 +959,6 @@ class LegendAI {
             ? parseFloat(volumeFilter.value)
             : Number.NaN;
 
-        const relativeStrengthData = Array.isArray(this.data.relative_strength) ? this.data.relative_strength : [];
-
         const basePatterns = this.currentPattern === 'all'
             ? (Array.isArray(this.data?.patterns) ? this.data.patterns : [])
             : this.getVcpPatterns();
@@ -895,8 +970,7 @@ class LegendAI {
         }
 
         this.filteredPatterns = basePatterns.filter(pattern => {
-            const rsData = relativeStrengthData.find(rs => rs.symbol === pattern.symbol);
-            const rsRating = rsData ? rsData.rs_rating : 0;
+            const rsRating = Number.isFinite(pattern.rs_rating) ? pattern.rs_rating : 0;
 
             // RS Rating filter
             if (rsRating < rsThreshold) return false;
@@ -936,30 +1010,39 @@ class LegendAI {
     }
 
     sortTable(column) {
-        const direction = this.currentSort.column === column && this.currentSort.direction === 'asc' ? 'desc' : 'asc';
-        this.currentSort = { column, direction };
+        const columnMap = {
+            pattern_type: 'type',
+            price: 'current_price',
+            pivot: 'pivot_price',
+            rs: 'rs_rating',
+            rs_rating: 'rs_rating',
+            trend_strength: 'trend_strength',
+            market_cap: 'market_cap',
+            volume_multiple: 'volume_multiple',
+        };
+
+        const actualColumn = columnMap[column] || column;
+
+        const direction = this.currentSort.column === actualColumn && this.currentSort.direction === 'asc' ? 'desc' : 'asc';
+        this.currentSort = { column: actualColumn, direction };
 
         if (!Array.isArray(this.filteredPatterns)) return;
 
-        const relativeStrengthData = Array.isArray(this.data?.relative_strength) ? this.data.relative_strength : [];
-
         this.filteredPatterns.sort((a, b) => {
-            let aVal = a[column];
-            let bVal = b[column];
+            let aVal = a[actualColumn];
+            let bVal = b[actualColumn];
 
-            if (column === 'rs') {
-                const rsA = relativeStrengthData.find(rs => rs.symbol === a.symbol);
-                const rsB = relativeStrengthData.find(rs => rs.symbol === b.symbol);
-                aVal = rsA ? rsA.rs_rating : 0;
-                bVal = rsB ? rsB.rs_rating : 0;
+            if (actualColumn === 'rs_rating') {
+                aVal = a.rs_rating ?? 0;
+                bVal = b.rs_rating ?? 0;
             }
 
-            if (column === 'price') {
+            if (actualColumn === 'current_price') {
                 aVal = a.current_price;
                 bVal = b.current_price;
             }
 
-            if (column === 'pivot') {
+            if (actualColumn === 'pivot_price') {
                 aVal = a.pivot_price;
                 bVal = b.pivot_price;
             }
@@ -978,10 +1061,8 @@ class LegendAI {
         if (!this.data) return;
 
         const patterns = Array.isArray(this.data.patterns) ? this.data.patterns : [];
-        const relativeStrengthData = Array.isArray(this.data.relative_strength) ? this.data.relative_strength : [];
 
         const pattern = patterns.find(p => p.symbol === symbol);
-        const rsData = relativeStrengthData.find(rs => rs.symbol === symbol);
         
         if (!pattern) return;
 
@@ -991,7 +1072,7 @@ class LegendAI {
         }
         
         // Populate trend template checklist
-        this.populateTrendTemplate(pattern, rsData);
+        this.populateTrendTemplate(pattern, { rs_rating: pattern.rs_rating });
         
         // Populate pattern metrics
         this.populatePatternMetrics(pattern);
@@ -1272,17 +1353,11 @@ class LegendAI {
             });
         }
 
-        if (Array.isArray(this.data.watchlist)) {
-            this.data.watchlist.forEach(item => {
-                const change = (Math.random() - 0.5) * 0.01;
-                item.current_price *= (1 + change);
-            });
-        }
-
         // Update displays
         this.populatePatternTable();
         this.populatePortfolioTable();
-        this.populateWatchlist();
+        this.populateIndustryList();
+        this.populateMarketOverview();
     }
 }
 
