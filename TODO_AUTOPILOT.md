@@ -1,8 +1,6 @@
-- [x] Create feature branch `auto/2025-10-09-legend-ai`
-- [x] Install Python deps with Py3.13 pins
-- [x] Add tests for retry/backoff, alerting, and cache helpers
-- [x] Implement `retry_with_backoff` and `send_alert`
-- [x] Add 60s cache to `/api/market/indices`
-- [x] Expand pytest discovery to `backend/tests`
-- [x] Run lint/typecheck/tests; fix issues
-- [ ] Commit, push branch, open PR
+- Verify RS rounding across UI (pending frontend workspace)
+- Add Cypress E2E for layout overflow (pending frontend)
+- Unify sector count/list sources (pending API/FE integration)
+- Freshness selector live/stale toggle tests (pending WebSocket store)
+- Run Scans UX reliability tests (pending FE)
+- Add Redis-backed cache + provider failover tests (future)
