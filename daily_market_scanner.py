@@ -239,17 +239,17 @@ def run_scan():
                 # Gentle spacing between requests
                 time.sleep(0.6)
 
-        # Run VCP detection using stored histories
+        # Run VCP detection using stored histories with production-quality filters
         symbols = [s.symbol for s in session.query(Stock.symbol).all()]
         signals: List[VCPSignal] = scan_for_vcp(
             symbols, data_fetcher=data_fetcher,
             min_contractions=2,
-            max_contractions=8,
-            max_base_depth=0.45,
-            final_contraction_max=0.15,
-            min_price=5.0,
-            min_volume=250_000,
-            check_trend_template=False,
+            max_contractions=6,
+            max_base_depth=0.35,
+            final_contraction_max=0.10,
+            min_price=30.0,
+            min_volume=1_000_000,
+            check_trend_template=True,
         )
 
         # Clear and write patterns
@@ -342,12 +342,12 @@ def run_scan_for_symbols(symbols: List[str]):
             symbols,
             data_fetcher=data_fetcher,
             min_contractions=2,
-            max_contractions=8,
-            max_base_depth=0.45,
-            final_contraction_max=0.15,
-            min_price=5.0,
-            min_volume=250_000,
-            check_trend_template=False,
+            max_contractions=6,
+            max_base_depth=0.35,
+            final_contraction_max=0.10,
+            min_price=30.0,
+            min_volume=1_000_000,
+            check_trend_template=True,
         )
         session.query(Pattern).filter(Pattern.pattern_type == "VCP").delete()
         for sig in sigs:

@@ -89,16 +89,16 @@ class LegendAI {
     setDefaultFilters() {
         const rsSlider = document.getElementById('rs-slider');
         if (rsSlider) {
-            rsSlider.value = 50;
+            rsSlider.value = 70;
             const rsValue = document.getElementById('rs-value');
-            if (rsValue) rsValue.textContent = '50';
+            if (rsValue) rsValue.textContent = '70';
         }
 
         const confidenceSlider = document.getElementById('confidence-slider');
         if (confidenceSlider) {
-            confidenceSlider.value = 20;
+            confidenceSlider.value = 60;
             const confValue = document.getElementById('confidence-value');
-            if (confValue) confValue.textContent = '20%';
+            if (confValue) confValue.textContent = '60%';
         }
 
         const sectorFilter = document.getElementById('sector-filter');
@@ -639,6 +639,58 @@ class LegendAI {
         this.populatePortfolioTable();
         this.populateMarketOverview();
         this.updateLoadMoreVisibility();
+        this.updateDataFreshness();
+    }
+
+    async updateDataFreshness() {
+        try {
+            const status = await this.fetchJSON('/v1/meta/status');
+            const freshnessText = document.getElementById('freshness-text');
+            
+            if (status && status.last_scan_time) {
+                const lastScan = new Date(status.last_scan_time);
+                const now = new Date();
+                const hoursAgo = Math.floor((now - lastScan) / (1000 * 60 * 60));
+                const minutesAgo = Math.floor((now - lastScan) / (1000 * 60));
+                
+                let timeText = '';
+                if (hoursAgo < 1) {
+                    timeText = minutesAgo === 0 ? 'Just now' : `${minutesAgo}m ago`;
+                } else if (hoursAgo < 24) {
+                    timeText = `${hoursAgo}h ago`;
+                } else {
+                    const daysAgo = Math.floor(hoursAgo / 24);
+                    timeText = `${daysAgo}d ago`;
+                }
+                
+                if (freshnessText) {
+                    freshnessText.textContent = `Updated ${timeText}`;
+                }
+                
+                // Update color based on freshness
+                const freshnessDiv = document.getElementById('data-freshness');
+                if (freshnessDiv) {
+                    freshnessDiv.classList.remove('fresh', 'stale', 'very-stale');
+                    if (hoursAgo < 6) {
+                        freshnessDiv.classList.add('fresh');
+                    } else if (hoursAgo < 24) {
+                        freshnessDiv.classList.add('stale');
+                    } else {
+                        freshnessDiv.classList.add('very-stale');
+                    }
+                }
+            } else {
+                if (freshnessText) {
+                    freshnessText.textContent = 'Status unknown';
+                }
+            }
+        } catch (error) {
+            console.warn('Could not fetch data freshness:', error);
+            const freshnessText = document.getElementById('freshness-text');
+            if (freshnessText) {
+                freshnessText.textContent = 'Status unavailable';
+            }
+        }
     }
 
     async refreshData() {

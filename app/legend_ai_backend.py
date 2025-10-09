@@ -109,11 +109,11 @@ except Exception:
 v1 = APIRouter(prefix="/v1", tags=["v1"])
 
 _DETECTOR = VCPDetector(
-    min_price=5.0,
-    min_volume=200_000,
+    min_price=30.0,
+    min_volume=1_000_000,
     min_contractions=2,
     max_contractions=6,
-    check_trend_template=False,
+    check_trend_template=True,
 )
 
 _PRICE_CACHE: Dict[str, pd.DataFrame] = {}
@@ -858,7 +858,7 @@ def run_scan_endpoint(limit: int = Query(default=7, ge=1, le=20)):
         else:
             tickers = ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN"][:limit]
         
-        detector = VCPDetector(min_price=10.0, min_volume=500000, min_contractions=2, check_trend_template=False)
+        detector = VCPDetector(min_price=30.0, min_volume=1_000_000, min_contractions=2, check_trend_template=True)
         
         results = []
         for ticker in tickers:

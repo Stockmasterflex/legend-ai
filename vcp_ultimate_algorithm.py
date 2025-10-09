@@ -51,8 +51,8 @@ class VCPDetector:
     """
     
     def __init__(self, 
-                 min_price: float = 10.0,
-                 min_volume: int = 500000,
+                 min_price: float = 30.0,
+                 min_volume: int = 1000000,
                  min_contractions: int = 2,
                  max_contractions: int = 6,
                  max_base_depth: float = 0.35,
@@ -63,13 +63,14 @@ class VCPDetector:
         Initialize VCP Detector with configurable parameters
         
         Args:
-            min_price: Minimum stock price to consider
-            min_volume: Minimum average daily volume
-            min_contractions: Minimum number of contractions required
-            max_contractions: Maximum number of contractions allowed
-            max_base_depth: Maximum depth of entire base (0.35 = 35%)
-            final_contraction_max: Maximum depth of final contraction
-            breakout_volume_multiplier: Volume multiplier for breakout confirmation
+            min_price: Minimum stock price to consider (default: 30.0)
+            min_volume: Minimum average daily volume (default: 1,000,000)
+            min_contractions: Minimum number of contractions required (default: 2)
+            max_contractions: Maximum number of contractions allowed (default: 6)
+            max_base_depth: Maximum depth of entire base (default: 0.35 = 35%)
+            final_contraction_max: Maximum depth of final contraction (default: 0.10 = 10%)
+            breakout_volume_multiplier: Volume multiplier for breakout confirmation (default: 1.5)
+            check_trend_template: Whether to apply Minervini's 8-point trend template (default: True)
         """
         self.min_price = min_price
         self.min_volume = min_volume
@@ -551,14 +552,15 @@ def example_usage():
         'Volume': np.random.uniform(1000000, 5000000, len(dates))
     })
     
-    # Initialize detector
+    # Initialize detector with production-quality defaults
     detector = VCPDetector(
-        min_price=10.0,
-        min_volume=500000,
+        min_price=30.0,
+        min_volume=1000000,
         min_contractions=2,
         max_contractions=4,
         max_base_depth=0.35,
-        final_contraction_max=0.10
+        final_contraction_max=0.10,
+        check_trend_template=True
     )
     
     # Detect VCP

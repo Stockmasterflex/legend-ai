@@ -33,6 +33,10 @@
                 <span class="stream-indicator"></span>
                 <span>Live Data</span>
             </div>
+            <div class="data-freshness" id="data-freshness">
+                <span class="freshness-icon">🕒</span>
+                <span class="freshness-text" id="freshness-text">Loading...</span>
+            </div>
         </div>
     </header>
 
@@ -66,13 +70,13 @@
                 </div>
 
                 <div class="filter-group">
-                    <label>RS Rating Minimum: <span id="rs-value">50</span></label>
-                    <input type="range" id="rs-slider" class="slider" min="0" max="100" value="50">
+                    <label>RS Rating Minimum: <span id="rs-value">70</span></label>
+                    <input type="range" id="rs-slider" class="slider" min="0" max="100" value="70">
                 </div>
 
                 <div class="filter-group">
-                    <label>Confidence Threshold: <span id="confidence-value">20%</span></label>
-                    <input type="range" id="confidence-slider" class="slider" min="0" max="100" value="20">
+                    <label>Confidence Threshold: <span id="confidence-value">60%</span></label>
+                    <input type="range" id="confidence-slider" class="slider" min="0" max="100" value="60">
                 </div>
 
                 <div class="filter-group">
