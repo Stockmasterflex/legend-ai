@@ -424,6 +424,24 @@ def _enrich_pattern_row(row: Dict[str, Any]) -> Dict[str, Any]:
         _, fallback_industry = _fallback_sector(ticker)
         industry = fallback_industry
 
+    if not volume_multiple and average_volume:
+        df = _fetch_price_history(ticker, days=60)
+        if df is not None and 'Volume' in df.columns and not df.empty:
+            latest_vol = float(df['Volume'].iloc[-1])
+            if average_volume:
+                try:
+                    volume_multiple = latest_vol / float(average_volume)
+                except ZeroDivisionError:
+                    volume_multiple = None
+
+    if (days_in_pattern or 0) <= 0:
+        df = _fetch_price_history(ticker, days=120)
+        if df is not None and len(df) >= 30:
+            days_in_pattern = min(90, len(df) // 2)
+
+    if trend_strength is None and profile.get("return_6m") is not None:
+        trend_strength = profile["return_6m"]
+
     meta.update({
         "sector": sector,
         "industry": industry,
