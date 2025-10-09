@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
-import pytest
+
 import pandas as pd
+import pytest
 
 from vcp_ultimate_algorithm import VCPDetector
 

@@ -7,5 +7,3 @@ optional Sentry), CORS configuration, and health/readiness endpoints.
 
 All code is designed to be idempotent and composable.
 """
-
-

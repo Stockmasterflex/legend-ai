@@ -1,4 +1,4 @@
-from legend_ai_backend import SessionLocal, ScanRun, Pattern
+from legend_ai_backend import Pattern, ScanRun, SessionLocal
 
 
 def main():

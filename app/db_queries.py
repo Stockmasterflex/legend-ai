@@ -10,7 +10,7 @@ from __future__ import annotations
 import base64
 import json
 from datetime import datetime
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
@@ -34,7 +34,9 @@ def _decode_cursor(cursor: Optional[str]) -> Optional[Dict[str, str]]:
         return None
 
 
-def fetch_patterns(engine: Engine, limit: int, cursor: Optional[str]) -> Tuple[List[Dict], Optional[str]]:
+def fetch_patterns(
+    engine: Engine, limit: int, cursor: Optional[str]
+) -> Tuple[List[Dict], Optional[str]]:
     """Fetch paginated patterns ordered by (as_of DESC, ticker ASC).
 
     Returns a tuple (items, next_cursor).
@@ -47,7 +49,9 @@ def fetch_patterns(engine: Engine, limit: int, cursor: Optional[str]) -> Tuple[L
     if after and after.get("as_of_iso") and after.get("ticker"):
         # For ordering as_of DESC, ticker ASC: next page items satisfy
         # (as_of < last_asof) OR (as_of = last_asof AND ticker > last_ticker)
-        where_clause = "WHERE (as_of < :after_as_of) OR (as_of = :after_as_of AND ticker > :after_ticker)"
+        where_clause = (
+            "WHERE (as_of < :after_as_of) OR (as_of = :after_as_of AND ticker > :after_ticker)"
+        )
         params["after_as_of"] = datetime.fromisoformat(after["as_of_iso"])  # type: ignore[arg-type]
         params["after_ticker"] = after["ticker"]
 
@@ -68,10 +72,12 @@ def fetch_patterns(engine: Engine, limit: int, cursor: Optional[str]) -> Tuple[L
             # Handle as_of - can be datetime (PostgreSQL) or string (SQLite)
             as_of_val = r["as_of"]
             if as_of_val is not None:
-                as_of_str = as_of_val.isoformat() if hasattr(as_of_val, 'isoformat') else str(as_of_val)
+                as_of_str = (
+                    as_of_val.isoformat() if hasattr(as_of_val, "isoformat") else str(as_of_val)
+                )
             else:
                 as_of_str = None
-            
+
             # Handle meta - can be dict (PostgreSQL JSONB) or string (SQLite TEXT)
             # This ensures compatibility with both database types
             meta_val = r.get("meta")
@@ -87,7 +93,7 @@ def fetch_patterns(engine: Engine, limit: int, cursor: Optional[str]) -> Tuple[L
                     meta_dict = meta_val
             else:
                 meta_dict = {}
-            
+
             rows.append(
                 {
                     "ticker": r["ticker"],
@@ -118,16 +124,20 @@ def get_status(engine: Engine) -> Dict[str, object]:
     - version: API version string
     """
     with engine.connect() as conn:
-        row = conn.execute(
-            text(
-                """
+        row = (
+            conn.execute(
+                text(
+                    """
                 SELECT MAX(as_of) AS last_as_of,
                        MIN(as_of) AS first_as_of,
                        COUNT(*)   AS total
                 FROM patterns
                 """
+                )
             )
-        ).mappings().first()
+            .mappings()
+            .first()
+        )
 
     last_as_of = row["last_as_of"] if row else None
     first_as_of = row["first_as_of"] if row else None
@@ -136,14 +146,16 @@ def get_status(engine: Engine) -> Dict[str, object]:
     span_days: Optional[int] = None
     if last_as_of and first_as_of:
         # Handle datetime objects (PostgreSQL) vs strings (SQLite)
-        if hasattr(last_as_of, 'days'):
+        if hasattr(last_as_of, "days"):
             span_days = (last_as_of - first_as_of).days
         # For SQLite strings, just set None - it's not critical
 
     # Handle last_as_of - can be datetime or string
     last_scan_str = None
     if last_as_of:
-        last_scan_str = last_as_of.isoformat() if hasattr(last_as_of, 'isoformat') else str(last_as_of)
+        last_scan_str = (
+            last_as_of.isoformat() if hasattr(last_as_of, "isoformat") else str(last_as_of)
+        )
 
     return {
         "last_scan_time": last_scan_str,
@@ -151,5 +163,3 @@ def get_status(engine: Engine) -> Dict[str, object]:
         "patterns_daily_span_days": span_days,
         "version": "0.1.0",
     }
-
-

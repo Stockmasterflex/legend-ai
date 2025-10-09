@@ -1,5 +1,6 @@
-from vcp_ultimate_algorithm import VCPDetector
 import yfinance as yf
+
+from vcp_ultimate_algorithm import VCPDetector
 
 symbol = 'NVDA'
 print(f"Fetching {symbol}...")

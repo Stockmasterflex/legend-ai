@@ -4,8 +4,8 @@ Lightweight Redis cache helper for Legend AI API.
 Fail-open if Redis is not configured. Provides JSON helpers with TTL.
 """
 
-import os
 import json
+import os
 import typing as t
 
 try:
@@ -31,5 +31,3 @@ def cache_set(key: str, data: t.Any, ttl: int = 60) -> None:
     if not _client:
         return
     _client.setex(key, ttl, json.dumps(data))
-
-

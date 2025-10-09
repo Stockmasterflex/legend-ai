@@ -10,21 +10,19 @@ without duplicating business logic.
 """
 
 import json
+import logging
 import os
 import uuid
-import math
 from datetime import datetime
-from typing import List, Dict, Any, Tuple
+from typing import Any, Dict, List, Tuple
 
-import logging
-
+import pandas as pd
+from fastapi import APIRouter, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, APIRouter, Query, Response, HTTPException, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware
-import pandas as pd
 
 try:  # pragma: no cover - optional dependency for live enrichment
     import yfinance as yf
@@ -33,19 +31,19 @@ except Exception:  # pragma: no cover
 
 from pathlib import Path
 
-from .config import allowed_origins, mock_enabled
-from .flags import get_flags
-from .cache import cache_get, cache_set
-from .db_queries import fetch_patterns, get_status
-from .data_fetcher import fetch_stock_data
-from .observability import setup_json_logging, setup_sentry
 from vcp_ultimate_algorithm import VCPDetector
 
+from .cache import cache_get, cache_set
+from .config import allowed_origins, mock_enabled
+from .data_fetcher import fetch_stock_data
+from .db_queries import fetch_patterns, get_status  # noqa: TID252 (import within package)
+from .flags import get_flags
+from .observability import setup_json_logging, setup_sentry
 
 # Import the existing FastAPI application defined at repository root
 try:
     from legend_ai_backend import app as base_app  # type: ignore
-except Exception as import_exc:  # pragma: no cover - defensive import guard
+except Exception:  # pragma: no cover - defensive import guard
     # Fallback: create a minimal app if import fails so /healthz still works
     base_app = FastAPI(title="Legend AI API (fallback)")
 
@@ -57,6 +55,7 @@ app = setup_sentry(base_app)
 LIVE_ENRICHMENT = os.getenv("LEGEND_LIVE_ENRICHMENT", "0") == "1"
 LOCAL_DATA_PATH = Path(__file__).parent.parent / "legend_ai_data.json"
 _LOCAL_DATA: Dict[str, Any] | None = None
+_INDICES_CACHE: Dict[str, Tuple[Dict[str, Any], datetime]] = {}
 
 
 def _load_local_data() -> Dict[str, Any]:
@@ -94,15 +93,18 @@ def healthz():
 
 # Readiness endpoint using a minimal SQLAlchemy engine if available
 try:
-    from .db import engine  # type: ignore
     from sqlalchemy import text
+
+    from .db import engine  # type: ignore
 
     @app.get("/readyz")
     def readyz():
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         return {"ok": True}
+
 except Exception:  # pragma: no cover - readiness degrades gracefully
+
     @app.get("/readyz")
     def readyz():
         return {"ok": False, "reason": "db engine unavailable"}
@@ -111,6 +113,7 @@ except Exception:  # pragma: no cover - readiness degrades gracefully
 # ---------------------------
 # API v1 router and middleware
 # ---------------------------
+
 
 class Error(BaseModel):
     code: str
@@ -145,6 +148,7 @@ _PRICE_CACHE: Dict[str, pd.DataFrame] = {}
 _SIGNAL_CACHE: Dict[str, Any] = {}
 _PROFILE_CACHE: Dict[str, Dict[str, Any]] = {}
 _BENCHMARK_CACHE: Dict[str, Tuple[float, datetime]] = {}
+_INDICES_CACHE: Dict[str, Tuple[Dict[str, Any], datetime]] = {}
 
 _SECTOR_BUCKETS = [
     ("Technology", "Software"),
@@ -172,15 +176,17 @@ def _generate_mock_series(ticker: str, days: int = 365) -> pd.DataFrame:
     for ts in rng:
         change = (hash((ticker, ts.toordinal())) % 200 - 100) / 5000.0
         price = max(1, price * (1 + change))
-        volume = 1_000_000 + abs(hash((ticker, ts.toordinal(), 'vol'))) % 2_000_000
-        series.append({
-            "Date": ts,
-            "Open": price * (1 - 0.01),
-            "High": price * (1 + 0.015),
-            "Low": price * (1 - 0.02),
-            "Close": price,
-            "Volume": volume,
-        })
+        volume = 1_000_000 + abs(hash((ticker, ts.toordinal(), "vol"))) % 2_000_000
+        series.append(
+            {
+                "Date": ts,
+                "Open": price * (1 - 0.01),
+                "High": price * (1 + 0.015),
+                "Low": price * (1 - 0.02),
+                "Close": price,
+                "Volume": volume,
+            }
+        )
     return pd.DataFrame(series)
 
 
@@ -233,7 +239,7 @@ def _compute_vcp_signal(ticker: str) -> Any:
         return None
 
     try:
-        detector_df = df.set_index("Date")[['Open', 'High', 'Low', 'Close', 'Volume']]
+        detector_df = df.set_index("Date")[["Open", "High", "Low", "Close", "Volume"]]
         signal = _DETECTOR.detect_vcp(detector_df, symbol=ticker)
         _SIGNAL_CACHE[ticker] = signal
         return signal
@@ -255,8 +261,8 @@ def _get_benchmark_return(symbol: str = "SPY", days: int = 180) -> float | None:
     df_tail = df.tail(days)
     if len(df_tail) < 2:
         return None
-    start = float(df_tail['Close'].iloc[0])
-    end = float(df_tail['Close'].iloc[-1])
+    start = float(df_tail["Close"].iloc[0])
+    end = float(df_tail["Close"].iloc[-1])
     if start <= 0:
         return None
     ret = (end - start) / start
@@ -329,22 +335,22 @@ def _get_stock_profile(ticker: str) -> Dict[str, Any]:
     df = _fetch_price_history(ticker, days=240)
     if df is not None and not df.empty:
         try:
-            profile["current_price"] = float(df['Close'].iloc[-1])
+            profile["current_price"] = float(df["Close"].iloc[-1])
         except Exception:
             profile["current_price"] = None
         window = df.tail(180)
         if len(window) >= 2:
-            start = float(window['Close'].iloc[0])
-            end = float(window['Close'].iloc[-1])
+            start = float(window["Close"].iloc[0])
+            end = float(window["Close"].iloc[-1])
             if start > 0:
                 stock_return = (end - start) / start
                 profile["return_6m"] = stock_return
                 benchmark_return = _get_benchmark_return("SPY", days=min(180, len(window)))
                 profile["rs_rating"] = _calculate_rs_rating(stock_return, benchmark_return)
-        if 'Volume' in df.columns and len(df['Volume']) >= 30:
-            avg_vol = float(df['Volume'].tail(30).mean())
+        if "Volume" in df.columns and len(df["Volume"]) >= 30:
+            avg_vol = float(df["Volume"].tail(30).mean())
             profile["average_volume"] = avg_vol
-            latest_vol = float(df['Volume'].iloc[-1])
+            latest_vol = float(df["Volume"].iloc[-1])
             if avg_vol > 0:
                 profile["volume_multiple"] = latest_vol / avg_vol
     elif local_entry and local_entry.get("data"):
@@ -386,9 +392,13 @@ def _enrich_pattern_row(row: Dict[str, Any]) -> Dict[str, Any]:
     profile = _get_stock_profile(ticker)
 
     confidence = _normalize_confidence(data.get("confidence"), signal, meta)
-    price = float(data.get("price") or profile.get("current_price") or meta.get("current_price") or 0)
+    price = float(
+        data.get("price") or profile.get("current_price") or meta.get("current_price") or 0
+    )
 
-    pivot = meta.get("pivot_price") or (signal.pivot_price if signal and signal.pivot_price else None)
+    pivot = meta.get("pivot_price") or (
+        signal.pivot_price if signal and signal.pivot_price else None
+    )
     if pivot is None and price:
         pivot = price
 
@@ -426,8 +436,8 @@ def _enrich_pattern_row(row: Dict[str, Any]) -> Dict[str, Any]:
 
     if not volume_multiple and average_volume:
         df = _fetch_price_history(ticker, days=60)
-        if df is not None and 'Volume' in df.columns and not df.empty:
-            latest_vol = float(df['Volume'].iloc[-1])
+        if df is not None and "Volume" in df.columns and not df.empty:
+            latest_vol = float(df["Volume"].iloc[-1])
             if average_volume:
                 try:
                     volume_multiple = latest_vol / float(average_volume)
@@ -442,19 +452,21 @@ def _enrich_pattern_row(row: Dict[str, Any]) -> Dict[str, Any]:
     if trend_strength is None and profile.get("return_6m") is not None:
         trend_strength = profile["return_6m"]
 
-    meta.update({
-        "sector": sector,
-        "industry": industry,
-        "pivot_price": pivot,
-        "stop_loss": stop_loss,
-        "rs_rating": rs_rating,
-        "days_in_pattern": days_in_pattern,
-        "market_cap": meta.get("market_cap") or profile.get("market_cap"),
-        "market_cap_human": meta.get("market_cap_human") or profile.get("market_cap_human"),
-        "volume_multiple": volume_multiple,
-        "average_volume": average_volume,
-        "trend_strength": trend_strength,
-    })
+    meta.update(
+        {
+            "sector": sector,
+            "industry": industry,
+            "pivot_price": pivot,
+            "stop_loss": stop_loss,
+            "rs_rating": rs_rating,
+            "days_in_pattern": days_in_pattern,
+            "market_cap": meta.get("market_cap") or profile.get("market_cap"),
+            "market_cap_human": meta.get("market_cap_human") or profile.get("market_cap_human"),
+            "volume_multiple": volume_multiple,
+            "average_volume": average_volume,
+            "trend_strength": trend_strength,
+        }
+    )
 
     data.update(
         {
@@ -532,6 +544,7 @@ def patterns_all_v1(
 
     try:
         from .db import engine  # type: ignore
+
         items, next_cursor = fetch_patterns(engine, limit=limit, cursor=cursor)
     except Exception as exc:  # pragma: no cover
         raise HTTPException(status_code=500, detail={"code": "db_error", "message": str(exc)})
@@ -573,15 +586,27 @@ class MarketOverviewModel(BaseModel):
 def meta_status_v1() -> StatusModel:
     try:
         from .db import engine  # type: ignore
+
         status = get_status(engine)
     except Exception:
         # graceful when DB unavailable
-        status = {"last_scan_time": None, "rows_total": 0, "patterns_daily_span_days": None, "version": "0.1.0"}
+        status = {
+            "last_scan_time": None,
+            "rows_total": 0,
+            "patterns_daily_span_days": None,
+            "version": "0.1.0",
+        }
     return StatusModel(**status)
 
 
 @app.get("/api/market/indices", response_model=MarketOverviewModel)
-def market_indices_overview():
+def market_indices_overview() -> MarketOverviewModel:
+    # In-process cache for 60s to avoid heavy repeated computations
+    now = datetime.utcnow()
+    cached = _INDICES_CACHE.get("overview")
+    if cached and (now - cached[1]).total_seconds() < 60:
+        return MarketOverviewModel(**cached[0])
+
     indices_catalog = [
         ("SPY", "S&P 500"),
         ("QQQ", "Nasdaq 100"),
@@ -601,13 +626,15 @@ def market_indices_overview():
             continue
 
         try:
-            if not pd.api.types.is_datetime64_any_dtype(recent['Date']):
-                recent['Date'] = pd.to_datetime(recent['Date'])
-            last_close = float(recent['Close'].iloc[-1])
-            previous_close = float(recent['Close'].iloc[-2]) if len(recent) > 1 else None
-            change_percent = ((last_close - previous_close) / previous_close) if previous_close else 0.0
+            if not pd.api.types.is_datetime64_any_dtype(recent["Date"]):
+                recent["Date"] = pd.to_datetime(recent["Date"])
+            last_close = float(recent["Close"].iloc[-1])
+            previous_close = float(recent["Close"].iloc[-2]) if len(recent) > 1 else None
+            change_percent = (
+                ((last_close - previous_close) / previous_close) if previous_close else 0.0
+            )
             sparkline = [
-                MarketSparkPoint(time=row['Date'].strftime('%Y-%m-%d'), close=float(row['Close']))
+                MarketSparkPoint(time=row["Date"].strftime("%Y-%m-%d"), close=float(row["Close"]))
                 for _, row in recent.iterrows()
             ]
         except Exception as exc:  # pragma: no cover
@@ -628,7 +655,9 @@ def market_indices_overview():
     if not indices:
         raise HTTPException(status_code=503, detail="Market overview unavailable")
 
-    return MarketOverviewModel(indices=indices, updated_at=datetime.utcnow().isoformat())
+    payload = {"indices": indices, "updated_at": datetime.utcnow().isoformat()}
+    _INDICES_CACHE["overview"] = (payload, now)
+    return MarketOverviewModel(**payload)
 
 
 app.include_router(v1)
@@ -654,15 +683,15 @@ def serve_test_dashboard():
 @app.get("/api/patterns/all")
 def get_all_patterns_legacy(response: Response, limit: int = Query(default=500, ge=1, le=1000)):
     """Legacy endpoint for backward compatibility. Returns dashboard-compatible format.
-    
+
     Calls the v1 endpoint internally and transforms the data to the format the dashboard expects.
     """
     # Call the v1 endpoint
     v1_response = patterns_all_v1(response, limit=min(limit, 500), cursor=None)
-    
+
     # v1 returns {"items": [...], "next": ...}, extract items
     v1_items = v1_response.get("items", []) if isinstance(v1_response, dict) else []
-    
+
     # Transform to dashboard format
     dashboard_format = []
     for item in v1_items:
@@ -675,7 +704,9 @@ def get_all_patterns_legacy(response: Response, limit: int = Query(default=500, 
         industry = item.get("industry") or item.get("meta", {}).get("industry") or sector
         pivot_price = item.get("pivot_price") or price or 0
         stop_loss = item.get("stop_loss") or (pivot_price * 0.92 if pivot_price else None)
-        days_in_pattern = item.get("days_in_pattern") or item.get("meta", {}).get("days_in_pattern") or 0
+        days_in_pattern = (
+            item.get("days_in_pattern") or item.get("meta", {}).get("days_in_pattern") or 0
+        )
         name = item.get("name") or item.get("meta", {}).get("name") or f"{ticker} Corp"
 
         normalized_confidence = confidence
@@ -704,7 +735,7 @@ def get_all_patterns_legacy(response: Response, limit: int = Query(default=500, 
             "action": "Analyze",
         }
         dashboard_format.append(dashboard_item)
-    
+
     return dashboard_format
 
 
@@ -721,8 +752,8 @@ def get_market_environment():
         "breadth_indicators": {
             "advance_decline_line": "Strong",
             "new_highs_vs_lows": "245 vs 23",
-            "up_volume_ratio": "68%"
-        }
+            "up_volume_ratio": "68%",
+        },
     }
 
 
@@ -739,7 +770,7 @@ def get_portfolio_positions():
 def frontend_data_sample():
     """Return a sample of exactly what the frontend should fetch and how to display it."""
     v1_response = patterns_all_v1(Response(), limit=3, cursor=None)
-    
+
     return {
         "instructions": "The frontend should call /v1/patterns/all and transform like this:",
         "api_url": "https://legend-api.onrender.com/v1/patterns/all",
@@ -768,7 +799,7 @@ fetch('https://legend-api.onrender.com/v1/patterns/all?limit=100')
     // Now populate your table with patterns array
   });
         """,
-        "test_it_now": "Open browser console and paste the code above to see it work!"
+        "test_it_now": "Open browser console and paste the code above to see it work!",
     }
 
 
@@ -779,18 +810,18 @@ def list_all_routes():
     routes = []
     for route in app.routes:
         if hasattr(route, "path") and hasattr(route, "methods"):
-            routes.append({
-                "path": route.path,
-                "methods": list(route.methods) if route.methods else [],
-                "name": route.name if hasattr(route, "name") else None
-            })
+            routes.append(
+                {
+                    "path": route.path,
+                    "methods": list(route.methods) if route.methods else [],
+                    "name": route.name if hasattr(route, "name") else None,
+                }
+            )
     # Filter to show only patterns-related routes
-    patterns_routes = [r for r in routes if 'pattern' in r['path'].lower() or 'api' in r['path'].lower()]
-    return {
-        "total_routes": len(routes),
-        "patterns_related": patterns_routes,
-        "all_routes": routes
-    }
+    patterns_routes = [
+        r for r in routes if "pattern" in r["path"].lower() or "api" in r["path"].lower()
+    ]
+    return {"total_routes": len(routes), "patterns_related": patterns_routes, "all_routes": routes}
 
 
 # Debug endpoint to test data transformation
@@ -798,48 +829,51 @@ def list_all_routes():
 def test_legacy_transform():
     """Debug endpoint to test the legacy data transformation and diagnose issues."""
     import traceback as tb
+
     try:
         from .db import engine  # type: ignore
         from .db_queries import fetch_patterns  # type: ignore
-        
+
         items, _ = fetch_patterns(engine, limit=3, cursor=None)
-        
+
         result = {
             "raw_count": len(items),
             "raw_sample": items[0] if items else None,
             "transformed": [],
             "legacy_call_result": None,
-            "legacy_call_error": None
+            "legacy_call_error": None,
         }
-        
+
         for item in items:
             ticker = item.get("ticker", "UNKNOWN")
             pattern = item.get("pattern", "VCP")
             confidence = item.get("confidence", 0)
             price = item.get("price", 0)
             rs = item.get("rs", 80)
-            
-            result["transformed"].append({
-                "symbol": ticker,
-                "pattern_type": pattern,
-                "confidence": confidence,
-                "price": price,
-                "rs_rating": int(rs or 80)
-            })
-        
+
+            result["transformed"].append(
+                {
+                    "symbol": ticker,
+                    "pattern_type": pattern,
+                    "confidence": confidence,
+                    "price": price,
+                    "rs_rating": int(rs or 80),
+                }
+            )
+
         # Now actually CALL the legacy endpoint to see what happens
         try:
             from fastapi.responses import Response
-            from fastapi import Query
+
             legacy_response = get_all_patterns_legacy(Response(), limit=3)
             result["legacy_call_result"] = legacy_response
         except Exception as legacy_err:
             result["legacy_call_error"] = {
                 "error": str(legacy_err),
                 "type": type(legacy_err).__name__,
-                "traceback": tb.format_exc()
+                "traceback": tb.format_exc(),
             }
-        
+
         return result
     except Exception as e:
         return {"error": str(e), "type": type(e).__name__, "traceback": tb.format_exc()}
@@ -850,17 +884,18 @@ def test_legacy_transform():
 def init_database_endpoint():
     """Initialize database schema by running SQL migrations. Use once after deploy."""
     try:
-        from .db import engine  # type: ignore
         from sqlalchemy import text
-        
+
+        from .db import engine  # type: ignore
+
         migrations_dir = Path(__file__).parent.parent / "migrations" / "sql"
         sql_files = sorted(migrations_dir.glob("*.sql"))
-        
+
         results = []
         for sql_file in sql_files:
-            with open(sql_file, "r") as f:
+            with open(sql_file) as f:
                 sql = f.read()
-            
+
             # Split and execute
             statements = [s.strip() for s in sql.split(";") if s.strip()]
             with engine.begin() as conn:
@@ -871,7 +906,7 @@ def init_database_endpoint():
                             results.append(f"✓ {sql_file.name}")
                         except Exception as e:
                             results.append(f"⚠ {sql_file.name}: {str(e)[:100]}")
-        
+
         return {"ok": True, "results": results}
     except Exception as e:
         logging.error(f"Database init failed: {e}", exc_info=True)
@@ -882,10 +917,12 @@ def init_database_endpoint():
 def seed_demo_data():
     """Seed the database with mock VCP patterns for testing."""
     try:
-        from .db import engine  # type: ignore
-        from sqlalchemy import text
         from datetime import datetime, timedelta
-        
+
+        from sqlalchemy import text
+
+        from .db import engine  # type: ignore
+
         # Create 3 mock VCP detections
         mock_patterns = [
             {
@@ -895,7 +932,7 @@ def seed_demo_data():
                 "confidence": 85.5,
                 "rs": 92.3,
                 "price": 495.22,
-                "meta": '{"contractions": 3, "base_depth": 0.18, "pivot": 495.22}'
+                "meta": '{"contractions": 3, "base_depth": 0.18, "pivot": 495.22}',
             },
             {
                 "ticker": "PLTR",
@@ -904,7 +941,7 @@ def seed_demo_data():
                 "confidence": 78.2,
                 "rs": 88.5,
                 "price": 28.45,
-                "meta": '{"contractions": 4, "base_depth": 0.25, "pivot": 28.45}'
+                "meta": '{"contractions": 4, "base_depth": 0.25, "pivot": 28.45}',
             },
             {
                 "ticker": "CRWD",
@@ -913,23 +950,29 @@ def seed_demo_data():
                 "confidence": 91.0,
                 "rs": 95.1,
                 "price": 285.67,
-                "meta": '{"contractions": 3, "base_depth": 0.15, "pivot": 285.67}'
-            }
+                "meta": '{"contractions": 3, "base_depth": 0.15, "pivot": 285.67}',
+            },
         ]
-        
+
         with engine.begin() as conn:
             for pattern in mock_patterns:
                 conn.execute(
-                    text("""
+                    text(
+                        """
                         INSERT INTO patterns (ticker, pattern, as_of, confidence, rs, price, meta)
                         VALUES (:ticker, :pattern, :as_of, :confidence, :rs, :price, :meta)
                         ON CONFLICT (ticker, pattern, as_of) DO UPDATE
                         SET confidence=EXCLUDED.confidence, rs=EXCLUDED.rs, price=EXCLUDED.price, meta=EXCLUDED.meta
-                    """),
-                    pattern
+                    """
+                    ),
+                    pattern,
                 )
-        
-        return {"ok": True, "seeded": len(mock_patterns), "patterns": [p["ticker"] for p in mock_patterns]}
+
+        return {
+            "ok": True,
+            "seeded": len(mock_patterns),
+            "patterns": [p["ticker"] for p in mock_patterns],
+        }
     except Exception as e:
         logging.error(f"Seed failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Seed failed: {str(e)}")
@@ -940,24 +983,23 @@ def test_data_fetch(ticker: str = Query(default="AAPL")):
     """Test endpoint to check what data we're getting from yfinance."""
     try:
         import yfinance as yf
-        import pandas as pd
-        
+
         stock = yf.Ticker(ticker)
         df = stock.history(period="1y")
-        
+
         if df.empty:
             return {"error": "No data returned from yfinance"}
-        
+
         df = df.reset_index()
-        
+
         return {
             "ticker": ticker,
             "rows": len(df),
             "columns": list(df.columns),
             "first_row": df.iloc[0].to_dict() if len(df) > 0 else None,
             "last_row": df.iloc[-1].to_dict() if len(df) > 0 else None,
-            "sample_close": float(df['Close'].iloc[-1]) if 'Close' in df.columns else None,
-            "sample_volume": float(df['Volume'].iloc[-1]) if 'Volume' in df.columns else None,
+            "sample_close": float(df["Close"].iloc[-1]) if "Close" in df.columns else None,
+            "sample_volume": float(df["Volume"].iloc[-1]) if "Volume" in df.columns else None,
         }
     except Exception as e:
         return {"error": str(e)}
@@ -968,17 +1010,19 @@ def run_scan_endpoint(limit: int = Query(default=7, ge=1, le=20)):
     """Trigger a scan for VCP patterns on a limited set of tickers."""
     try:
         import sys
-        from pathlib import Path
         from datetime import datetime
-        
+        from pathlib import Path
+
         # Add parent to path
         sys.path.insert(0, str(Path(__file__).parent.parent))
-        
-        from vcp_ultimate_algorithm import VCPDetector  # type: ignore
-        from .db import engine  # type: ignore
-        from .data_fetcher import fetch_stock_data  # type: ignore
+
         from sqlalchemy import text
-        
+
+        from vcp_ultimate_algorithm import VCPDetector  # type: ignore
+
+        from .data_fetcher import fetch_stock_data  # type: ignore
+        from .db import engine  # type: ignore
+
         # Load universe
         universe_path = Path(__file__).parent.parent / "data" / "universe.csv"
         if universe_path.exists():
@@ -986,9 +1030,11 @@ def run_scan_endpoint(limit: int = Query(default=7, ge=1, le=20)):
                 tickers = [line.strip() for line in f if line.strip()][:limit]
         else:
             tickers = ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN"][:limit]
-        
-        detector = VCPDetector(min_price=30.0, min_volume=1_000_000, min_contractions=2, check_trend_template=True)
-        
+
+        detector = VCPDetector(
+            min_price=30.0, min_volume=1_000_000, min_contractions=2, check_trend_template=True
+        )
+
         results = []
         for ticker in tickers:
             try:
@@ -997,10 +1043,10 @@ def run_scan_endpoint(limit: int = Query(default=7, ge=1, le=20)):
                 if df is None or len(df) < 60:
                     results.append(f"⊘ {ticker}: insufficient data")
                     continue
-                
+
                 # Detect
                 signal = detector.detect_vcp(df, ticker)
-                
+
                 if signal.detected:
                     # Upsert to database
                     record = {
@@ -1010,17 +1056,21 @@ def run_scan_endpoint(limit: int = Query(default=7, ge=1, le=20)):
                         "confidence": float(signal.confidence_score),
                         "rs": None,
                         "price": float(signal.pivot_price) if signal.pivot_price else None,
-                        "meta": text(f"""'{{"contractions": {len(signal.contractions)}}}'::jsonb""")
+                        "meta": text(
+                            f"""'{{"contractions": {len(signal.contractions)}}}'::jsonb"""
+                        ),
                     }
-                    
+
                     with engine.begin() as conn:
                         conn.execute(
-                            text("""
+                            text(
+                                """
                                 INSERT INTO patterns (ticker, pattern, as_of, confidence, rs, price, meta)
                                 VALUES (:ticker, :pattern, :as_of, :confidence, :rs, :price, :meta)
                                 ON CONFLICT (ticker, pattern, as_of) DO UPDATE
                                 SET confidence=EXCLUDED.confidence, price=EXCLUDED.price, meta=EXCLUDED.meta
-                            """),
+                            """
+                            ),
                             {
                                 "ticker": ticker,
                                 "pattern": "VCP",
@@ -1028,19 +1078,19 @@ def run_scan_endpoint(limit: int = Query(default=7, ge=1, le=20)):
                                 "confidence": float(signal.confidence_score),
                                 "rs": None,
                                 "price": float(signal.pivot_price) if signal.pivot_price else None,
-                                "meta": f'{{"contractions": {len(signal.contractions)}}}'
-                            }
+                                "meta": f'{{"contractions": {len(signal.contractions)}}}',
+                            },
                         )
-                    
+
                     results.append(f"✓ {ticker}: VCP (conf={signal.confidence_score:.1f}%)")
                 else:
                     results.append(f"✗ {ticker}: no VCP")
-                    
+
             except Exception as e:
                 results.append(f"⚠ {ticker}: {str(e)[:50]}")
-        
+
         return {"ok": True, "scanned": len(tickers), "results": results}
-        
+
     except Exception as e:
         logging.error(f"Scan failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
@@ -1058,13 +1108,17 @@ try:
         # FastAPI integration helper
         secure.framework.fastapi(resp)  # type: ignore[attr-defined]
         return resp
+
 except Exception:
     pass
 
 
 # Boot log
 try:
-    logging.info("legend-api boot", extra={"module": "legend-api", "port_env": os.getenv("PORT"), "mock": mock_enabled()})
+    logging.info(
+        "legend-api boot",
+        extra={"module": "legend-api", "port_env": os.getenv("PORT"), "mock": mock_enabled()},
+    )
 except Exception:
     pass
 
@@ -1078,6 +1132,8 @@ try:
         logging.error("database url missing or invalid", extra={"error": str(db_exc)})
 except Exception:
     pass
+
+
 def _fallback_sector(ticker: str) -> Tuple[str, str]:
     idx = abs(hash(ticker)) % len(_SECTOR_BUCKETS)
     return _SECTOR_BUCKETS[idx]

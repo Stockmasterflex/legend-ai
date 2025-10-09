@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List
+
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
@@ -14,7 +15,9 @@ def upsert_patterns(engine: Engine, rows: List[Dict]) -> None:
     keys = ",".join(cols)
     placeholders = ",".join([f":{c}" for c in cols])
     conflict = "(ticker, pattern, as_of)"
-    set_expr = ", ".join([f"{c}=EXCLUDED.{c}" for c in cols if c not in ("ticker", "pattern", "as_of")])
+    set_expr = ", ".join(
+        [f"{c}=EXCLUDED.{c}" for c in cols if c not in ("ticker", "pattern", "as_of")]
+    )
     sql = text(
         f"INSERT INTO patterns ({keys}) VALUES ({placeholders}) ON CONFLICT {conflict} DO UPDATE SET {set_expr}"
     )
@@ -35,5 +38,3 @@ def load_universe() -> List[str]:
         return tickers
     # fallback small universe
     return ["AAPL", "MSFT", "NVDA", "AMZN", "TSLA"]
-
-

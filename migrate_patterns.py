@@ -1,10 +1,9 @@
-import os
 import json
+import os
 from datetime import datetime
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
-
 
 SQLITE_PATH = os.getenv("SQLITE_PATH", os.path.abspath("legendai.db"))
 RAW_POSTGRES_URL = os.getenv(

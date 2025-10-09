@@ -4,9 +4,9 @@ idempotently (ON CONFLICT DO NOTHING). Requires env: SQLITE_PATH, DATABASE_URL.
 """
 
 import os
-import sqlalchemy as sa
-import pandas as pd
 
+import pandas as pd
+import sqlalchemy as sa
 
 SQLITE_PATH = os.getenv("SQLITE_PATH", "legendai.db")
 PG_URL = os.getenv("DATABASE_URL")

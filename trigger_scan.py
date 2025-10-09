@@ -1,6 +1,6 @@
-from daily_market_scanner import run_scan, run_scan_for_symbols, test_finnhub_connection
 import sys
 
+from daily_market_scanner import run_scan, run_scan_for_symbols, test_finnhub_connection
 
 if __name__ == "__main__":
     # Usage:

@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta
 import json
 import os
 import random
+from datetime import datetime, timedelta
 
 from legend_ai_backend import SessionLocal, Stock
 

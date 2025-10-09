@@ -7,13 +7,11 @@ on first failure. Intended for manual checks and CI.
 
 from __future__ import annotations
 
+import json
 import os
 import sys
-import json
-import time
 import urllib.request
 from typing import Tuple
-
 
 BASE = os.getenv("SERVICE_BASE", "https://legend-api.onrender.com")
 TIMEOUT = float(os.getenv("MONITOR_TIMEOUT", "10"))

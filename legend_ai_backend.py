@@ -1,20 +1,22 @@
 # Legend AI Backend - FastAPI Implementation
 
-from fastapi import FastAPI, WebSocket, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, JSON
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-from pydantic import BaseModel
-from typing import List, Optional
-import os
 import asyncio
 import json
-import redis
+import os
 from datetime import datetime, timedelta
-import pandas as pd
+from typing import List, Optional
+
 import numpy as np
-from vcp_ultimate_algorithm import scan_for_vcp, VCPSignal
+import pandas as pd
+import redis
+from fastapi import Depends, FastAPI, HTTPException, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from sqlalchemy import JSON, Column, DateTime, Float, Integer, String, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session, sessionmaker
+
+from vcp_ultimate_algorithm import VCPSignal, scan_for_vcp
 
 # Initialize FastAPI app
 app = FastAPI(title="Legend AI Backend", version="1.0.0")
@@ -298,7 +300,7 @@ def _patterns_from_db(db: Session) -> List[PatternResponse]:
                 confidence=float(p.confidence or 0.0),
                 pivot_price=float(p.pivot_price or 0.0),
                 stop_loss=float(p.stop_loss or 0.0),
-                current_price=float(0.0),
+                current_price=0.0,
                 days_in_pattern=int(p.days_in_pattern or 0),
                 rs_rating=0,
             ))
@@ -663,10 +665,11 @@ def get_stock_price_data(symbol: str) -> List[dict]:
     '''Fetch stock price data from seeded files if available, else generate mock data.'''
     # Try reading seeded data
     try:
-        import os, json as _json
+        import json as _json
+        import os
         file_path = os.path.join('data', 'price_history', f'{symbol}.json')
         if os.path.exists(file_path):
-            with open(file_path, 'r') as f:
+            with open(file_path) as f:
                 loaded = _json.load(f)
                 if isinstance(loaded, list) and loaded:
                     return loaded

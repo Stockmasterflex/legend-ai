@@ -1,9 +1,9 @@
 # Generate comprehensive sample trading data for the Legend AI platform
-import pandas as pd
-import numpy as np
 import random
 from datetime import datetime, timedelta
-import json
+
+import numpy as np
+import pandas as pd
 
 # Set random seed for reproducibility
 np.random.seed(42)

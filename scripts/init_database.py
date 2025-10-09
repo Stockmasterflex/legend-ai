@@ -7,6 +7,7 @@ Reads SQL files in order and applies them to the DATABASE_URL.
 import os
 import sys
 from pathlib import Path
+
 from sqlalchemy import create_engine, text
 
 
@@ -17,7 +18,7 @@ def init_database():
         print("ERROR: DATABASE_URL environment variable not set")
         sys.exit(1)
     
-    print(f"Connecting to database...")
+    print("Connecting to database...")
     engine = create_engine(database_url, pool_pre_ping=True)
     
     # Get migrations directory
@@ -34,7 +35,7 @@ def init_database():
     
     for sql_file in sql_files:
         print(f"\nApplying: {sql_file.name}")
-        with open(sql_file, "r") as f:
+        with open(sql_file) as f:
             sql = f.read()
         
         # Split by semicolons and execute each statement

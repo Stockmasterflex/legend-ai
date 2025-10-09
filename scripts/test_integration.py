@@ -4,10 +4,11 @@ Integration test suite for Legend AI frontend-backend connection.
 Tests all endpoints that the dashboard uses.
 """
 
-import sys
 import json
+import sys
+from typing import Dict, Tuple
+
 import requests
-from typing import Dict, List, Tuple
 
 # Configuration
 API_BASE = "https://legend-api.onrender.com"
@@ -135,7 +136,7 @@ def main():
     
     # Frontend-Backend Connection Test
     print(f"{Colors.BLUE}[Frontend-Backend Connection]{Colors.END}")
-    print(f"Testing if frontend can fetch data from backend...")
+    print("Testing if frontend can fetch data from backend...")
     
     # Simulate what the frontend would do
     try:

@@ -1,5 +1,4 @@
 # Generate additional market intelligence and sector data
-import pandas as pd
 
 # Generate sector performance data
 sectors = [

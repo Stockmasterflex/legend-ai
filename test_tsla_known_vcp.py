@@ -1,6 +1,7 @@
-from vcp_ultimate_algorithm import VCPDetector
+
 import yfinance as yf
-from datetime import datetime
+
+from vcp_ultimate_algorithm import VCPDetector
 
 # Fetch TSLA data covering the VCP period (April - October 2025)
 hist = yf.Ticker('TSLA').history(start='2025-01-01', end='2025-10-15', interval='1d', auto_adjust=False, actions=False)

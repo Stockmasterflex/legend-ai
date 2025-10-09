@@ -1,8 +1,8 @@
-import schedule
-import time
-import subprocess
 import os
+import subprocess
+import time
 
+import schedule
 
 WHEN = os.getenv("LEGEND_SCAN_AT", "13:30")  # HH:MM 24h
 
@@ -17,5 +17,3 @@ print(f"[scheduler] scheduled daily at {WHEN}")
 while True:
     schedule.run_pending()
     time.sleep(1)
-
-

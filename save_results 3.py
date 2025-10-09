@@ -1,8 +1,8 @@
-import os
 import json
+import os
 from datetime import datetime
 
-from legend_ai_backend import SessionLocal, Stock, Pattern
+from legend_ai_backend import Pattern, SessionLocal, Stock
 
 
 def export_scan_results(output_dir: str = os.path.join('data', 'exports')) -> str:

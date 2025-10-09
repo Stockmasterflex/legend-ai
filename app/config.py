@@ -1,7 +1,6 @@
-import os
 import logging
+import os
 from typing import List
-
 
 DEFAULT_SQLITE_URL = "sqlite:///./legendai.db"
 
@@ -26,4 +25,3 @@ def allowed_origins() -> List[str]:
 
 def mock_enabled() -> bool:
     return os.getenv("LEGEND_MOCK_MODE", "0") == "1" or os.getenv("LEGEND_MOCK", "0") == "1"
-

@@ -4,10 +4,12 @@ Migrate patterns from SQLite to PostgreSQL/TimescaleDB
 Copies all 185 patterns from legendai.db to Render PostgreSQL
 """
 
-import sqlite3
 import os
-from sqlalchemy import create_engine, text
+import sqlite3
 from datetime import datetime
+
+from sqlalchemy import create_engine, text
+
 
 def migrate_patterns():
     """Migrate patterns from SQLite to PostgreSQL"""
@@ -33,7 +35,7 @@ def migrate_patterns():
     if postgres_url.startswith('postgres://'):
         postgres_url = postgres_url.replace('postgres://', 'postgresql://', 1)
     
-    print(f"📊 Source: legendai.db (SQLite)")
+    print("📊 Source: legendai.db (SQLite)")
     print(f"📊 Target: {postgres_url[:50]}... (PostgreSQL)")
     print()
     
@@ -185,7 +187,7 @@ def migrate_patterns():
             print()
             return True
         else:
-            print(f"⚠️  Warning: Row count mismatch!")
+            print("⚠️  Warning: Row count mismatch!")
             print(f"   SQLite: {total_rows}")
             print(f"   PostgreSQL: {pg_count}")
             return False

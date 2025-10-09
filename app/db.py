@@ -6,10 +6,8 @@ readiness probes and other modules that only need a lightweight connection.
 """
 
 from sqlalchemy import create_engine
-from .config import get_database_url
 
+from .config import get_database_url
 
 # Use pool_pre_ping to avoid stale connections in serverless/pooled envs.
 engine = create_engine(get_database_url(), pool_pre_ping=True, future=True)
-
-

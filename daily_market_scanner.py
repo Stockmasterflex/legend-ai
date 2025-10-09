@@ -1,19 +1,17 @@
+import json
 import os
 import time
-import math
-import json
 import traceback
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import Dict, List
 
-import requests
 import pandas as pd
-from dotenv import load_dotenv
+import requests
 import yfinance as yf
+from dotenv import load_dotenv
 
-from legend_ai_backend import SessionLocal, Stock, Pattern, ScanRun, ScanFailure, Base
-from vcp_ultimate_algorithm import scan_for_vcp, VCPSignal
-
+from legend_ai_backend import Pattern, ScanFailure, ScanRun, SessionLocal, Stock
+from vcp_ultimate_algorithm import VCPSignal, scan_for_vcp
 
 load_dotenv()
 
@@ -159,7 +157,7 @@ def data_fetcher(symbol: str) -> pd.DataFrame | None:
     path = os.path.join(DATA_DIR, f"{symbol}.json")
     if not os.path.exists(path):
         return None
-    with open(path, 'r') as f:
+    with open(path) as f:
         rows = json.load(f)
     if not rows:
         return None

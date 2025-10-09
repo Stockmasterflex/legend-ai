@@ -10,5 +10,3 @@ from typing import Set
 def get_flags() -> Set[str]:
     raw = os.getenv("LEGEND_FLAGS", "")
     return {f.strip() for f in raw.split(",") if f.strip()}
-
-

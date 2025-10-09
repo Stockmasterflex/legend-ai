@@ -5,12 +5,13 @@ A comprehensive implementation for detecting VCP patterns in stock data
 Based on Mark Minervini's and William O'Neil's trading methodologies
 """
 
-import pandas as pd
-import numpy as np
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass
-from datetime import datetime, timedelta
 import warnings
+from dataclasses import dataclass
+from typing import List, Tuple
+
+import numpy as np
+import pandas as pd
+
 warnings.filterwarnings('ignore')
 
 

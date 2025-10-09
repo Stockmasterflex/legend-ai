@@ -4,10 +4,11 @@ Idempotent by (ticker, pattern, as_of).
 """
 
 import os
-import sqlalchemy as sa
-from typing import List, Dict
-from .utils import upsert_patterns, load_universe
+from typing import Dict, List
 
+import sqlalchemy as sa
+
+from .utils import load_universe, upsert_patterns
 
 PG_URL = os.getenv("DATABASE_URL")
 if not PG_URL:
@@ -37,5 +38,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
